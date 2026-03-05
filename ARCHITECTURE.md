@@ -85,7 +85,8 @@ Use vertical slices while respecting layer boundaries:
 
 ## 6. Database and Migrations
 
-PostgreSQL runs via Docker Compose on host port `5433`.
+PostgreSQL runs via Docker Compose on host port `5433`. 
+Ensure you have installed Docker and have daemon running (the docker background service)
 
 Start database:
 
@@ -135,7 +136,7 @@ npm run dev
 Run:
 
 ```powershell
-dotnet test .\Backend\tests\Backend.UnitTests\Backend.UnitTests.csproj
+dotnet test Backend\tests\Backend.UnitTests\Backend.UnitTests.csproj
 ```
 
 ### Integration Tests
@@ -146,13 +147,13 @@ dotnet test .\Backend\tests\Backend.UnitTests\Backend.UnitTests.csproj
 Run:
 
 ```powershell
-dotnet test .\Backend\tests\Backend.IntegrationTests\Backend.IntegrationTests.csproj
+dotnet test Backend\tests\Backend.IntegrationTests\Backend.IntegrationTests.csproj
 ```
 
 ### Full Backend Test Run
 
 ```powershell
-dotnet test .\Marketplace.slnx
+dotnet test Marketplace.slnx
 ```
 
 ## 9. Version Management

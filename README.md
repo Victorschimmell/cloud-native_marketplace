@@ -45,13 +45,13 @@ Architecture details: see [ARCHITECTURE.md](./ARCHITECTURE.md).
 Build backend solution:
 
 ```powershell
-dotnet build .\Marketplace.slnx
+dotnet build Marketplace.slnx
 ```
 
 Run backend tests:
 
 ```powershell
-dotnet test .\Marketplace.slnx
+dotnet test Marketplace.slnx
 ```
 
 Build frontend:

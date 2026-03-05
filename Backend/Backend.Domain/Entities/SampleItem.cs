@@ -1,4 +1,4 @@
-using Backend.Domain.Common;
+using Backend.Domain.Base;
 
 namespace Backend.Domain.Entities;
 

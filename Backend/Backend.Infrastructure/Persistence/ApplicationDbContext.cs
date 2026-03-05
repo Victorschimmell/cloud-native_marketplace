@@ -1,4 +1,4 @@
-using Backend.Domain.Common;
+using Backend.Domain.Base;
 using Backend.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
