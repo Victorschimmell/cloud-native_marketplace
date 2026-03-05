@@ -1,11 +1,6 @@
-@Backend.Api_HostAddress = http://localhost:5053
+@Backend.Api_HostAddress = http://localhost:5094
 
-GET {{Backend.Api_HostAddress}}/health
-Accept: application/json
-
-###
-
-GET {{Backend.Api_HostAddress}}/api/system/info
+GET {{Backend.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
