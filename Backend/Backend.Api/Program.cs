@@ -1,31 +1,23 @@
-using Backend.Api.Extensions;
-using Backend.Infrastructure;
-using Scalar.AspNetCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddHealthChecks();
-builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference("/scalar");
-}
-
-if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
-{
-    await app.Services.ApplyMigrationsAsync();
 }
 
 app.UseHttpsRedirection();
 
-app.MapHealthChecks("/health");
-app.MapFoundationEndpoints();
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.Run();
-
-public partial class Program;
