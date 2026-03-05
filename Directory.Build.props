@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <AspNetCoreVersion>10.0.3</AspNetCoreVersion>
+    <EntityFrameworkCoreVersion>10.0.0</EntityFrameworkCoreVersion>
+    <NpgsqlEfCoreVersion>10.0.0</NpgsqlEfCoreVersion>
+    <ScalarVersion>2.12.54</ScalarVersion>
+    <NetTestSdkVersion>17.14.1</NetTestSdkVersion>
+    <XunitVersion>2.9.3</XunitVersion>
+    <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
+    <CoverletCollectorVersion>6.0.4</CoverletCollectorVersion>
+  </PropertyGroup>
+</Project>

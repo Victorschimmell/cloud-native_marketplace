@@ -1,0 +1,32 @@
+# IDE / OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET
+**/bin/
+**/obj/
+
+# Node / frontend build output
+**/node_modules/
+**/dist/
+**/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.local
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local CLI state
+.dotnet/
