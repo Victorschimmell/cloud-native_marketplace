@@ -1,0 +1,64 @@
+
+# Runs on:
+#   - Every PR targeting master or release/v1.0.0 (failing test -> cannot complete PR)
+#   - Every push/merge to master or release/v1.0.0 (failing test -> merge not finalised)
+
+trigger:
+  branches:
+    include:
+      - master
+      - release/v1.0.0
+
+pr:
+  branches:
+    include:
+      - master
+      - release/v1.0.0
+
+pool:
+  name: LocalAgentPool
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+
+  # SDK
+  - task: UseDotNet@2
+    displayName: 'Install .NET 10.x SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '10.x'
+
+  # 2. Restore dependencies
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore dependencies'
+    inputs:
+      command: 'restore'
+      projects: 'Marketplace.slnx'
+
+  # Build all projects (incl. tests)
+  - task: DotNetCoreCLI@2
+    displayName: 'Build solution'
+    inputs:
+      command: 'build'
+      projects: 'Marketplace.slnx'
+      arguments: '--configuration $(buildConfiguration) --no-restore'
+
+  # 4. Unit tests  (no database used)
+  - task: DotNetCoreCLI@2
+    displayName: 'Run unit tests'
+    inputs:
+      command: 'test'
+      projects: 'Backend/tests/Backend.UnitTests/Backend.UnitTests.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+      publishTestResults: true
+
+  # Integration tests  (no database connection required)
+  - task: DotNetCoreCLI@2
+    displayName: 'Run integration tests'
+    inputs:
+      command: 'test'
+      projects: 'Backend/tests/Backend.IntegrationTests/Backend.IntegrationTests.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+      publishTestResults: true
