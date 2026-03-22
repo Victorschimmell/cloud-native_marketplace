@@ -2,15 +2,13 @@ trigger:
   branches:
     include:
       - master
-      # - release/v1.0.0
-      - cicd/51-pipeline-docker-image
+      - release/v1.0.0
 
 pr:
   branches:
     include:
       - master
-      # - release/v1.0.0
-      - cicd/51-pipeline-docker-image
+      - release/v1.0.0
 
 pool:
   name: LocalAgentPool
