@@ -1,0 +1,381 @@
+@startuml
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+
+' =========================
+' IDENTITY / ACCESS
+' =========================
+
+entity "user_accounts" as user_accounts {
+  * user_id : uuid <<PK>>
+  --
+  email : text <<UQ>>
+  password_hash : text
+  role : text
+  account_status : text
+  failed_login_attempts : int
+  locked_until : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+  last_login_at : timestamp
+}
+
+entity "customers" as customers {
+  * customer_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UQ>>
+  first_name : text
+  last_name : text
+  phone : text
+  default_address_id : uuid <<FK, nullable>>
+  olist_customer_id : text <<UQ, nullable>>
+  olist_customer_unique_id : text <<nullable>>
+  created_at : timestamp
+}
+
+entity "sellers" as sellers {
+  * seller_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UQ>>
+  business_name : text
+  registration_number : text
+  payout_information : text
+  default_address_id : uuid <<FK, nullable>>
+  verification_status : text
+  verified_at : timestamp <<nullable>>
+  olist_seller_id : text <<UQ, nullable>>
+  created_at : timestamp
+}
+
+entity "admins" as admins {
+  * admin_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UQ>>
+  display_name : text
+  created_at : timestamp
+}
+
+entity "user_sessions" as user_sessions {
+  * session_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  ip_address : inet
+  user_agent : text
+  started_at : timestamp
+  expires_at : timestamp
+  ended_at : timestamp <<nullable>>
+  is_active : boolean
+}
+
+entity "user_blocks" as user_blocks {
+  * block_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, nullable>>
+  ip_address : inet <<nullable>>
+  blocked_by_admin_id : uuid <<FK>>
+  reason : text
+  starts_at : timestamp
+  ends_at : timestamp
+  is_active : boolean
+  created_at : timestamp
+}
+
+entity "seller_verification_requests" as seller_verification_requests {
+  * verification_request_id : uuid <<PK>>
+  --
+  seller_id : uuid <<FK>>
+  submitted_at : timestamp
+  status : text
+  business_name_snapshot : text
+  registration_number_snapshot : text
+  submitted_details : text
+  review_notes : text <<nullable>>
+  reviewed_by_admin_id : uuid <<FK, nullable>>
+  reviewed_at : timestamp <<nullable>>
+  rejection_reason : text <<nullable>>
+}
+
+' =========================
+' LOCATION
+' =========================
+
+entity "addresses" as addresses {
+  * address_id : uuid <<PK>>
+  --
+  postal_code : text
+  city : text
+  state : text
+  address_line_1 : text <<nullable>>
+  address_line_2 : text <<nullable>>
+  country_code : text
+  latitude : numeric <<nullable>>
+  longitude : numeric <<nullable>>
+  created_at : timestamp
+}
+
+entity "geolocations" as geolocations {
+  geolocation_zip_code_prefix : int
+  geolocation_lat : numeric
+  geolocation_lng : numeric
+  geolocation_city : text
+  geolocation_state : text
+}
+
+' =========================
+' CATALOG / SELLING
+' =========================
+
+entity "product_categories" as product_categories {
+  * category_id : uuid <<PK>>
+  --
+  category_name_pt : text <<UQ>>
+  category_name_en : text <<nullable>>
+}
+
+entity "products" as products {
+  * product_id : uuid <<PK>>
+  --
+  category_id : uuid <<FK>>
+  product_name : text
+  description : text
+  product_name_length : int
+  product_description_length : int
+  product_photos_qty : int
+  product_weight_g : int
+  product_length_cm : int
+  product_height_cm : int
+  product_width_cm : int
+  created_at : timestamp
+  updated_at : timestamp
+  olist_product_id : text <<UQ, nullable>>
+}
+
+entity "product_listings" as product_listings {
+  * listing_id : uuid <<PK>>
+  --
+  seller_id : uuid <<FK>>
+  product_id : uuid <<FK>>
+  sku : text
+  listing_price : numeric
+  inventory_quantity : int
+  visibility_status : text
+  is_deleted : boolean
+  published_at : timestamp <<nullable>>
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+' =========================
+' CART / CHECKOUT
+' =========================
+
+entity "shopping_carts" as shopping_carts {
+  * cart_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, nullable>>
+  session_id : uuid <<FK, nullable>>
+  status : text
+  created_at : timestamp
+  updated_at : timestamp
+  expires_at : timestamp
+  recovered_from_cart_id : uuid <<FK, nullable>>
+}
+
+entity "cart_items" as cart_items {
+  * cart_item_id : uuid <<PK>>
+  --
+  cart_id : uuid <<FK>>
+  listing_id : uuid <<FK>>
+  quantity : int
+  unit_price_at_addition : numeric
+  added_at : timestamp
+  updated_at : timestamp
+}
+
+' =========================
+' ORDERS
+' =========================
+
+entity "orders" as orders {
+  * order_id : uuid <<PK>>
+  --
+  customer_id : uuid <<FK>>
+  shipping_address_id : uuid <<FK>>
+  order_status : text
+  order_purchase_timestamp : timestamp
+  order_approved_at : timestamp <<nullable>>
+  order_delivered_carrier_date : timestamp <<nullable>>
+  order_delivered_customer_date : timestamp <<nullable>>
+  order_estimated_delivery_date : timestamp <<nullable>>
+  subtotal_amount : numeric
+  freight_amount : numeric
+  total_amount : numeric
+  placed_from_cart_id : uuid <<FK, nullable>>
+  order_number : text <<UQ>>
+}
+
+entity "order_items" as order_items {
+  * order_id : uuid <<PK, FK>>
+  * order_item_id : int <<PK>>
+  --
+  listing_id : uuid <<FK>>
+  product_id : uuid <<FK>>
+  seller_id : uuid <<FK>>
+  quantity : int
+  unit_price : numeric
+  freight_value : numeric
+  shipping_limit_date : timestamp <<nullable>>
+}
+
+entity "order_payments" as order_payments {
+  * order_id : uuid <<PK, FK>>
+  * payment_sequential : int <<PK>>
+  --
+  payment_type : text
+  payment_installments : int
+  payment_value : numeric
+  payment_status : text
+  external_payment_reference : text <<nullable>>
+  paid_at : timestamp <<nullable>>
+}
+
+entity "order_reviews" as order_reviews {
+  * review_id : uuid <<PK>>
+  --
+  order_id : uuid <<FK>>
+  review_score : int
+  review_comment_title : text <<nullable>>
+  review_comment_message : text <<nullable>>
+  review_creation_date : timestamp
+  review_answer_timestamp : timestamp <<nullable>>
+}
+
+entity "shipments" as shipments {
+  * shipment_id : uuid <<PK>>
+  --
+  order_id : uuid <<FK>>
+  seller_id : uuid <<FK>>
+  carrier_name : text
+  tracking_number : text
+  shipment_status : text
+  shipped_at : timestamp <<nullable>>
+  delivered_at : timestamp <<nullable>>
+  returned_at : timestamp <<nullable>>
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+
+'entity "order_cancellations" as order_cancellations {
+'  * cancellation_id : uuid <<PK>>
+'  --
+'  order_id : uuid <<FK>>
+'  cancelled_by_seller_id : uuid <<FK>>
+'  cancellation_reason : text
+'  comment_to_customer : text
+'  cancelled_at : timestamp
+'  refund_status : text
+'}
+
+'entity "refunds" as refunds {
+'  * refund_id : uuid <<PK>>
+'  --
+'  cancellation_id : uuid <<FK>>
+'  order_id : uuid <<FK>>
+'  amount : numeric
+'  refund_status : text
+'  external_refund_reference : text <<nullable>>
+'  processed_at : timestamp <<nullable>>
+'}
+
+entity "notifications" as notifications {
+  * notification_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  order_id : uuid <<FK, nullable>>
+  notification_type : text
+  title : text
+  body : text
+  created_at : timestamp
+  read_at : timestamp <<nullable>>
+}
+
+' =========================
+' ADMIN / MONITORING
+' =========================
+
+entity "system_incidents" as system_incidents {
+  * incident_id : uuid <<PK>>
+  --
+  incident_type : text
+  severity : text
+  status : text
+  component_name : text
+  message : text
+  created_at : timestamp
+  resolved_at : timestamp <<nullable>>
+}
+
+entity "audit_logs" as audit_logs {
+  * audit_log_id : uuid <<PK>>
+  --
+  actor_user_id : uuid <<FK, nullable>>
+  actor_ip_address : inet <<nullable>>
+  action_type : text
+  target_entity_type : text
+  target_entity_id : text
+  outcome : text
+  details : text
+  created_at : timestamp
+}
+
+' =========================
+' RELATIONSHIPS
+' =========================
+
+user_accounts ||--o| customers : has
+user_accounts ||--o| sellers : has
+user_accounts ||--o| admins : has
+user_accounts ||--o{ user_sessions : starts
+user_accounts ||--o{ user_blocks : may_be_blocked
+admins ||--o{ user_blocks : applies
+
+sellers ||--o{ seller_verification_requests : submits
+admins ||--o{ seller_verification_requests : reviews
+
+addresses ||--o{ customers : default_address
+addresses ||--o{ sellers : default_address
+
+product_categories ||--o{ products : classifies
+products ||--o{ product_listings : listed_as
+sellers ||--o{ product_listings : owns
+
+user_accounts ||--o{ shopping_carts : owns
+user_sessions ||--o{ shopping_carts : guest_session
+shopping_carts ||--o{ cart_items : contains
+product_listings ||--o{ cart_items : referenced_by
+
+customers ||--o{ orders : places
+addresses ||--o{ orders : ship_to
+shopping_carts ||--o{ orders : converts_to
+
+orders ||--o{ order_items : contains
+product_listings ||--o{ order_items : sold_as
+products ||--o{ order_items : snapshot_product
+sellers ||--o{ order_items : fulfilled_by
+
+orders ||--o{ order_payments : paid_by
+orders ||--o{ order_reviews : reviewed_by
+orders ||--o{ shipments : shipped_in
+sellers ||--o{ shipments : ships
+
+'orders ||--o| order_cancellations : may_have
+'order_cancellations ||--o{ refunds : triggers
+
+orders ||--o{ notifications : generates
+user_accounts ||--o{ notifications : receives
+user_accounts ||--o{ audit_logs : acts_in
+
+@enduml

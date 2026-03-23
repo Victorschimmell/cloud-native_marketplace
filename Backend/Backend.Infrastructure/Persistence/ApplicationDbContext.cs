@@ -32,7 +32,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         var now = DateTimeOffset.UtcNow;
 
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
             {
