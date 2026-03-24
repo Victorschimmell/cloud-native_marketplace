@@ -1,6 +1,5 @@
 using Backend.Domain.Base;
 using Backend.Domain.Entities.Location;
-using Backend.Domain.ValueObjects;
 
 namespace Backend.Domain.Entities.IdentityAccess;
 
@@ -12,7 +11,8 @@ public sealed class Customer : AggregateRoot<Guid>
     }
 
     public Guid UserId { get; set; }
-    public required PersonName Name { get; set; }
+    public required string FirstName { get; set; }
+    public required string LastName { get; set; }
     public required string Phone { get; set; }
     public Guid? DefaultAddressId { get; set; }
     public string? OlistCustomerId { get; set; }

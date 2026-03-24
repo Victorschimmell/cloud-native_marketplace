@@ -17,23 +17,24 @@ public class IdentityAccessEntitiesTests
 
         Assert.NotEqual(Guid.Empty, entity.Id);
         Assert.Empty(entity.Sessions);
-        Assert.Empty(entity.Blocks);
         Assert.Empty(entity.ShoppingCarts);
-        Assert.Empty(entity.Notifications);
+        Assert.Empty(entity.ReviewedVerificationRequests);
         Assert.Empty(entity.AuditLogs);
     }
 
     [Fact]
-    public void Customer_StoresNameAsValueObject()
+    public void Customer_StoresSplitNameFields()
     {
         var entity = new Customer
         {
-            Name = new PersonName("Victor", "LastName"),
+            FirstName = "Victor",
+            LastName = "LastName",
             Phone = "+4512345678"
         };
 
         Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal("Victor LastName", entity.Name.FullName);
+        Assert.Equal("Victor", entity.FirstName);
+        Assert.Equal("LastName", entity.LastName);
         Assert.Empty(entity.Orders);
     }
 
@@ -57,19 +58,6 @@ public class IdentityAccessEntitiesTests
     }
 
     [Fact]
-    public void Admin_InitializesCollections()
-    {
-        var entity = new Admin
-        {
-            DisplayName = "Platform Admin"
-        };
-
-        Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Empty(entity.AppliedBlocks);
-        Assert.Empty(entity.ReviewedVerificationRequests);
-    }
-
-    [Fact]
     public void UserSession_InitializesIdentityAndGuestCarts()
     {
         var entity = new UserSession
@@ -80,18 +68,6 @@ public class IdentityAccessEntitiesTests
 
         Assert.NotEqual(Guid.Empty, entity.Id);
         Assert.Empty(entity.GuestShoppingCarts);
-    }
-
-    [Fact]
-    public void UserBlock_StoresAuditFriendlyFields()
-    {
-        var entity = new UserBlock
-        {
-            Reason = "Too many failed logins"
-        };
-
-        Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal("Too many failed logins", entity.Reason);
     }
 
     [Fact]

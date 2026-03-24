@@ -1,5 +1,3 @@
-using Backend.Domain.ValueObjects;
-
 namespace Backend.Domain.Entities.Orders;
 
 public sealed class OrderItem
@@ -10,8 +8,8 @@ public sealed class OrderItem
     public Guid ProductId { get; set; }
     public Guid SellerId { get; set; }
     public int Quantity { get; set; }
-    public Money UnitPrice { get; set; }
-    public Money FreightValue { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal FreightValue { get; set; }
     public DateTimeOffset? ShippingLimitDateUtc { get; set; }
 
     public Order? Order { get; set; }

@@ -1,5 +1,4 @@
 using Backend.Domain.Base;
-using Backend.Domain.ValueObjects;
 
 namespace Backend.Domain.Entities.Catalog;
 
@@ -16,8 +15,10 @@ public sealed class Product : AuditableEntity<Guid>
     public int ProductNameLength { get; set; }
     public int ProductDescriptionLength { get; set; }
     public int ProductPhotosQty { get; set; }
-    public int ProductWeightGrams { get; set; }
-    public required ProductDimensions DimensionsCm { get; set; }
+    public int ProductWeightG { get; set; }
+    public int ProductLengthCm { get; set; }
+    public int ProductHeightCm { get; set; }
+    public int ProductWidthCm { get; set; }
     public string? OlistProductId { get; set; }
 
     public ProductCategory? Category { get; set; }

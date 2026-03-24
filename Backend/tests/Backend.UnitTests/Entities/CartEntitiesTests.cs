@@ -1,6 +1,5 @@
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Enums;
-using Backend.Domain.ValueObjects;
 
 namespace Backend.UnitTests.Entities;
 
@@ -26,10 +25,10 @@ public class CartEntitiesTests
     {
         var entity = new CartItem
         {
-            UnitPriceAtAddition = new Money(15.50m, "DKK")
+            UnitPriceAtAddition = 15.50m
         };
 
         Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal("15.50 DKK", entity.UnitPriceAtAddition.ToString());
+        Assert.Equal(15.50m, entity.UnitPriceAtAddition);
     }
 }

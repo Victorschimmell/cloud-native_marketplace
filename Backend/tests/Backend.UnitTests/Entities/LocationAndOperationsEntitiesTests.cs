@@ -1,14 +1,13 @@
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Enums;
-using Backend.Domain.ValueObjects;
 
 namespace Backend.UnitTests.Entities;
 
 public class LocationAndOperationsEntitiesTests
 {
     [Fact]
-    public void Address_StoresCoordinateValueObjectAndCollections()
+    public void Address_StoresLatitudeLongitudeAndCollections()
     {
         var entity = new Address
         {
@@ -16,61 +15,16 @@ public class LocationAndOperationsEntitiesTests
             City = "Copenhagen",
             State = "Capital Region",
             CountryCode = "DK",
-            Coordinates = new GeoCoordinate(55.6761m, 12.5683m)
+            Latitude = 55.6761m,
+            Longitude = 12.5683m
         };
 
         Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal(new GeoCoordinate(55.6761m, 12.5683m), entity.Coordinates);
+        Assert.Equal(55.6761m, entity.Latitude);
+        Assert.Equal(12.5683m, entity.Longitude);
         Assert.Empty(entity.DefaultForCustomers);
         Assert.Empty(entity.DefaultForSellers);
         Assert.Empty(entity.ShippingOrders);
-    }
-
-    [Fact]
-    public void Geolocation_StoresZipAreaValues()
-    {
-        var entity = new Geolocation
-        {
-            ZipCodePrefix = 105,
-            Latitude = 55.6761m,
-            Longitude = 12.5683m,
-            City = "Copenhagen",
-            State = "Capital Region"
-        };
-
-        Assert.Equal(105, entity.ZipCodePrefix);
-        Assert.Equal("Copenhagen", entity.City);
-    }
-
-    [Fact]
-    public void Notification_InitializesIdentityAndType()
-    {
-        var entity = new Notification
-        {
-            Title = "Order update",
-            Body = "Your order shipped.",
-            NotificationType = NotificationType.OrderStatusChanged
-        };
-
-        Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal(NotificationType.OrderStatusChanged, entity.NotificationType);
-    }
-
-    [Fact]
-    public void SystemIncident_InitializesIdentityAndSeverity()
-    {
-        var entity = new SystemIncident
-        {
-            ComponentName = "Checkout",
-            Message = "Latency spike",
-            IncidentType = IncidentType.Performance,
-            Severity = IncidentSeverity.High,
-            Status = IncidentStatus.Open
-        };
-
-        Assert.NotEqual(Guid.Empty, entity.Id);
-        Assert.Equal(IncidentSeverity.High, entity.Severity);
-        Assert.Equal(IncidentStatus.Open, entity.Status);
     }
 
     [Fact]

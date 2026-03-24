@@ -17,10 +17,10 @@ public sealed class SellerVerificationRequest : Entity<Guid>
     public required string RegistrationNumberSnapshot { get; set; }
     public required string SubmittedDetails { get; set; }
     public string? ReviewNotes { get; set; }
-    public Guid? ReviewedByAdminId { get; set; }
+    public Guid? ReviewedByUserId { get; set; }
     public DateTimeOffset? ReviewedAtUtc { get; set; }
     public string? RejectionReason { get; set; }
 
     public Seller? Seller { get; set; }
-    public Admin? ReviewedByAdmin { get; set; }
+    public UserAccount? ReviewedByUser { get; set; }
 }

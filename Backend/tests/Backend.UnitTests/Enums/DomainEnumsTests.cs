@@ -20,17 +20,12 @@ public class DomainEnumsTests
         typeof(AuditActionType),
         typeof(AuditOutcome),
         typeof(CartStatus),
-        typeof(IncidentSeverity),
-        typeof(IncidentStatus),
-        typeof(IncidentType),
         typeof(ListingVisibilityStatus),
-        typeof(NotificationType),
         typeof(OrderStatus),
         typeof(PaymentStatus),
         typeof(PaymentType),
         typeof(SellerVerificationRequestStatus),
         typeof(ShipmentStatus),
-        typeof(UserRole),
         typeof(VerificationStatus)
     ];
 }
