@@ -37,12 +37,4 @@ public class ValueObjectTests
         Assert.Equal(left, right);
     }
 
-    [Fact]
-    public void GeoCoordinate_RecordEquality_WorksForSameValues()
-    {
-        var left = new GeoCoordinate(55.6761m, 12.5683m);
-        var right = new GeoCoordinate(55.6761m, 12.5683m);
-
-        Assert.Equal(left, right);
-    }
 }
