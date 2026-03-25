@@ -98,7 +98,7 @@ public sealed class RepositoryDITests
 
         var category = new Domain.Entities.Catalog.ProductCategory
         {
-            CategoryNamePt = "Eletrônicos",
+            CategoryNamePt = "Eletronicos",
             CategoryNameEn = "Electronics"
         };
 
@@ -107,7 +107,7 @@ public sealed class RepositoryDITests
         var retrieved = await repository.GetByIdAsync(category.Id);
 
         Assert.NotNull(retrieved);
-        Assert.Equal("Eletrônicos", retrieved.CategoryNamePt);
+        Assert.Equal("Eletronicos", retrieved.CategoryNamePt);
         Assert.Equal("Electronics", retrieved.CategoryNameEn);
     }
 }
