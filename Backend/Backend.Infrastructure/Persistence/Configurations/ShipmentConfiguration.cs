@@ -8,7 +8,7 @@ public sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
 {
     public void Configure(EntityTypeBuilder<Shipment> builder)
     {
-        builder.ToTable("shipments");
+        builder.ToTable("shipment");
 
         builder.HasKey(s => s.Id);
 

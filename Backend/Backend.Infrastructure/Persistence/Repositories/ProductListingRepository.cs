@@ -16,6 +16,7 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<IReadOnlyList<ProductListing>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
+            .Where(l => !l.IsDeleted)
             .OrderBy(l => l.CreatedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -25,7 +26,7 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
-            .Where(l => l.SellerId == sellerId)
+            .Where(l => l.SellerId == sellerId && !l.IsDeleted)
             .OrderBy(l => l.CreatedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -35,7 +36,7 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<IReadOnlyList<ProductListing>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
-            .Where(l => l.ProductId == productId)
+            .Where(l => l.ProductId == productId && !l.IsDeleted)
             .OrderBy(l => l.ListingPrice)
             .ToListAsync(cancellationToken);
     }
@@ -54,7 +55,8 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
 
     public async Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default)
     {
-        dbContext.ProductListings.Remove(listing);
+        listing.IsDeleted = true;
+        dbContext.ProductListings.Update(listing);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

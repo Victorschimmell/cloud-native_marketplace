@@ -8,7 +8,7 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
 {
     public void Configure(EntityTypeBuilder<OrderReview> builder)
     {
-        builder.ToTable("order_reviews");
+        builder.ToTable("order_review");
 
         builder.HasKey(r => r.Id);
 

@@ -8,7 +8,7 @@ public sealed class CartItemConfiguration : IEntityTypeConfiguration<CartItem>
 {
     public void Configure(EntityTypeBuilder<CartItem> builder)
     {
-        builder.ToTable("cart_items");
+        builder.ToTable("cart_item");
 
         builder.HasKey(i => i.Id);
 

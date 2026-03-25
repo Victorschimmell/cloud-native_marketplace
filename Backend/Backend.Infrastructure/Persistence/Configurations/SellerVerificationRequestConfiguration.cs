@@ -8,7 +8,7 @@ public sealed class SellerVerificationRequestConfiguration : IEntityTypeConfigur
 {
     public void Configure(EntityTypeBuilder<SellerVerificationRequest> builder)
     {
-        builder.ToTable("seller_verification_requests");
+        builder.ToTable("seller_verification_request");
 
         builder.HasKey(r => r.Id);
 

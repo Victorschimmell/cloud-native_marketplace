@@ -8,7 +8,7 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
 {
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
-        builder.ToTable("order_items");
+        builder.ToTable("order_item");
 
         builder.HasKey(i => new { i.OrderId, i.OrderItemId });
 

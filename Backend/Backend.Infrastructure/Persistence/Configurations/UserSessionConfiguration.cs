@@ -8,7 +8,7 @@ public sealed class UserSessionConfiguration : IEntityTypeConfiguration<UserSess
 {
     public void Configure(EntityTypeBuilder<UserSession> builder)
     {
-        builder.ToTable("user_sessions");
+        builder.ToTable("user_session");
 
         builder.HasKey(s => s.Id);
 

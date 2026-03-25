@@ -8,7 +8,7 @@ public sealed class ProductListingConfiguration : IEntityTypeConfiguration<Produ
 {
     public void Configure(EntityTypeBuilder<ProductListing> builder)
     {
-        builder.ToTable("product_listings");
+        builder.ToTable("product_listing");
 
         builder.HasKey(l => l.Id);
 

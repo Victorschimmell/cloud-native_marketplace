@@ -8,7 +8,7 @@ public sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> builder)
     {
-        builder.ToTable("audit_logs");
+        builder.ToTable("audit_log");
 
         builder.HasKey(a => a.Id);
 

@@ -8,7 +8,7 @@ public sealed class AddressConfiguration : IEntityTypeConfiguration<Address>
 {
     public void Configure(EntityTypeBuilder<Address> builder)
     {
-        builder.ToTable("addresses");
+        builder.ToTable("address");
 
         builder.HasKey(a => a.Id);
 

@@ -8,7 +8,7 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 {
     public void Configure(EntityTypeBuilder<Customer> builder)
     {
-        builder.ToTable("customers");
+        builder.ToTable("customer");
 
         builder.HasKey(c => c.Id);
 

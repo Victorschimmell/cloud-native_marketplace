@@ -55,156 +55,32 @@ public sealed class RepositoryDITests
         Assert.NotNull(dbContext.Model);
     }
 
-    [Fact]
-    public void IUserAccountRepository_ResolvesFromServiceProvider()
+    public static TheoryData<Type> RepositoryTypes =>
+    [
+        typeof(IUserAccountRepository),
+        typeof(ICustomerRepository),
+        typeof(ISellerRepository),
+        typeof(IProductCategoryRepository),
+        typeof(IProductRepository),
+        typeof(IProductListingRepository),
+        typeof(IOrderRepository),
+        typeof(IOrderItemRepository),
+        typeof(IOrderReviewRepository),
+        typeof(ICartRepository),
+        typeof(IAuditLogRepository),
+        typeof(ISellerVerificationRequestRepository),
+        typeof(IShipmentRepository),
+        typeof(ICurrencyRepository),
+    ];
+
+    [Theory]
+    [MemberData(nameof(RepositoryTypes))]
+    public void Repository_ResolvesFromServiceProvider(Type repositoryType)
     {
         using var provider = BuildServiceProvider();
         using var scope = provider.CreateScope();
 
-        var repository = scope.ServiceProvider.GetRequiredService<IUserAccountRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void ICustomerRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<ICustomerRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void ISellerRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<ISellerRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IProductCategoryRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IProductCategoryRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IProductRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IProductListingRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IOrderRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IOrderItemRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IOrderItemRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IOrderReviewRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IOrderReviewRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void ICartRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<ICartRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IAuditLogRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IAuditLogRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void ISellerVerificationRequestRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<ISellerVerificationRequestRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void IShipmentRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<IShipmentRepository>();
-
-        Assert.NotNull(repository);
-    }
-
-    [Fact]
-    public void ICurrencyRepository_ResolvesFromServiceProvider()
-    {
-        using var provider = BuildServiceProvider();
-        using var scope = provider.CreateScope();
-
-        var repository = scope.ServiceProvider.GetRequiredService<ICurrencyRepository>();
+        var repository = scope.ServiceProvider.GetRequiredService(repositoryType);
 
         Assert.NotNull(repository);
     }
