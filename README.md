@@ -54,12 +54,20 @@ Run backend tests:
 dotnet test Marketplace.slnx
 ```
 
-Build frontend:
+# Build frontend:
 
 ```powershell
 cd .\Frontend
 npm run build
+npm install react-router-dom@6
+npm install @types/react-router-dom --save-dev
 ```
+
+# Run Front-end  -- http://localhost:5173/
+```powershell
+npm run dev
+```
+
 
 # Contribute
 - Keep layer boundaries (`Api -> Application/Infrastructure -> Domain`).
