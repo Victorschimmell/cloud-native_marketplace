@@ -32,6 +32,11 @@ Enable Olist startup import:
 3. Set `OlistImport:Enabled=true`.
 4. Start the API. Migrations will run before the import.
 
+Olist dataset location:
+
+- Keep the full development dataset outside source control, for example in `.data/olist/`.
+- The repository only keeps small fixture CSV files for automated tests.
+
 Useful backend URLs (Development):
 
 - Health: `http://localhost:5053/health`
