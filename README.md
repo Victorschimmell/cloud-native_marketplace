@@ -25,6 +25,13 @@ Run backend API:
 dotnet run --project .\Backend\Backend.Api\Backend.Api.csproj
 ```
 
+Enable Olist startup import:
+
+1. Put the required Olist CSV files in one folder.
+2. Set `OlistImport:DatasetRootPath` in `Backend/Backend.Api/appsettings.Development.json` or via environment variables.
+3. Set `OlistImport:Enabled=true`.
+4. Start the API. Migrations will run before the import.
+
 Useful backend URLs (Development):
 
 - Health: `http://localhost:5053/health`

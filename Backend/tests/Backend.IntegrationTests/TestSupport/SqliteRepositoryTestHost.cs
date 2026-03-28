@@ -1,9 +1,13 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Import.Abstractions;
+using Backend.Infrastructure.Persistence.Import.Services;
 using Backend.Infrastructure.Persistence.Repositories;
+using Backend.Infrastructure.Persistence.Seeding;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Backend.IntegrationTests.TestSupport;
 
@@ -18,14 +22,21 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
         _serviceProvider = serviceProvider;
     }
 
-    public static async Task<SqliteRepositoryTestHost> CreateAsync()
+    public static async Task<SqliteRepositoryTestHost> CreateAsync(Action<OlistSeedOptions>? configureOlistOptions = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
 
         var services = new ServiceCollection();
 
+        services.AddLogging();
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
+        services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
+
+        var olistOptions = new OlistSeedOptions();
+        configureOlistOptions?.Invoke(olistOptions);
+        services.AddSingleton(Options.Create(olistOptions));
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();

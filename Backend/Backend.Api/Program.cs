@@ -10,10 +10,16 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+var seedOlistOnStartup = builder.Configuration.GetValue<bool>("OlistImport:Enabled");
 
-if (applyMigrationsOnStartup)
+if (applyMigrationsOnStartup || seedOlistOnStartup)
 {
     await app.Services.ApplyMigrationsAsync();
+}
+
+if (seedOlistOnStartup)
+{
+    await app.Services.SeedOlistDataAsync();
 }
 
 // Configure the HTTP request pipeline.
