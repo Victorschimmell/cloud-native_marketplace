@@ -33,10 +33,10 @@ public sealed class OlistDataSeederTests
         Assert.Equal(2, await dbContext.Sellers.CountAsync());
         Assert.Equal(2, await dbContext.Products.CountAsync());
         Assert.Equal(3, await dbContext.ProductListings.CountAsync());
-        Assert.Equal(2, await dbContext.Orders.CountAsync());
-        Assert.Equal(3, await dbContext.OrderItems.CountAsync());
-        Assert.Equal(3, await dbContext.OrderPayments.CountAsync());
-        Assert.Equal(2, await dbContext.OrderReviews.CountAsync());
+        Assert.Equal(3, await dbContext.Orders.CountAsync());
+        Assert.Equal(4, await dbContext.OrderItems.CountAsync());
+        Assert.Equal(4, await dbContext.OrderPayments.CountAsync());
+        Assert.Equal(4, await dbContext.OrderReviews.CountAsync());
 
         var importedOrder = await dbContext.Orders.SingleAsync(order => order.OrderNumber == "order-1");
         Assert.Equal(150m, importedOrder.SubtotalAmount);
@@ -46,7 +46,17 @@ public sealed class OlistDataSeederTests
         var importedProduct = await dbContext.Products.SingleAsync(product => product.OlistProductId == "product-1");
         Assert.Contains("bed_bath_table", importedProduct.Description);
 
-        var importedReview = await dbContext.OrderReviews.SingleAsync(review => review.OrderId == importedOrder.Id);
-        Assert.Contains("Great, works", importedReview.ReviewCommentMessage);
+        var listing = await dbContext.ProductListings
+            .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2");
+        Assert.Equal(60m, listing.ListingPrice);
+
+        var importedReviews = await dbContext.OrderReviews
+            .Where(review => review.Order!.OrderNumber == "order-3")
+            .OrderBy(review => review.OlistReviewId)
+            .ToListAsync();
+
+        Assert.Equal(2, importedReviews.Count);
+        Assert.Equal("review-3", importedReviews[0].OlistReviewId);
+        Assert.Equal("review-4", importedReviews[1].OlistReviewId);
     }
 }

@@ -53,7 +53,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         await SeedCustomersAsync(sourceData.Customers, cancellationToken);
         await SeedSellersAsync(sourceData.Sellers, cancellationToken);
         await SeedProductsAsync(sourceData.Products, sourceData.CategoryTranslations, cancellationToken);
-        await SeedListingsAsync(sourceData.OrderItems, cancellationToken);
+        await SeedListingsAsync(sourceData.Orders, sourceData.OrderItems, cancellationToken);
         await SeedOrdersAsync(sourceData.Orders, sourceData.OrderItems, cancellationToken);
         await SeedOrderItemsAsync(sourceData.OrderItems, cancellationToken);
         await SeedPaymentsAsync(sourceData.Payments, currencyId, cancellationToken);
@@ -433,7 +433,10 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         _logger.LogInformation("Inserted {InsertedCount} products.", productsToInsert.Count);
     }
 
-    private async Task SeedListingsAsync(IReadOnlyList<OrderItemRow> orderItems, CancellationToken cancellationToken)
+    private async Task SeedListingsAsync(
+        IReadOnlyList<OrderRow> orders,
+        IReadOnlyList<OrderItemRow> orderItems,
+        CancellationToken cancellationToken)
     {
         var productLookup = await _dbContext.Products
             .AsNoTracking()
@@ -445,29 +448,47 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             .Where(seller => seller.OlistSellerId != null)
             .ToDictionaryAsync(seller => seller.OlistSellerId!, seller => seller.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        var existingSkus = await _dbContext.ProductListings
-            .AsNoTracking()
-            .Select(listing => listing.Sku)
-            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+        var existingListings = await _dbContext.ProductListings
+            .ToDictionaryAsync(listing => listing.Sku, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        var distinctListingRows = orderItems
-            .GroupBy(row => $"{row.SellerId}|{row.ProductId}", StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
+        var orderPurchaseLookup = orders
+            .ToDictionary(order => order.OrderId, order => order.OrderPurchaseTimestampUtc, StringComparer.OrdinalIgnoreCase);
+
+        var listingCandidates = orderItems
+            .Where(row =>
+                productLookup.ContainsKey(row.ProductId) &&
+                sellerLookup.ContainsKey(row.SellerId) &&
+                orderPurchaseLookup.ContainsKey(row.OrderId))
+            .Select(row => new
+            {
+                Row = row,
+                PurchaseTimestampUtc = orderPurchaseLookup[row.OrderId],
+                Sku = OlistImportValueMapper.BuildListingSku(row.SellerId, row.ProductId)
+            })
+            .GroupBy(candidate => candidate.Sku, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group
+                .OrderByDescending(candidate => candidate.PurchaseTimestampUtc)
+                .ThenByDescending(candidate => candidate.Row.OrderItemId)
+                .First())
             .ToList();
 
         var listingsToInsert = new List<ProductListing>();
+        var updatedListingsCount = 0;
 
-        foreach (var row in distinctListingRows)
+        foreach (var candidate in listingCandidates)
         {
-            if (!productLookup.TryGetValue(row.ProductId, out var productId) ||
-                !sellerLookup.TryGetValue(row.SellerId, out var sellerId))
-            {
-                continue;
-            }
+            var row = candidate.Row;
+            var productId = productLookup[row.ProductId];
+            var sellerId = sellerLookup[row.SellerId];
 
-            var sku = OlistImportValueMapper.BuildListingSku(row.SellerId, row.ProductId);
-            if (existingSkus.Contains(sku))
+            if (existingListings.TryGetValue(candidate.Sku, out var existingListing))
             {
+                if (existingListing.ListingPrice != row.Price)
+                {
+                    existingListing.ListingPrice = row.Price;
+                    updatedListingsCount++;
+                }
+
                 continue;
             }
 
@@ -475,7 +496,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             {
                 SellerId = sellerId,
                 ProductId = productId,
-                Sku = sku,
+                Sku = candidate.Sku,
                 ListingPrice = row.Price,
                 InventoryQuantity = 0,
                 VisibilityStatus = ListingVisibilityStatus.Published,
@@ -483,15 +504,22 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             });
         }
 
-        if (listingsToInsert.Count == 0)
+        if (listingsToInsert.Count == 0 && updatedListingsCount == 0)
         {
             _logger.LogInformation("No product listings needed importing.");
             return;
         }
 
-        _dbContext.ProductListings.AddRange(listingsToInsert);
+        if (listingsToInsert.Count > 0)
+        {
+            _dbContext.ProductListings.AddRange(listingsToInsert);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Inserted {InsertedCount} product listings.", listingsToInsert.Count);
+        _logger.LogInformation(
+            "Inserted {InsertedCount} product listings and updated {UpdatedCount}.",
+            listingsToInsert.Count,
+            updatedListingsCount);
     }
 
     private async Task SeedOrdersAsync(
@@ -499,17 +527,33 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         IReadOnlyList<OrderItemRow> orderItems,
         CancellationToken cancellationToken)
     {
-        var existingOrderNumbers = await _dbContext.Orders
-            .AsNoTracking()
-            .Select(order => order.OrderNumber)
-            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
-
         var customerLookup = await _dbContext.Customers
             .AsNoTracking()
             .Where(customer => customer.OlistCustomerId != null)
             .ToDictionaryAsync(customer => customer.OlistCustomerId!, customer => customer, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
+        var productLookup = await _dbContext.Products
+            .AsNoTracking()
+            .Where(product => product.OlistProductId != null)
+            .Select(product => product.OlistProductId!)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        var sellerLookup = await _dbContext.Sellers
+            .AsNoTracking()
+            .Where(seller => seller.OlistSellerId != null)
+            .Select(seller => seller.OlistSellerId!)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        var listingLookup = await _dbContext.ProductListings
+            .AsNoTracking()
+            .Select(listing => listing.Sku)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+
         var itemTotals = orderItems
+            .Where(row =>
+                productLookup.Contains(row.ProductId) &&
+                sellerLookup.Contains(row.SellerId) &&
+                listingLookup.Contains(OlistImportValueMapper.BuildListingSku(row.SellerId, row.ProductId)))
             .GroupBy(row => row.OrderId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 group => group.Key,
@@ -520,15 +564,14 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 },
                 StringComparer.OrdinalIgnoreCase);
 
+        var existingOrders = await _dbContext.Orders
+            .ToDictionaryAsync(order => order.OrderNumber, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
         var ordersToInsert = new List<Order>();
+        var updatedOrdersCount = 0;
 
         foreach (var row in orders)
         {
-            if (existingOrderNumbers.Contains(row.OrderId))
-            {
-                continue;
-            }
-
             if (!customerLookup.TryGetValue(row.CustomerId, out var customer) || customer.DefaultAddressId is null)
             {
                 continue;
@@ -537,6 +580,23 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             var totals = itemTotals.GetValueOrDefault(row.OrderId);
             var subtotal = totals?.Subtotal ?? 0m;
             var freight = totals?.Freight ?? 0m;
+
+            if (existingOrders.TryGetValue(row.OrderId, out var existingOrder))
+            {
+                existingOrder.CustomerId = customer.Id;
+                existingOrder.ShippingAddressId = customer.DefaultAddressId.Value;
+                existingOrder.OrderStatus = OlistImportValueMapper.MapOrderStatus(row.OrderStatus);
+                existingOrder.OrderPurchaseTimestampUtc = row.OrderPurchaseTimestampUtc;
+                existingOrder.OrderApprovedAtUtc = row.OrderApprovedAtUtc;
+                existingOrder.OrderDeliveredCarrierDateUtc = row.OrderDeliveredCarrierDateUtc;
+                existingOrder.OrderDeliveredCustomerDateUtc = row.OrderDeliveredCustomerDateUtc;
+                existingOrder.OrderEstimatedDeliveryDateUtc = row.OrderEstimatedDeliveryDateUtc;
+                existingOrder.SubtotalAmount = subtotal;
+                existingOrder.FreightAmount = freight;
+                existingOrder.TotalAmount = subtotal + freight;
+                updatedOrdersCount++;
+                continue;
+            }
 
             ordersToInsert.Add(new Order
             {
@@ -555,15 +615,22 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             });
         }
 
-        if (ordersToInsert.Count == 0)
+        if (ordersToInsert.Count == 0 && updatedOrdersCount == 0)
         {
             _logger.LogInformation("No orders needed importing.");
             return;
         }
 
-        _dbContext.Orders.AddRange(ordersToInsert);
+        if (ordersToInsert.Count > 0)
+        {
+            _dbContext.Orders.AddRange(ordersToInsert);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Inserted {InsertedCount} orders.", ordersToInsert.Count);
+        _logger.LogInformation(
+            "Inserted {InsertedCount} orders and updated {UpdatedCount}.",
+            ordersToInsert.Count,
+            updatedOrdersCount);
     }
 
     private async Task SeedOrderItemsAsync(IReadOnlyList<OrderItemRow> orderItems, CancellationToken cancellationToken)
@@ -706,16 +773,53 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             .AsNoTracking()
             .ToDictionaryAsync(order => order.OrderNumber, order => order.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
-        var existingReviewedOrderIds = await _dbContext.OrderReviews
+        var existingReviewIds = await _dbContext.OrderReviews
             .AsNoTracking()
-            .Select(review => review.OrderId)
-            .ToHashSetAsync(cancellationToken);
+            .Where(review => review.OlistReviewId != null)
+            .Select(review => review.OlistReviewId!)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        var existingReviewFingerprints = await _dbContext.OrderReviews
+            .AsNoTracking()
+            .Select(review => new
+            {
+                review.OrderId,
+                review.ReviewScore,
+                review.ReviewCommentTitle,
+                review.ReviewCommentMessage,
+                review.ReviewCreationDateUtc,
+                review.ReviewAnswerTimestampUtc
+            })
+            .ToListAsync(cancellationToken);
+
+        var existingFingerprintSet = existingReviewFingerprints
+            .Select(review => CreateReviewFingerprint(
+                review.OrderId,
+                review.ReviewScore,
+                review.ReviewCommentTitle,
+                review.ReviewCommentMessage,
+                review.ReviewCreationDateUtc,
+                review.ReviewAnswerTimestampUtc))
+            .ToHashSet(StringComparer.Ordinal);
 
         var reviewsToInsert = new List<OrderReview>();
 
         foreach (var row in reviews)
         {
-            if (!orderLookup.TryGetValue(row.OrderId, out var orderId) || existingReviewedOrderIds.Contains(orderId))
+            if (!orderLookup.TryGetValue(row.OrderId, out var orderId))
+            {
+                continue;
+            }
+
+            var fingerprint = CreateReviewFingerprint(
+                orderId,
+                row.ReviewScore,
+                row.ReviewCommentTitle,
+                row.ReviewCommentMessage,
+                row.ReviewCreationDateUtc,
+                row.ReviewAnswerTimestampUtc);
+
+            if (existingReviewIds.Contains(row.ReviewId) || existingFingerprintSet.Contains(fingerprint))
             {
                 continue;
             }
@@ -723,6 +827,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             reviewsToInsert.Add(new OrderReview
             {
                 OrderId = orderId,
+                OlistReviewId = row.ReviewId,
                 ReviewScore = row.ReviewScore,
                 ReviewCommentTitle = row.ReviewCommentTitle,
                 ReviewCommentMessage = row.ReviewCommentMessage,
@@ -730,7 +835,8 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 ReviewAnswerTimestampUtc = row.ReviewAnswerTimestampUtc
             });
 
-            existingReviewedOrderIds.Add(orderId);
+            existingReviewIds.Add(row.ReviewId);
+            existingFingerprintSet.Add(fingerprint);
         }
 
         if (reviewsToInsert.Count == 0)
@@ -743,6 +849,22 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         await _dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Inserted {InsertedCount} order reviews.", reviewsToInsert.Count);
     }
+
+    private static string CreateReviewFingerprint(
+        Guid orderId,
+        int reviewScore,
+        string? reviewCommentTitle,
+        string? reviewCommentMessage,
+        DateTimeOffset reviewCreationDateUtc,
+        DateTimeOffset? reviewAnswerTimestampUtc) =>
+        string.Join(
+            "|",
+            orderId.ToString("N"),
+            reviewScore.ToString(),
+            reviewCreationDateUtc.ToUniversalTime().ToString("O"),
+            reviewAnswerTimestampUtc?.ToUniversalTime().ToString("O") ?? string.Empty,
+            reviewCommentTitle?.Trim() ?? string.Empty,
+            reviewCommentMessage?.Trim() ?? string.Empty);
 
     private sealed record OlistFileSet(
         string ProductCategoryTranslationsPath,

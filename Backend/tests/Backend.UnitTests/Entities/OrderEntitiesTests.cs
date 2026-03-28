@@ -53,9 +53,13 @@ public class OrderEntitiesTests
     [Fact]
     public void OrderReview_InitializesIdentity()
     {
-        var entity = new OrderReview();
+        var entity = new OrderReview
+        {
+            OlistReviewId = "review-1"
+        };
 
         Assert.NotEqual(Guid.Empty, entity.Id);
+        Assert.Equal("review-1", entity.OlistReviewId);
     }
 
     [Fact]

@@ -750,6 +750,10 @@ namespace Backend.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("OlistReviewId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
@@ -773,6 +777,9 @@ namespace Backend.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("OlistReviewId")
+                        .IsUnique();
 
                     b.ToTable("order_review", (string)null);
                 });
