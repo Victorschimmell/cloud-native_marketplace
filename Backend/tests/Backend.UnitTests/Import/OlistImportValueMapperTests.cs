@@ -38,4 +38,12 @@ public sealed class OlistImportValueMapperTests
 
         Assert.Equal("OLIST-SELLER-1-PRODUCT-1", sku);
     }
+
+    [Fact]
+    public void CreateCustomerEmail_IncludesCustomerIdToAvoidDuplicateUniqueIds()
+    {
+        var email = OlistImportValueMapper.CreateCustomerEmail("customer-1", "shared-unique-id");
+
+        Assert.Equal("customer-shared-unique-id-customer-1@olist.import.local", email.Value);
+    }
 }

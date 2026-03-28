@@ -274,7 +274,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
             var userAccount = new UserAccount
             {
-                Email = OlistImportValueMapper.CreateCustomerEmail(row.CustomerUniqueId),
+                Email = OlistImportValueMapper.CreateCustomerEmail(row.CustomerId, row.CustomerUniqueId),
                 PasswordHash = ImportedPasswordHash,
                 AccountStatus = AccountStatus.Active
             };

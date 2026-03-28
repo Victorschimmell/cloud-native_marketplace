@@ -31,8 +31,8 @@ public static class OlistImportValueMapper
             _ => PaymentType.Other
         };
 
-    public static EmailAddress CreateCustomerEmail(string customerUniqueId) =>
-        new($"customer-{customerUniqueId.ToLowerInvariant()}@olist.import.local");
+    public static EmailAddress CreateCustomerEmail(string customerId, string customerUniqueId) =>
+        new($"customer-{customerUniqueId.ToLowerInvariant()}-{customerId.ToLowerInvariant()}@olist.import.local");
 
     public static EmailAddress CreateSellerEmail(string sellerId) =>
         new($"seller-{sellerId.ToLowerInvariant()}@olist.import.local");
