@@ -39,9 +39,8 @@ Olist dataset location:
 
 Useful backend URLs (Development):
 
-- Health: `http://localhost:5053/health`
-- System info: `http://localhost:5053/api/system/info`
-- Scalar API docs: `http://localhost:5053/scalar`
+- Weather forecast sample: `http://localhost:5053/WeatherForecast`
+- OpenAPI document: `http://localhost:5053/openapi/v1.json`
 
 Run frontend:
 

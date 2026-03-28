@@ -15,6 +15,8 @@ namespace Backend.Infrastructure.Persistence.Seeding;
 public sealed class OlistDataSeeder : IOlistDataSeeder
 {
     private const string ImportedPasswordHash = "olist-import";
+    private const string FallbackCategoryNamePt = "olist_sem_categoria";
+    private const string FallbackCategoryNameEn = "Olist uncategorized";
     private readonly ApplicationDbContext _dbContext;
     private readonly ICsvDatasetReader _csvDatasetReader;
     private readonly OlistSeedOptions _options;
@@ -390,6 +392,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         var translations = categoryTranslations
             .ToDictionary(row => row.CategoryNamePt, row => row.CategoryNameEn, StringComparer.OrdinalIgnoreCase);
 
+        ProductCategory? fallbackCategory = null;
         var productsToInsert = new List<Product>();
 
         foreach (var row in products)
@@ -401,16 +404,20 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
             if (row.CategoryNamePt is null || !categoryLookup.TryGetValue(row.CategoryNamePt, out var category))
             {
-                continue;
+                fallbackCategory ??= await EnsureFallbackCategoryAsync(categoryLookup, cancellationToken);
+                category = fallbackCategory;
             }
 
-            var categoryNameEn = translations.GetValueOrDefault(row.CategoryNamePt);
+            var categoryNamePt = row.CategoryNamePt ?? category.CategoryNamePt;
+            var categoryNameEn = row.CategoryNamePt is null
+                ? category.CategoryNameEn
+                : translations.GetValueOrDefault(row.CategoryNamePt) ?? category.CategoryNameEn;
 
             productsToInsert.Add(new Product
             {
                 CategoryId = category.Id,
-                ProductName = OlistImportValueMapper.CreateImportedProductName(row.ProductId, categoryNameEn, row.CategoryNamePt),
-                Description = OlistImportValueMapper.CreateImportedProductDescription(row.ProductId, categoryNameEn, row.CategoryNamePt),
+                ProductName = OlistImportValueMapper.CreateImportedProductName(row.ProductId, categoryNameEn, categoryNamePt),
+                Description = OlistImportValueMapper.CreateImportedProductDescription(row.ProductId, categoryNameEn, categoryNamePt),
                 ProductNameLength = row.ProductNameLength ?? 0,
                 ProductDescriptionLength = row.ProductDescriptionLength ?? 0,
                 ProductPhotosQty = row.ProductPhotosQty ?? 0,
@@ -431,6 +438,29 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         _dbContext.Products.AddRange(productsToInsert);
         await _dbContext.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Inserted {InsertedCount} products.", productsToInsert.Count);
+    }
+
+    private async Task<ProductCategory> EnsureFallbackCategoryAsync(
+        IDictionary<string, ProductCategory> categoryLookup,
+        CancellationToken cancellationToken)
+    {
+        if (categoryLookup.TryGetValue(FallbackCategoryNamePt, out var existingCategory))
+        {
+            return existingCategory;
+        }
+
+        var fallbackCategory = new ProductCategory
+        {
+            CategoryNamePt = FallbackCategoryNamePt,
+            CategoryNameEn = FallbackCategoryNameEn
+        };
+
+        _dbContext.ProductCategories.Add(fallbackCategory);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        categoryLookup[FallbackCategoryNamePt] = fallbackCategory;
+
+        _logger.LogInformation("Inserted fallback product category '{CategoryNamePt}'.", FallbackCategoryNamePt);
+        return fallbackCategory;
     }
 
     private async Task SeedListingsAsync(

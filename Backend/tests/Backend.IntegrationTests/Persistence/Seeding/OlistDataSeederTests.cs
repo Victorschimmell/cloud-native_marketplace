@@ -28,23 +28,28 @@ public sealed class OlistDataSeederTests
         var dbContext = firstScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         Assert.Equal(1, await dbContext.Currencies.CountAsync());
-        Assert.Equal(2, await dbContext.ProductCategories.CountAsync());
+        Assert.Equal(3, await dbContext.ProductCategories.CountAsync());
         Assert.Equal(2, await dbContext.Customers.CountAsync());
         Assert.Equal(2, await dbContext.Sellers.CountAsync());
-        Assert.Equal(2, await dbContext.Products.CountAsync());
-        Assert.Equal(3, await dbContext.ProductListings.CountAsync());
+        Assert.Equal(3, await dbContext.Products.CountAsync());
+        Assert.Equal(4, await dbContext.ProductListings.CountAsync());
         Assert.Equal(3, await dbContext.Orders.CountAsync());
-        Assert.Equal(4, await dbContext.OrderItems.CountAsync());
+        Assert.Equal(5, await dbContext.OrderItems.CountAsync());
         Assert.Equal(4, await dbContext.OrderPayments.CountAsync());
         Assert.Equal(4, await dbContext.OrderReviews.CountAsync());
 
         var importedOrder = await dbContext.Orders.SingleAsync(order => order.OrderNumber == "order-1");
-        Assert.Equal(150m, importedOrder.SubtotalAmount);
-        Assert.Equal(15m, importedOrder.FreightAmount);
-        Assert.Equal(165m, importedOrder.TotalAmount);
+        Assert.Equal(1149m, importedOrder.SubtotalAmount);
+        Assert.Equal(16m, importedOrder.FreightAmount);
+        Assert.Equal(1165m, importedOrder.TotalAmount);
 
         var importedProduct = await dbContext.Products.SingleAsync(product => product.OlistProductId == "product-1");
         Assert.Contains("bed_bath_table", importedProduct.Description);
+
+        var uncategorizedProduct = await dbContext.Products
+            .Include(product => product.Category)
+            .SingleAsync(product => product.OlistProductId == "product-3");
+        Assert.Equal("olist_sem_categoria", uncategorizedProduct.Category!.CategoryNamePt);
 
         var listing = await dbContext.ProductListings
             .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2");
