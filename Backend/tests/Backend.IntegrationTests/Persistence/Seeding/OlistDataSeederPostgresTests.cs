@@ -19,12 +19,14 @@ public sealed class OlistDataSeederPostgresTests
             options.DatasetRootPath = datasetPath;
         });
 
-        using var scope = host.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<IOlistDataSeeder>();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        using (var seedScope = host.CreateScope())
+            await seedScope.ServiceProvider.GetRequiredService<IOlistDataSeeder>().SeedAsync();
 
-        await seeder.SeedAsync();
-        await seeder.SeedAsync();
+        using (var seedScope = host.CreateScope())
+            await seedScope.ServiceProvider.GetRequiredService<IOlistDataSeeder>().SeedAsync();
+
+        using var verifyScope = host.CreateScope();
+        var dbContext = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         Assert.Contains(
             "20260328195500_AddOlistReviewIdToOrderReviews",
