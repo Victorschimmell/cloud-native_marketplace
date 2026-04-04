@@ -41,7 +41,7 @@ The backend is intentionally foundation-first: one sample entity (`SampleItem`) 
 
 - `Backend.Infrastructure`
   - Technical implementations (EF Core, PostgreSQL, migrations, external services).
-  - Depends on `Backend.Domain`.
+  - Depends on `Backend.Application` abstractions and `Backend.Domain`.
 
 - `Backend.Api`
   - HTTP layer (endpoints, startup, DI composition).
@@ -52,8 +52,9 @@ The backend is intentionally foundation-first: one sample entity (`SampleItem`) 
 - Inward dependencies only:
   - `Api -> Application, Infrastructure`
   - `Application -> Domain`
-  - `Infrastructure -> Domain`
+  - `Infrastructure -> Application, Domain`
   - `Domain -> (none)`
+- `Infrastructure` may reference `Application` to implement application-layer contracts such as repository interfaces, but `Application` must not reference `Infrastructure`.
 - `Domain` must not reference EF, ASP.NET, or infrastructure details.
 - Business rules should not live in `Api`.
 

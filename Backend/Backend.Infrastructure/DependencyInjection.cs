@@ -1,7 +1,13 @@
+using Backend.Application.Abstractions.Repositories;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Import.Abstractions;
+using Backend.Infrastructure.Persistence.Import.Services;
+using Backend.Infrastructure.Persistence.Repositories;
+using Backend.Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Infrastructure;
 
@@ -19,6 +25,26 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));
 
+        var olistOptions = BuildOlistSeedOptions(configuration);
+        services.AddSingleton(Options.Create(olistOptions));
+        services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
+        services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
+
+        services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+        services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<ISellerRepository, SellerRepository>();
+        services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IProductListingRepository, ProductListingRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<ISellerVerificationRequestRepository, SellerVerificationRequestRepository>();
+        services.AddScoped<IShipmentRepository, ShipmentRepository>();
+        services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+
         return services;
     }
 
@@ -27,5 +53,31 @@ public static class DependencyInjection
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync(cancellationToken);
+    }
+
+    public static async Task SeedOlistDataAsync(this IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        using var scope = services.CreateScope();
+        var seeder = scope.ServiceProvider.GetRequiredService<IOlistDataSeeder>();
+        await seeder.SeedAsync(cancellationToken);
+    }
+
+    private static OlistSeedOptions BuildOlistSeedOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection(OlistSeedOptions.SectionName);
+
+        return new OlistSeedOptions
+        {
+            Enabled = bool.TryParse(section["Enabled"], out var enabled) && enabled,
+            DatasetRootPath = section["DatasetRootPath"],
+            ProductCategoryTranslationFileName = section["ProductCategoryTranslationFileName"] ?? "product_category_name_translation.csv",
+            CustomersFileName = section["CustomersFileName"] ?? "olist_customers_dataset.csv",
+            SellersFileName = section["SellersFileName"] ?? "olist_sellers_dataset.csv",
+            ProductsFileName = section["ProductsFileName"] ?? "olist_products_dataset.csv",
+            OrdersFileName = section["OrdersFileName"] ?? "olist_orders_dataset.csv",
+            OrderItemsFileName = section["OrderItemsFileName"] ?? "olist_order_items_dataset.csv",
+            OrderPaymentsFileName = section["OrderPaymentsFileName"] ?? "olist_order_payments_dataset.csv",
+            OrderReviewsFileName = section["OrderReviewsFileName"] ?? "olist_order_reviews_dataset.csv"
+        };
     }
 }
