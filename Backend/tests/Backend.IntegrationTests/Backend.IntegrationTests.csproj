@@ -23,6 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Fixtures\Olist\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

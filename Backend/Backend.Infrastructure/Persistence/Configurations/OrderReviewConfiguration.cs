@@ -12,6 +12,12 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
 
         builder.HasKey(r => r.Id);
 
+        builder.Property(r => r.OlistReviewId)
+            .HasMaxLength(100);
+
+        builder.HasIndex(r => r.OlistReviewId)
+            .IsUnique();
+
         builder.Property(r => r.ReviewScore)
             .IsRequired();
 

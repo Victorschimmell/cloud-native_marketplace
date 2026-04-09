@@ -10,6 +10,7 @@ public sealed class OrderReview : Entity<Guid>
     }
 
     public Guid OrderId { get; set; }
+    public string? OlistReviewId { get; set; }
     public int ReviewScore { get; set; }
     public string? ReviewCommentTitle { get; set; }
     public string? ReviewCommentMessage { get; set; }
