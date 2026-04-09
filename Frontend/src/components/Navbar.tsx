@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import '../css/variables.css';
 
 export default function Navbar() {
   return (
@@ -10,23 +11,23 @@ export default function Navbar() {
       width: '100%'
     }}>
       <div style={{
-        maxWidth: '1280px',           // ← this creates the nice space
+        maxWidth: '1280px',
         margin: '0 auto',
         padding: '0 40px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <Link to="/" style={{ fontSize: '28px', fontWeight: '700', color: '#1e40af', textDecoration: 'none' }}>
+        <Link to="/" style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary-color)', textDecoration: 'none' }}>
           Marketplace
         </Link>
 
         <div style={{ display: 'flex', gap: '32px', fontSize: '15px' }}>
-          <Link to="/products" style={{ color: '#374151', textDecoration: 'none' }}>Browse Products</Link>
-          <Link to="/categories" style={{ color: '#374151', textDecoration: 'none' }}>Categories</Link>
-          <Link to="/cart" style={{ color: '#374151', textDecoration: 'none' }}>Cart</Link>
-          <Link to="/seller/products" style={{ color: '#374151', textDecoration: 'none' }}>Seller Dashboard</Link>
-          <Link to="/admin/users" style={{ color: '#374151', textDecoration: 'none' }}>Admin</Link>
+          <Link to="/products" style={{ color: 'var(--text-dark)', textDecoration: 'none' }}>Browse Products</Link>
+          <Link to="/categories" style={{ color: 'var(--text-dark)', textDecoration: 'none' }}>Categories</Link>
+          <Link to="/cart" style={{ color: 'var(--text-dark)', textDecoration: 'none' }}>Cart</Link>
+          <Link to="/seller/products" style={{ color: 'var(--text-dark)', textDecoration: 'none' }}>Seller Dashboard</Link>
+          <Link to="/admin/users" style={{ color: 'var(--text-dark)', textDecoration: 'none' }}>Admin</Link>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
@@ -36,7 +37,7 @@ export default function Navbar() {
               padding: '8px 24px',
               border: '1px solid #d1d5db',
               borderRadius: '8px',
-              color: '#374151',
+              color: 'var(--text-dark)',
               textDecoration: 'none',
               fontSize: '14px'
             }}
@@ -47,8 +48,8 @@ export default function Navbar() {
             to="/register"
             style={{
               padding: '8px 24px',
-              backgroundColor: '#1e40af',
-              color: '#fff',
+              backgroundColor: 'var(--primary-color)',
+              color: 'var(--text-light)',
               borderRadius: '8px',
               textDecoration: 'none',
               fontSize: '14px'
