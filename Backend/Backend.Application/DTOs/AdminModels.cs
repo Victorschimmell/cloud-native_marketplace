@@ -28,4 +28,4 @@ public sealed record AdminBlockUserRequest(Guid UserId, string? Reason);
 
 public sealed record AdminUnblockUserRequest(Guid UserId, string? Reason);
 
-public sealed record AdminOperationResponse(Guid UserId, string Operation, bool Succeeded, string? Message);
+public sealed record AdminOperationResponse(Guid UserId, string Operation, string? Message);

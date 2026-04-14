@@ -8,7 +8,9 @@ public sealed record CustomerDto(
     string FirstName,
     string LastName,
     string Phone,
-    Guid? DefaultAddressId);
+    Guid? DefaultAddressId,
+    string? OlistCustomerId,
+    string? OlistCustomerUniqueId);
 
 public sealed record SellerDto(
     Guid Id,
@@ -18,7 +20,8 @@ public sealed record SellerDto(
     string PayoutInformation,
     Guid? DefaultAddressId,
     VerificationStatus VerificationStatus,
-    DateTimeOffset? VerifiedAtUtc);
+    DateTimeOffset? VerifiedAtUtc,
+    string? OlistSellerId);
 
 public sealed record UserAccountDto(
     Guid Id,
@@ -26,6 +29,8 @@ public sealed record UserAccountDto(
     bool IsAdmin,
     bool IsBlocked,
     AccountStatus AccountStatus,
+    int FailedLoginAttempts,
+    DateTimeOffset? LockedUntilUtc,
     DateTimeOffset? LastLoginAtUtc);
 
 public sealed record LoginRequest(string Email, string Password);

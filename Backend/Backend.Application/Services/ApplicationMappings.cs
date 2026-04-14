@@ -10,7 +10,15 @@ namespace Backend.Application.Services;
 internal static class ApplicationMappings
 {
     public static CustomerDto ToDto(this Customer customer) =>
-        new(customer.Id, customer.UserId, customer.FirstName, customer.LastName, customer.Phone, customer.DefaultAddressId);
+        new(
+            customer.Id,
+            customer.UserId,
+            customer.FirstName,
+            customer.LastName,
+            customer.Phone,
+            customer.DefaultAddressId,
+            customer.OlistCustomerId,
+            customer.OlistCustomerUniqueId);
 
     public static SellerDto ToDto(this Seller seller) =>
         new(
@@ -21,7 +29,8 @@ internal static class ApplicationMappings
             seller.PayoutInformation,
             seller.DefaultAddressId,
             seller.VerificationStatus,
-            seller.VerifiedAtUtc);
+            seller.VerifiedAtUtc,
+            seller.OlistSellerId);
 
     public static UserAccountDto ToDto(this UserAccount userAccount) =>
         new(
@@ -30,6 +39,8 @@ internal static class ApplicationMappings
             userAccount.IsAdmin,
             userAccount.IsBlocked,
             userAccount.AccountStatus,
+            userAccount.FailedLoginAttempts,
+            userAccount.LockedUntilUtc,
             userAccount.LastLoginAtUtc);
 
     public static ProductDto ToDto(this Product product) =>

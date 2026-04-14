@@ -21,12 +21,20 @@ internal sealed class FakeCustomerRepository : ICustomerRepository
 
 internal sealed class FakeSellerRepository : ISellerRepository
 {
+    public Seller? Seller { get; set; }
+    public int UpdateCalls { get; private set; }
+
     public Task AddAsync(Seller seller, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(Seller seller, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<Seller>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Seller>>([]);
-    public Task<Seller?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Seller?>(null);
-    public Task<Seller?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<Seller?>(null);
-    public Task UpdateAsync(Seller seller, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<Seller?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Seller is not null && Seller.Id == id ? Seller : null);
+    public Task<Seller?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Seller is not null && Seller.UserId == userId ? Seller : null);
+    public Task UpdateAsync(Seller seller, CancellationToken cancellationToken = default)
+    {
+        Seller = seller;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeProductRepository : IProductRepository
@@ -61,11 +69,13 @@ internal sealed class FakeProductListingRepository : IProductListingRepository
 
 internal sealed class FakeCartRepository : ICartRepository
 {
+    public ShoppingCart? Cart { get; set; }
+
     public Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult<ShoppingCart?>(null);
-    public Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<ShoppingCart?>(null);
-    public Task<ShoppingCart?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<ShoppingCart?>(null);
+    public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
+    public Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
+    public Task<ShoppingCart?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -99,7 +109,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
-internal sealed class FakeReviewRepository : IReviewRepository
+internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
 {
     public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -130,21 +140,37 @@ internal sealed class FakeAuditLogRepository : IAuditLogRepository
 
 internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificationRequestRepository
 {
+    public SellerVerificationRequest? Request { get; set; }
+    public int UpdateCalls { get; private set; }
+
     public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
-    public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<SellerVerificationRequest?>(null);
-    public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
-    public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Request is not null && Request.Id == id ? Request : null);
+    public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Request is not null && Request.SellerId == sellerId ? [Request] : []);
+    public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
+    {
+        Request = request;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeUserAccountRepository : IUserAccountRepository
 {
+    public UserAccount? UserAccount { get; set; }
+    public int UpdateCalls { get; private set; }
+
     public Task AddAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<UserAccount>>([]);
-    public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult<UserAccount?>(null);
-    public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<UserAccount?>(null);
-    public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && string.Equals(UserAccount.Email.Value, email, StringComparison.OrdinalIgnoreCase) ? UserAccount : null);
+    public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && UserAccount.Id == id ? UserAccount : null);
+    public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
+    {
+        UserAccount = userAccount;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeDateTimeProvider : IDateTimeProvider
@@ -157,11 +183,6 @@ internal sealed class FakeCurrentUserProvider : ICurrentUserProvider
     public Guid? UserId => Guid.Parse("11111111-1111-1111-1111-111111111111");
     public bool IsAuthenticated => true;
     public bool IsAdmin => true;
-}
-
-internal sealed class FakeUnitOfWork : IUnitOfWork
-{
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 internal sealed class FakePasswordHasher : IPasswordHasher

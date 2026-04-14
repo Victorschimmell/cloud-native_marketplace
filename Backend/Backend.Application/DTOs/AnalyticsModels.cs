@@ -15,5 +15,3 @@ public sealed record OrderStatisticsDto(
     int CancelledOrders,
     int CompletedOrders,
     DateTimeOffset GeneratedAtUtc);
-
-public sealed record AnalyticsResponse(SalesStatisticsDto? Sales, OrderStatisticsDto? Orders);
