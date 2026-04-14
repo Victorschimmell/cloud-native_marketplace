@@ -2,19 +2,19 @@
 #   - Every PR targeting master or release/v1.0.0 (failing test -> cannot complete PR)
 #   - Every push/merge to master or release/v1.0.0 (failing test -> merge not finalised)
 #
-# Docker image is pushed ONLY on push/merge (not on PR builds).
+# Docker images are pushed ONLY on push/merge to release/v1.0.0 (not on PR builds).
 
 trigger:
   branches:
     include:
-      - master
+      # - master
       # - release/v1.0.0
       - feature/79-infrastructure-layer
 
 pr:
   branches:
     include:
-      - master
+      # - master
       # - release/v1.0.0
       - feature/79-infrastructure-layer
 
@@ -23,7 +23,9 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
-  imageName: 'adminkusofteng2026/marketplace-platform'
+  backendImageName: 'adminkusofteng2026/marketplace-platform-backend'
+  frontendImageName: 'adminkusofteng2026/marketplace-platform-frontend'
+  databaseImageName: 'adminkusofteng2026/marketplace-platform-database'
   tag: '$(Build.BuildId)'
 
 steps:
@@ -103,18 +105,48 @@ steps:
 
   # ── Docker ─────────────────────────────────────────────────────────────────
 
-  # 10. Docker build + push
-  #     Condition: all previous steps passed AND this is NOT a PR build.
+  # 10. Backend Docker build + push
+  #     Condition: all previous steps passed, this is NOT a PR build,
+  #     and the run is for release/v1.0.0.
   #     Build.Reason is 'PullRequest' for PR pipelines; 'IndividualCI' / 'BatchedCI' for merges.
-  #     This prevents pushing an unreviewed image to DockerHub before the PR is merged.
+  #     This prevents pushing unreviewed images to DockerHub before the PR is merged.
   - task: Docker@2
-    displayName: 'Build and Push Docker image'
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+    displayName: 'Build and Push Backend Docker image'
+    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
     inputs:
       containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
-      repository: '$(imageName)'
+      repository: '$(backendImageName)'
       command: 'buildAndPush'
-      Dockerfile: '**/Dockerfile'
+      Dockerfile: 'Dockerfile'
+      buildContext: '.'
+      tags: |
+        $(tag)
+        latest
+
+  # 11. Frontend Docker build + push
+  - task: Docker@2
+    displayName: 'Build and Push Frontend Docker image'
+    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    inputs:
+      containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
+      repository: '$(frontendImageName)'
+      command: 'buildAndPush'
+      Dockerfile: 'Frontend/Dockerfile'
+      buildContext: 'Frontend'
+      tags: |
+        $(tag)
+        latest
+
+  # 12. Database Docker build + push
+  - task: Docker@2
+    displayName: 'Build and Push Database Docker image'
+    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    inputs:
+      containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
+      repository: '$(databaseImageName)'
+      command: 'buildAndPush'
+      Dockerfile: 'Database/Dockerfile'
+      buildContext: 'Database'
       tags: |
         $(tag)
         latest

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
@@ -24,6 +25,13 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
 
     public static async Task<SqliteRepositoryTestHost> CreateAsync(Action<OlistSeedOptions>? configureOlistOptions = null)
     {
+        // EF Core SQLite registers a decimal collation that calls decimal.Parse on raw SQLite
+        // text values. When the OS culture uses ',' as the decimal separator the parse fails
+        // with FormatException. Pinning to InvariantCulture before opening the connection
+        // ensures the collation always uses '.' as the decimal point.
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
 
