@@ -8,15 +8,15 @@ trigger:
   branches:
     include:
       # - master
-      # - release/v1.0.0
-      - feature/79-infrastructure-layer
+      - release/v1.0.0
+      # - feature/79-infrastructure-layer
 
 pr:
   branches:
     include:
       # - master
-      # - release/v1.0.0
-      - feature/79-infrastructure-layer
+      - release/v1.0.0
+      # - feature/79-infrastructure-layer
 
 pool:
   name: LocalAgentPool
@@ -112,7 +112,7 @@ steps:
   #     This prevents pushing unreviewed images to DockerHub before the PR is merged.
   - task: Docker@2
     displayName: 'Build and Push Backend Docker image'
-    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
     inputs:
       containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
       repository: '$(backendImageName)'
@@ -126,7 +126,7 @@ steps:
   # 11. Frontend Docker build + push
   - task: Docker@2
     displayName: 'Build and Push Frontend Docker image'
-    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
     inputs:
       containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
       repository: '$(frontendImageName)'
@@ -140,7 +140,7 @@ steps:
   # 12. Database Docker build + push
   - task: Docker@2
     displayName: 'Build and Push Database Docker image'
-    # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
     inputs:
       containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
       repository: '$(databaseImageName)'
