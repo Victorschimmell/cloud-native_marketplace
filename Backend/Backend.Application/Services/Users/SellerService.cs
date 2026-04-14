@@ -16,34 +16,13 @@ public sealed class SellerService : ISellerService
         _sellerRepository = sellerRepository;
     }
 
-    public async Task<Result<SellerDto>> GetByIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    public Task<Result<SellerDto>> GetByIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
-        return await ServiceExecution.ExecuteAsync(async () =>
-        {
-            if (sellerId == Guid.Empty)
-            {
-                return Result<SellerDto>.ValidationFailure("Seller id is required.");
-            }
-
-            var seller = await _sellerRepository.GetByIdAsync(sellerId, cancellationToken);
-            return seller is null
-                ? Result<SellerDto>.NotFound("Seller was not found.")
-                : Result<SellerDto>.Success(seller.ToDto());
-        }, "Unable to get seller.");
+        throw new NotImplementedException();
     }
 
-    public async Task<Result<PagedResult<SellerDto>>> GetSellersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    public Task<Result<PagedResult<SellerDto>>> GetSellersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        return await ServiceExecution.ExecuteAsync(async () =>
-        {
-            if (request.Page <= 0 || request.PageSize <= 0)
-            {
-                return Result<PagedResult<SellerDto>>.ValidationFailure("Page and page size must be greater than zero.");
-            }
-
-            var sellers = await _sellerRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
-            var items = sellers.Select(static seller => seller.ToDto()).ToArray();
-            return Result<PagedResult<SellerDto>>.Success(new PagedResult<SellerDto>(items, request.Page, request.PageSize, items.Length));
-        }, "Unable to get sellers.");
+        throw new NotImplementedException();
     }
 }

@@ -30,34 +30,8 @@ public sealed class AuthService : IAuthService
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task<Result<AuthenticationResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    public Task<Result<AuthenticationResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        return await ServiceExecution.ExecuteAsync(async () =>
-        {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            {
-                return Result<AuthenticationResponse>.ValidationFailure("Email and password are required.");
-            }
-
-            var userAccount = await _userAccountRepository.GetByEmailAsync(request.Email.Trim(), cancellationToken);
-            if (userAccount is null)
-            {
-                return Result<AuthenticationResponse>.Unauthorized("Invalid email or password.");
-            }
-
-            if (!_passwordHasher.VerifyPassword(userAccount, request.Password))
-            {
-                userAccount.FailedLoginAttempts += 1;
-                await _userAccountRepository.UpdateAsync(userAccount, cancellationToken);
-                return Result<AuthenticationResponse>.Unauthorized("Invalid email or password.");
-            }
-
-            userAccount.FailedLoginAttempts = 0;
-            userAccount.LastLoginAtUtc = _dateTimeProvider.UtcNow;
-            await _userAccountRepository.UpdateAsync(userAccount, cancellationToken);
-
-            var response = new AuthenticationResponse(userAccount.ToDto(), _authTokenGenerator.CreateToken(userAccount));
-            return Result<AuthenticationResponse>.Success(response);
-        }, "Unable to authenticate user.");
+        throw new NotImplementedException();
     }
 }
