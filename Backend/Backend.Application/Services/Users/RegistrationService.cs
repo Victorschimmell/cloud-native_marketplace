@@ -31,11 +31,11 @@ public sealed class RegistrationService : IRegistrationService
 
     public Task<Result<RegistrationResponse>> RegisterCustomerAsync(RegisterCustomerRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<RegistrationResponse>.NotImplemented());
     }
 
     public Task<Result<RegistrationResponse>> RegisterSellerAsync(RegisterSellerRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<RegistrationResponse>.NotImplemented());
     }
 }

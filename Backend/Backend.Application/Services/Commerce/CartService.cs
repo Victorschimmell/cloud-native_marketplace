@@ -24,16 +24,16 @@ public sealed class CartService : ICartService
 
     public Task<Result<CartDto>> GetCartAsync(GetCartRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CartDto>.NotImplemented());
     }
 
     public Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CartDto>.NotImplemented());
     }
 
     public Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CartDto>.NotImplemented());
     }
 }

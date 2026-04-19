@@ -18,11 +18,11 @@ public sealed class SellerService : ISellerService
 
     public Task<Result<SellerDto>> GetByIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<SellerDto>.NotImplemented());
     }
 
     public Task<Result<PagedResult<SellerDto>>> GetSellersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<PagedResult<SellerDto>>.NotImplemented());
     }
 }

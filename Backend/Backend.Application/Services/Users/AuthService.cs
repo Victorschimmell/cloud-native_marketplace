@@ -32,6 +32,6 @@ public sealed class AuthService : IAuthService
 
     public Task<Result<AuthenticationResponse>> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<AuthenticationResponse>.NotImplemented());
     }
 }

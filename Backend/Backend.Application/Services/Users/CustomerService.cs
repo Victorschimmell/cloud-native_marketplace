@@ -18,11 +18,11 @@ public sealed class CustomerService : ICustomerService
 
     public Task<Result<CustomerDto>> GetByIdAsync(Guid customerId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CustomerDto>.NotImplemented());
     }
 
     public Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<PagedResult<CustomerDto>>.NotImplemented());
     }
 }

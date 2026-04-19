@@ -20,11 +20,11 @@ public sealed class AnalyticsService : IAnalyticsService
 
     public Task<Result<SalesStatisticsDto>> GetSalesStatisticsAsync(GetSalesStatisticsRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<SalesStatisticsDto>.NotImplemented());
     }
 
     public Task<Result<OrderStatisticsDto>> GetOrderStatisticsAsync(GetOrderStatisticsRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<OrderStatisticsDto>.NotImplemented());
     }
 }

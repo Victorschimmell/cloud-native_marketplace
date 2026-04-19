@@ -7,7 +7,8 @@ public enum ResultFailureType
     Conflict = 3,
     Unauthorized = 4,
     Forbidden = 5,
-    Unexpected = 6
+    Unexpected = 6,
+    NotImplemented = 7
 }
 
 public class Result
@@ -38,6 +39,8 @@ public class Result
     public static Result Conflict(string error) => Failure(error, ResultFailureType.Conflict);
 
     public static Result Unauthorized(string error) => Failure(error, ResultFailureType.Unauthorized);
+
+    public static Result NotImplemented(string error = "This service is not implemented yet.") => Failure(error, ResultFailureType.NotImplemented);
 }
 
 public sealed class Result<T> : Result
@@ -61,4 +64,6 @@ public sealed class Result<T> : Result
     public static new Result<T> Conflict(string error) => Failure(error, ResultFailureType.Conflict);
 
     public static new Result<T> Unauthorized(string error) => Failure(error, ResultFailureType.Unauthorized);
+
+    public static new Result<T> NotImplemented(string error = "This service is not implemented yet.") => Failure(error, ResultFailureType.NotImplemented);
 }

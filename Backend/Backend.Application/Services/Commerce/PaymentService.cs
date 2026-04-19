@@ -24,12 +24,12 @@ public sealed class PaymentService : IPaymentService
 
     public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
     }
 
     public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<PaymentDto>.NotImplemented());
     }
 }
 
