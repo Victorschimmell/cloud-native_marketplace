@@ -21,6 +21,14 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<OrderReview>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrderReviews
+            .Where(review => review.Order != null && review.Order.Items.Any(item => item.ProductId == productId))
+            .OrderBy(review => review.ReviewCreationDateUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         await dbContext.OrderReviews.AddAsync(review, cancellationToken);
