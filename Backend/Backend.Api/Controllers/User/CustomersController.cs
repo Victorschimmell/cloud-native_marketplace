@@ -19,16 +19,12 @@ public class CustomersController : ApiControllerBase
     [HttpGet]
     public async Task<ActionResult<CustomerResponse>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
-        // var result = await _customerService.GetCustomersAsync(request.ToDto());
-        // return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 
     [HttpGet("{customerId:guid}")]
     public async Task<ActionResult<PageResponse<CustomerResponse>>> GetByIdAsync([NotEmptyGuid] Guid customerId, CancellationToken cancellationToken)
     {
-        // var result = await _customerService.GetByIdAsync(customerId);
-        // return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 }
