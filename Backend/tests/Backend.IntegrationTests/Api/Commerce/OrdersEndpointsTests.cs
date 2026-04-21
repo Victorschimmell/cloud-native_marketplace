@@ -16,16 +16,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetOrders_ReturnsNotImplemented()
-    {
-        // Act
-        var response = await _client.GetAsync("/api/orders");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetOrderById_ReturnsNotImplemented()
     {
         // Act

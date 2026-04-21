@@ -15,22 +15,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetCart_ReturnsNotImplemented()
-    {
-        // Arrange
-        var getCartRequest = new GetCartRequest
-        {
-            UserId = Guid.NewGuid()
-        };
-
-        // Act
-        var response = await _client.GetAsync($"/api/cart?userId={getCartRequest.UserId}");
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
     public async Task AddCartItem_ReturnsNotImplemented()
     {
         // Arrange

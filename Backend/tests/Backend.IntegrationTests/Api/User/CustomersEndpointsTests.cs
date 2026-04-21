@@ -32,4 +32,30 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
     }
+
+    [Fact]
+    public async Task GetCartByCustomerId_ReturnsNotImplemented()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+
+        // Act
+        var response = await _client.GetAsync($"/api/customers/{customerId}/cart");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetOrdersByCustomerId_ReturnsNotImplemented()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+
+        // Act
+        var response = await _client.GetAsync($"/api/customers/{customerId}/orders");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+    }
 }
