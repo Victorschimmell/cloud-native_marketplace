@@ -14,12 +14,6 @@ public class CartController : ApiControllerBase
         _cartService = cartService;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<CartResponse>> GetCartAsync([FromQuery] GetCartRequest request, CancellationToken cancellationToken)
-    {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
-
     [HttpPost]
     public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, CancellationToken cancellationToken)
     {

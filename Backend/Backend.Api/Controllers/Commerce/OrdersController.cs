@@ -28,12 +28,6 @@ public class OrdersController : ApiControllerBase
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 
-    [HttpGet]
-    public async Task<ActionResult<PageResponse<OrderResponse>>> GetByCustomerAsync([NotEmptyGuid][FromQuery] Guid customerId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
-    {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
-
     [HttpGet("{orderId:guid}/items")]
     public async Task<ActionResult<IReadOnlyList<OrderItemResponse>>> GetOrderItemsAsync([NotEmptyGuid] Guid orderId, CancellationToken cancellationToken)
     {
