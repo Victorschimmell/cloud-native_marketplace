@@ -18,27 +18,27 @@ public sealed class ProductService : IProductService
 
     public Task<Result<ProductDto>> GetByIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
     public Task<Result<PagedResult<ProductDto>>> GetByCategoryAsync(Guid categoryId, PagedRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<PagedResult<ProductDto>>.NotImplemented());
     }
 
     public Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
     public Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
     public Task<Result> DeleteAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result.NotImplemented());
     }
 }
 

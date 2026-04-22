@@ -27,11 +27,11 @@ public sealed class CheckoutService : ICheckoutService
 
     public Task<Result<IReadOnlyList<CheckoutLineDto>>> GetCheckoutPreviewAsync(GetCheckoutPreviewRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<CheckoutLineDto>>.NotImplemented());
     }
 
     public Task<Result<CheckoutResponse>> CheckoutAsync(CheckoutRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CheckoutResponse>.NotImplemented());
     }
 }

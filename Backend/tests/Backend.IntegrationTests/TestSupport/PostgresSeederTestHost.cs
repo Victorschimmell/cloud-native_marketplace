@@ -14,13 +14,17 @@ internal sealed class PostgresSeederTestHost : IAsyncDisposable
     private readonly string _adminConnectionString;
     private readonly string _databaseName;
     private readonly ServiceProvider _serviceProvider;
+    private readonly string _testConnectionString;
 
-    private PostgresSeederTestHost(string adminConnectionString, string databaseName, ServiceProvider serviceProvider)
+    private PostgresSeederTestHost(string adminConnectionString, string databaseName, ServiceProvider serviceProvider, string testConnectionString)
     {
         _adminConnectionString = adminConnectionString;
         _databaseName = databaseName;
         _serviceProvider = serviceProvider;
+        _testConnectionString = testConnectionString;
     }
+
+    public string ConnectionString => _testConnectionString;
 
     public static async Task<PostgresSeederTestHost> CreateAsync(Action<OlistSeedOptions> configureOlistOptions)
     {
@@ -68,7 +72,7 @@ internal sealed class PostgresSeederTestHost : IAsyncDisposable
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync();
 
-        return new PostgresSeederTestHost(adminConnectionString, databaseName, serviceProvider);
+        return new PostgresSeederTestHost(adminConnectionString, databaseName, serviceProvider, databaseConnectionStringBuilder.ConnectionString);
     }
 
     public IServiceScope CreateScope() => _serviceProvider.CreateScope();

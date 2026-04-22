@@ -17,27 +17,27 @@ public sealed class CategoryService : ICategoryService
 
     public Task<Result<CategoryDto>> GetByIdAsync(Guid categoryId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CategoryDto>.NotImplemented());
     }
 
     public Task<Result<IReadOnlyList<CategoryDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<CategoryDto>>.NotImplemented());
     }
 
     public Task<Result<CategoryDto>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CategoryDto>.NotImplemented());
     }
 
     public Task<Result<CategoryDto>> UpdateAsync(UpdateCategoryRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<CategoryDto>.NotImplemented());
     }
 
     public Task<Result> DeleteAsync(Guid categoryId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result.NotImplemented());
     }
 }
 

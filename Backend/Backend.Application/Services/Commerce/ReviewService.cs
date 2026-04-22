@@ -24,17 +24,17 @@ public sealed class ReviewService : IReviewService
 
     public Task<Result<IReadOnlyList<ReviewDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<ReviewDto>>.NotImplemented());
     }
 
     public Task<Result<IReadOnlyList<ReviewDto>>> GetByProductAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<ReviewDto>>.NotImplemented());
     }
 
     public Task<Result<ReviewDto>> CreateAsync(CreateReviewRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ReviewDto>.NotImplemented());
     }
 }
 

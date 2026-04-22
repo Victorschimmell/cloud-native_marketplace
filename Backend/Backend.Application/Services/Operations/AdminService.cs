@@ -22,17 +22,17 @@ public sealed class AdminService : IAdminService
 
     public Task<Result<AdminOperationResponse>> BlockUserAsync(AdminBlockUserRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<AdminOperationResponse>.NotImplemented());
     }
 
     public Task<Result<AdminOperationResponse>> UnblockUserAsync(AdminUnblockUserRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<AdminOperationResponse>.NotImplemented());
     }
 
     public Task<Result<PagedResult<AuditLogEntryDto>>> GetAuditLogsAsync(GetAuditLogsRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<PagedResult<AuditLogEntryDto>>.NotImplemented());
     }
 }
 

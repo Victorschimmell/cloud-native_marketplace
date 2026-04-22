@@ -24,16 +24,16 @@ public sealed class ShipmentService : IShipmentService
 
     public Task<Result<IReadOnlyList<ShipmentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<ShipmentDto>>.NotImplemented());
     }
 
     public Task<Result<ShipmentDto>> RecordShipmentAsync(RecordShipmentRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ShipmentDto>.NotImplemented());
     }
 
     public Task<Result<ShipmentDto>> UpdateShipmentStatusAsync(UpdateShipmentStatusRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<ShipmentDto>.NotImplemented());
     }
 }

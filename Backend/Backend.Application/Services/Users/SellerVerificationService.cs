@@ -35,16 +35,16 @@ public sealed class SellerVerificationService : ISellerVerificationService
 
     public Task<Result<SellerVerificationResponse>> SubmitVerificationAsync(SubmitSellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<SellerVerificationResponse>.NotImplemented());
     }
 
     public Task<Result<SellerVerificationResponse>> VerifySellerAsync(VerifySellerRequest request, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<SellerVerificationResponse>.NotImplemented());
     }
 
     public Task<Result<IReadOnlyList<SellerVerificationRequestDto>>> GetRequestsBySellerAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(Result<IReadOnlyList<SellerVerificationRequestDto>>.NotImplemented());
     }
 }
