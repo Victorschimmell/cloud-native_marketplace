@@ -1,14 +1,9 @@
 <Project>
   <PropertyGroup>
     <AspNetCoreVersion>10.0.3</AspNetCoreVersion>
-    <AspNetCoreOpenApiVersion>10.0.3</AspNetCoreOpenApiVersion>
     <EntityFrameworkCoreVersion>10.0.5</EntityFrameworkCoreVersion>
     <EntityFrameworkCoreDesignVersion>10.0.5</EntityFrameworkCoreDesignVersion>
-    <MicrosoftExtensionsDependencyInjectionAbstractionsVersion>10.0.0</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
     <NpgsqlEfCoreVersion>10.0.0</NpgsqlEfCoreVersion>
-    <ScalarVersion>2.12.54</ScalarVersion>
-    <ScalarAspNetCoreVersion>2.12.54</ScalarAspNetCoreVersion>
-    <SystemSecurityCryptographyXmlVersion>10.0.7</SystemSecurityCryptographyXmlVersion>
     <NetTestSdkVersion>17.14.1</NetTestSdkVersion>
     <XunitVersion>2.9.3</XunitVersion>
     <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
