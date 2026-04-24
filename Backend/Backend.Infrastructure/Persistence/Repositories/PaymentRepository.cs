@@ -1,11 +1,12 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
 
-internal sealed class PaymentRepository(ApplicationDbContext dbContext) : IPaymentRepository
+internal sealed class PaymentRepository(ApplicationDbContext dbContext, IDateTimeProvider dateTimeProvider) : IPaymentRepository
 {
     public async Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default)
     {
@@ -79,6 +80,6 @@ internal sealed class PaymentRepository(ApplicationDbContext dbContext) : IPayme
 
         // This repository intentionally simulates a successful payment provider interaction.
         payment.PaymentStatus = PaymentStatus.Paid;
-        payment.PaidAtUtc ??= DateTimeOffset.UtcNow;
+        payment.PaidAtUtc ??= dateTimeProvider.UtcNow;
     }
 }

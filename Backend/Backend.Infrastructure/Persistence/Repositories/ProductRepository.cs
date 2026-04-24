@@ -32,9 +32,10 @@ internal sealed class ProductRepository(ApplicationDbContext dbContext) : IProdu
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
+    public Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
-        await dbContext.Products.AddAsync(product, cancellationToken);
+        dbContext.Products.Add(product);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)

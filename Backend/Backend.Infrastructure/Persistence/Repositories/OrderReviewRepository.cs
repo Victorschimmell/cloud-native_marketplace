@@ -29,9 +29,10 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
-        await dbContext.OrderReviews.AddAsync(review, cancellationToken);
+        dbContext.OrderReviews.Add(review);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default)

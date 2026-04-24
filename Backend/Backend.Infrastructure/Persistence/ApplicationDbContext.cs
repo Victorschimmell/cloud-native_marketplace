@@ -1,4 +1,3 @@
-using Backend.Domain.Base;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
@@ -34,39 +33,5 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
-    }
-
-    public override int SaveChanges(bool acceptAllChangesOnSuccess)
-    {
-        ApplyAuditValues();
-        return base.SaveChanges(acceptAllChangesOnSuccess);
-    }
-
-    public override Task<int> SaveChangesAsync(
-        bool acceptAllChangesOnSuccess,
-        CancellationToken cancellationToken = default)
-    {
-        ApplyAuditValues();
-        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-    }
-
-    private void ApplyAuditValues()
-    {
-        var now = DateTimeOffset.UtcNow;
-
-        foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
-        {
-            if (entry.State == EntityState.Added)
-            {
-                entry.Entity.CreatedAtUtc = now;
-                entry.Entity.UpdatedAtUtc = now;
-            }
-
-            if (entry.State == EntityState.Modified)
-            {
-                entry.Property(x => x.CreatedAtUtc).IsModified = false;
-                entry.Entity.UpdatedAtUtc = now;
-            }
-        }
     }
 }

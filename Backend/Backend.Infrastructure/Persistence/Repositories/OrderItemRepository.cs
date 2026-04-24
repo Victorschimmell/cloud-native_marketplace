@@ -31,9 +31,10 @@ internal sealed class OrderItemRepository(ApplicationDbContext dbContext) : IOrd
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
+    public Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
     {
-        await dbContext.OrderItems.AddAsync(orderItem, cancellationToken);
+        dbContext.OrderItems.Add(orderItem);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)

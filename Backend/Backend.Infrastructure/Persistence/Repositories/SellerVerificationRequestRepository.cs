@@ -30,9 +30,10 @@ internal sealed class SellerVerificationRequestRepository(ApplicationDbContext d
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
+    public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
-        await dbContext.SellerVerificationRequests.AddAsync(request, cancellationToken);
+        dbContext.SellerVerificationRequests.Add(request);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)

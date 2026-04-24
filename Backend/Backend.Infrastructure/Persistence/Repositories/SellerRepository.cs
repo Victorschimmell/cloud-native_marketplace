@@ -28,9 +28,10 @@ internal sealed class SellerRepository(ApplicationDbContext dbContext) : ISeller
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Seller seller, CancellationToken cancellationToken = default)
+    public Task AddAsync(Seller seller, CancellationToken cancellationToken = default)
     {
-        await dbContext.Sellers.AddAsync(seller, cancellationToken);
+        dbContext.Sellers.Add(seller);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(Seller seller, CancellationToken cancellationToken = default)

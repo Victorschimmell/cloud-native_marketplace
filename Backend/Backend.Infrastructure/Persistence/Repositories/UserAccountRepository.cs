@@ -28,9 +28,10 @@ internal sealed class UserAccountRepository(ApplicationDbContext dbContext) : IU
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
+    public Task AddAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
     {
-        await dbContext.UserAccounts.AddAsync(userAccount, cancellationToken);
+        dbContext.UserAccounts.Add(userAccount);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default)

@@ -1,6 +1,8 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
+using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
 using Backend.Infrastructure.Persistence.Repositories;
@@ -31,7 +33,11 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
         var services = new ServiceCollection();
 
         services.AddLogging();
-        services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddScoped<IDateTimeProvider, InfrastructureDateTimeProvider>();
+        services.AddScoped<AuditTimestampInterceptor>();
+        services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+            options.UseSqlite(connection)
+                .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
         services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();

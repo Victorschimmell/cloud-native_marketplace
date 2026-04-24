@@ -20,9 +20,10 @@ internal sealed class ProductCategoryRepository(ApplicationDbContext dbContext) 
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    public Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default)
     {
-        await dbContext.ProductCategories.AddAsync(category, cancellationToken);
+        dbContext.ProductCategories.Add(category);
+        return Task.CompletedTask;
     }
 
     public Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
