@@ -6,6 +6,7 @@ using Backend.Api.Mappings.Catalog.Products;
 using Backend.Api.Mappings.Common;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.Catalog;
 
@@ -30,15 +31,29 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PageResponse<BrowseProductResponse>>> GetProductsAsync([FromQuery][NotEmptyGuid] Guid? categoryId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<PageResponse<BrowseProductResponse>>> GetProductsAsync(
+        [FromQuery][NotEmptyGuid] Guid? categoryId,
+        [FromQuery] string? search,
+        [FromQuery] string? sort,
+        [FromQuery] PageRequest pageRequest,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Browse products requested for category {CategoryId}, page {Page}, page size {PageSize}.",
+            "Browse products requested for category {CategoryId}, search {Search}, sort {Sort}, page {Page}, page size {PageSize}.",
             categoryId,
+            search,
+            sort,
             pageRequest.Page,
             pageRequest.PageSize);
 
-        var result = await _productService.GetBrowseProductsAsync(categoryId, pageRequest.ToDto(), cancellationToken);
+        var request = new App.BrowseProductsRequest(
+            CategoryId: categoryId,
+            Search: search,
+            Sort: string.IsNullOrWhiteSpace(sort) ? "newest" : sort,
+            Page: pageRequest.Page,
+            PageSize: pageRequest.PageSize);
+
+        var result = await _productService.GetBrowseProductsAsync(request, cancellationToken);
 
         return HandleResult(
             result,

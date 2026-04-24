@@ -28,6 +28,13 @@ public sealed record BrowseProductDto(
     int ProductHeightCm,
     int ProductWidthCm);
 
+public sealed record BrowseProductsRequest(
+    Guid? CategoryId,
+    string? Search,
+    string Sort,
+    int Page,
+    int PageSize);
+
 public sealed record CategoryDto(Guid Id, string CategoryNamePt, string? CategoryNameEn);
 
 public sealed record CreateProductRequest(

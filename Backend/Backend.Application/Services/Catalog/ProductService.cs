@@ -27,14 +27,19 @@ public sealed class ProductService : IProductService
         return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
-    public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(Guid? categoryId, PagedRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Page < 1 || request.PageSize < 1)
         {
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Page and page size must be greater than zero.");
         }
 
-        var listings = await _productListingRepository.GetAvailableForBrowseAsync(categoryId, request, cancellationToken);
+        if (request.Sort is not "newest" and not "price-asc" and not "price-desc" and not "name-asc")
+        {
+            return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Sort must be one of newest, price-asc, price-desc, or name-asc.");
+        }
+
+        var listings = await _productListingRepository.GetAvailableForBrowseAsync(request, cancellationToken);
         var products = listings.Items.Select(ApplicationMappings.ToBrowseDto).ToArray();
 
         return Result<PagedResult<BrowseProductDto>>.Success(

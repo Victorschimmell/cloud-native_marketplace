@@ -7,7 +7,7 @@ namespace Backend.Application.Interfaces.Services;
 public interface IProductService
 {
     Task<Result<ProductDto>> GetByIdAsync(Guid productId, CancellationToken cancellationToken = default);
-    Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(Guid? categoryId, PagedRequest request, CancellationToken cancellationToken = default);
+    Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<ProductDto>>> GetByCategoryAsync(Guid categoryId, PagedRequest request, CancellationToken cancellationToken = default);
     Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default);
     Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default);

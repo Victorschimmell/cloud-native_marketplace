@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
-import ProductsPage from '../pages/ProductsPage';
+import ProductListPage from '../features/products/pages/ProductListPage';
 import ProductDetailsPage from '../pages/ProductDetailsPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import CartPage from '../pages/CartPage';
@@ -32,7 +32,7 @@ export const router = createBrowserRouter([
       { path: '', element: <HomePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
-      { path: 'products', element: <ProductsPage /> },
+      { path: 'products', element: <ProductListPage /> },
       { path: 'products/:id', element: <ProductDetailsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
       { path: 'cart', element: <CartPage /> },
