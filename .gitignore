@@ -34,3 +34,6 @@ pnpm-debug.log*
 
 # Local development datasets
 .data/
+
+# Other
+logs/

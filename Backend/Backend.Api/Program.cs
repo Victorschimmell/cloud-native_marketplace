@@ -7,10 +7,31 @@ using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
+using Serilog;
 
 [assembly: ApiConventionType(typeof(DefaultApiConventions))]
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    var logDirectory = context.Configuration["LogFiles:DirectoryPath"];
+    var resolvedLogDirectory = string.IsNullOrWhiteSpace(logDirectory)
+        ? Path.Combine(AppContext.BaseDirectory, "logs")
+        : Path.GetFullPath(logDirectory);
+
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .WriteTo.Console(
+            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}")
+        .WriteTo.File(
+            path: Path.Combine(resolvedLogDirectory, "backend-.log"),
+            rollingInterval: RollingInterval.Day,
+            shared: true,
+            retainedFileCountLimit: 30,
+            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
+});
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
@@ -35,6 +56,8 @@ builder.Services.AddOpenApi(options =>
 });
 
 var app = builder.Build();
+app.Logger.LogInformation("Backend API host built successfully.");
+
 var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
 var seedOlistOnStartup = builder.Configuration.GetValue<bool>("OlistImport:Enabled");
 
@@ -49,6 +72,7 @@ if (seedOlistOnStartup)
 }
 
 app.UseExceptionHandler();
+app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -65,4 +89,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+try
+{
+    app.Logger.LogInformation("Backend API starting.");
+    app.Run();
+}
+finally
+{
+    Log.CloseAndFlush();
+}
