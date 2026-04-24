@@ -25,7 +25,7 @@ public class ShipmentsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PatchAsJsonAsync($"/api/shipments/{shipmentId}/status", updateRequest);
+        var response = await _client.PatchAsJsonAsync($"/api/shipments/{shipmentId}/status", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

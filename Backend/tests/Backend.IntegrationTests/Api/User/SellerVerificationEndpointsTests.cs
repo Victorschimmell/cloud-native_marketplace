@@ -25,7 +25,7 @@ public class SellerVerificationEndpointsTests : IClassFixture<MarketplaceApiFact
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync($"/api/sellers/{sellerId}/verifications", submitRequest);
+        var response = await _client.PostAsJsonAsync($"/api/sellers/{sellerId}/verifications", submitRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -36,7 +36,7 @@ public class SellerVerificationEndpointsTests : IClassFixture<MarketplaceApiFact
     {
         // Act
         var sellerId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/sellers/{sellerId}/verifications");
+        var response = await _client.GetAsync($"/api/sellers/{sellerId}/verifications", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

@@ -28,21 +28,21 @@ internal sealed class SellerRepository(ApplicationDbContext dbContext) : ISeller
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Seller seller, CancellationToken cancellationToken = default)
+    public Task AddAsync(Seller seller, CancellationToken cancellationToken = default)
     {
-        await dbContext.Sellers.AddAsync(seller, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.Sellers.Add(seller);
+        return Task.CompletedTask;
     }
 
-    public async Task UpdateAsync(Seller seller, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Seller seller, CancellationToken cancellationToken = default)
     {
         dbContext.Sellers.Update(seller);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Seller seller, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Seller seller, CancellationToken cancellationToken = default)
     {
         dbContext.Sellers.Remove(seller);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

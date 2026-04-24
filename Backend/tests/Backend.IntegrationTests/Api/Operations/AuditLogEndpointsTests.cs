@@ -19,7 +19,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var actorUserId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/admin/audit-logs/{actorUserId}");
+        var response = await _client.GetAsync($"/api/admin/audit-logs/{actorUserId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -31,7 +31,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Act
         var entityType = "Type";
         var entityId = "Id";
-        var response = await _client.GetAsync($"/api/admin/audit-logs/{entityType}/{entityId}");
+        var response = await _client.GetAsync($"/api/admin/audit-logs/{entityType}/{entityId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -51,7 +51,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/admin/audit-logs", writeRequest);
+        var response = await _client.PostAsJsonAsync("/api/admin/audit-logs", writeRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

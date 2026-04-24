@@ -16,7 +16,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetCustomers_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/customers");
+        var response = await _client.GetAsync("/api/customers", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -27,7 +27,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var customerId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/customers/{customerId}");
+        var response = await _client.GetAsync($"/api/customers/{customerId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -40,7 +40,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/customers/{customerId}/cart");
+        var response = await _client.GetAsync($"/api/customers/{customerId}/cart", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -53,7 +53,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/customers/{customerId}/orders");
+        var response = await _client.GetAsync($"/api/customers/{customerId}/orders", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

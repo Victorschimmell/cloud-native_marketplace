@@ -13,7 +13,7 @@ public sealed class ServiceSkeletonTests
     {
         var service = new ProductService(new FakeProductRepository());
 
-        var result = await service.GetByIdAsync(Guid.NewGuid());
+        var result = await service.GetByIdAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ResultFailureType.NotImplemented, result.FailureType);
@@ -24,7 +24,7 @@ public sealed class ServiceSkeletonTests
     {
         var service = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider());
 
-        var result = await service.LoginAsync(new LoginRequest("user@example.com", "password"));
+        var result = await service.LoginAsync(new LoginRequest("user@example.com", "password"), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ResultFailureType.NotImplemented, result.FailureType);
@@ -35,7 +35,7 @@ public sealed class ServiceSkeletonTests
     {
         var service = new CustomerService(new FakeCustomerRepository());
 
-        var result = await service.GetCustomersAsync(new PagedRequest(1, 10));
+        var result = await service.GetCustomersAsync(new PagedRequest(1, 10), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ResultFailureType.NotImplemented, result.FailureType);

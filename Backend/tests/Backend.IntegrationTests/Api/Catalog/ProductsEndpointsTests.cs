@@ -18,7 +18,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetProducts_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/products");
+        var response = await _client.GetAsync("/api/products", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -29,7 +29,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var productId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/products/{productId}");
+        var response = await _client.GetAsync($"/api/products/{productId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -52,7 +52,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/products", createRequest);
+        var response = await _client.PostAsJsonAsync("/api/products", createRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -76,7 +76,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/products/{productId}", updateRequest);
+        var response = await _client.PutAsJsonAsync($"/api/products/{productId}", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -87,7 +87,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var productId = Guid.NewGuid();
-        var response = await _client.DeleteAsync($"/api/products/{productId}");
+        var response = await _client.DeleteAsync($"/api/products/{productId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -98,7 +98,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var productId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/products/{productId}/reviews");
+        var response = await _client.GetAsync($"/api/products/{productId}/reviews", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

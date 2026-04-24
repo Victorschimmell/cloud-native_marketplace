@@ -10,7 +10,7 @@ public class MarketplaceApiWithSeedingFactory : WebApplicationFactory<Program>, 
 {
     private PostgresSeederTestHost? _testHost;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _testHost = await PostgresSeederTestHost.CreateAsync(_ => { });
     }
@@ -26,11 +26,13 @@ public class MarketplaceApiWithSeedingFactory : WebApplicationFactory<Program>, 
         builder.UseSetting("Database:ApplyMigrationsOnStartup", "false");
     }
 
-    public async Task DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         if (_testHost != null)
         {
             await _testHost.DisposeAsync();
         }
+
+        await base.DisposeAsync();
     }
 }

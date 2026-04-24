@@ -40,9 +40,9 @@ internal sealed class AuditLogRepository(ApplicationDbContext dbContext) : IAudi
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default)
+    public Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default)
     {
-        await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.AuditLogs.Add(auditLog);
+        return Task.CompletedTask;
     }
 }

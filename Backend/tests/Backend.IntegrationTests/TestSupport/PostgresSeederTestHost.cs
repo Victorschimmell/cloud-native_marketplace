@@ -59,6 +59,7 @@ internal sealed class PostgresSeederTestHost : IAsyncDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(databaseConnectionStringBuilder.ConnectionString));
+        services.AddScoped<Backend.Application.Common.Abstractions.IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
         services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
 

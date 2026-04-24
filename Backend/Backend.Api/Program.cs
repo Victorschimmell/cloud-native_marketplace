@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
+using Backend.Api.Auth;
 using Backend.Api.Middleware;
 using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
+using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
@@ -10,6 +12,8 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 

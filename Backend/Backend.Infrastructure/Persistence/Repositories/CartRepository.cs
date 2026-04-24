@@ -26,21 +26,21 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
             .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.Status == CartStatus.Active, cancellationToken);
     }
 
-    public async Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
+    public Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
     {
-        await dbContext.ShoppingCarts.AddAsync(cart, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.ShoppingCarts.Add(cart);
+        return Task.CompletedTask;
     }
 
-    public async Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
     {
         dbContext.ShoppingCarts.Update(cart);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
     {
         dbContext.ShoppingCarts.Remove(cart);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

@@ -24,10 +24,10 @@ public sealed class ProductRepositoryTests
             TestEntityFactory.CreateProduct(category.Id, "Alpha"),
             TestEntityFactory.CreateProduct(category.Id, "Charlie"),
             TestEntityFactory.CreateProduct(category.Id, "Bravo"));
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var firstPage = await repository.GetAllAsync(page: 1, pageSize: 2);
-        var secondPage = await repository.GetAllAsync(page: 2, pageSize: 2);
+        var firstPage = await repository.GetAllAsync(page: 1, pageSize: 2, TestContext.Current.CancellationToken);
+        var secondPage = await repository.GetAllAsync(page: 2, pageSize: 2, TestContext.Current.CancellationToken);
 
         Assert.Equal(["Alpha", "Bravo"], firstPage.Select(product => product.ProductName).ToArray());
         Assert.Equal(["Charlie", "Delta"], secondPage.Select(product => product.ProductName).ToArray());
@@ -50,9 +50,9 @@ public sealed class ProductRepositoryTests
             TestEntityFactory.CreateProduct(furniture.Id, "Chair"),
             TestEntityFactory.CreateProduct(furniture.Id, "Desk"),
             TestEntityFactory.CreateProduct(electronics.Id, "Keyboard"));
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var products = await repository.GetByCategoryIdAsync(furniture.Id, page: 1, pageSize: 10);
+        var products = await repository.GetByCategoryIdAsync(furniture.Id, page: 1, pageSize: 10, TestContext.Current.CancellationToken);
 
         Assert.Equal(["Chair", "Desk"], products.Select(product => product.ProductName).ToArray());
     }

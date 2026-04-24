@@ -16,7 +16,7 @@ public class AnalyticsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetSalesStatistics_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/analytics/sales");
+        var response = await _client.GetAsync("/api/analytics/sales", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -26,7 +26,7 @@ public class AnalyticsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetOrdersStatistics_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/analytics/orders");
+        var response = await _client.GetAsync("/api/analytics/orders", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
