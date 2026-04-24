@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Backend.Application.Common.Abstractions;
-using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Interfaces.Services;
 using Backend.Application.Services;
 
@@ -29,13 +27,6 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<ISellerVerificationService, SellerVerificationService>();
-
-        // IMPORTANT: Replace the following fake implementations with actual implementations when they are ready.
-        services.AddScoped<IPaymentRepository, FakePaymentRepository>();
-        services.AddScoped<IDateTimeProvider, FakeDateTimeProvider>();
-        services.AddScoped<IPasswordHasher, FakePasswordHasher>();
-        services.AddScoped<ICurrentUserProvider, FakeCurrentUserProvider>();
-        services.AddScoped<IAuthTokenGenerator, FakeAuthTokenGenerator>();
 
         return services;
     }

@@ -1,4 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
+using Backend.Infrastructure.Auth;
 using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
@@ -29,6 +31,9 @@ public static class DependencyInjection
         services.AddSingleton(Options.Create(olistOptions));
         services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
         services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
+        services.AddScoped<IDateTimeProvider, InfrastructureDateTimeProvider>();
+        services.AddScoped<IPasswordHasher, InfrastructurePasswordHasher>();
+        services.AddScoped<IAuthTokenGenerator, InfrastructureAuthTokenGenerator>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -38,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IProductListingRepository, ProductListingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
