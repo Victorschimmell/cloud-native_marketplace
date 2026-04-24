@@ -26,6 +26,7 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(connectionString));
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         var olistOptions = BuildOlistSeedOptions(configuration);
         services.AddSingleton(Options.Create(olistOptions));

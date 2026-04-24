@@ -34,18 +34,17 @@ internal sealed class ShipmentRepository(ApplicationDbContext dbContext) : IShip
     public async Task AddAsync(Shipment shipment, CancellationToken cancellationToken = default)
     {
         await dbContext.Shipments.AddAsync(shipment, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
     {
         dbContext.Shipments.Update(shipment);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Shipment shipment, CancellationToken cancellationToken = default)
     {
         dbContext.Shipments.Remove(shipment);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

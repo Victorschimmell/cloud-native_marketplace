@@ -31,18 +31,17 @@ internal sealed class CustomerRepository(ApplicationDbContext dbContext) : ICust
     public async Task AddAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         await dbContext.Customers.AddAsync(customer, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         dbContext.Customers.Update(customer);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Customer customer, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Customer customer, CancellationToken cancellationToken = default)
     {
         dbContext.Customers.Remove(customer);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

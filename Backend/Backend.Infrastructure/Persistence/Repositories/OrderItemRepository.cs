@@ -34,18 +34,17 @@ internal sealed class OrderItemRepository(ApplicationDbContext dbContext) : IOrd
     public async Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
     {
         await dbContext.OrderItems.AddAsync(orderItem, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
     {
         dbContext.OrderItems.Update(orderItem);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(OrderItem orderItem, CancellationToken cancellationToken = default)
     {
         dbContext.OrderItems.Remove(orderItem);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.IntegrationTests.TestSupport;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed class OrderRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var user = TestEntityFactory.CreateUserAccount("orders@example.com");
         var address = TestEntityFactory.CreateAddress();
@@ -29,9 +31,11 @@ public sealed class OrderRepositoryTests
         await repository.AddAsync(
             TestEntityFactory.CreateOrder(customer.Id, address.Id, "ORD-001", DateTimeOffset.UtcNow.AddMinutes(-10)),
             TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateOrder(customer.Id, address.Id, "ORD-001", DateTimeOffset.UtcNow);
+        await repository.AddAsync(duplicate, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken));
     }
 }

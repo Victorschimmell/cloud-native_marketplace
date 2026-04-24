@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,7 @@ public sealed class RepositoryDITests
 
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -23,6 +25,7 @@ public sealed class RepositoryDITests
         services.AddScoped<IProductListingRepository, ProductListingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
@@ -55,6 +58,17 @@ public sealed class RepositoryDITests
         Assert.NotNull(dbContext.Model);
     }
 
+    [Fact]
+    public void UnitOfWork_CanBeResolved()
+    {
+        using var provider = BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        Assert.NotNull(unitOfWork);
+    }
+
     public static TheoryData<Type> RepositoryTypes =>
     [
         typeof(IUserAccountRepository),
@@ -65,6 +79,7 @@ public sealed class RepositoryDITests
         typeof(IProductListingRepository),
         typeof(IOrderRepository),
         typeof(IOrderItemRepository),
+        typeof(IPaymentRepository),
         typeof(IOrderReviewRepository),
         typeof(ICartRepository),
         typeof(IAuditLogRepository),
@@ -92,6 +107,7 @@ public sealed class RepositoryDITests
         using var scope = provider.CreateScope();
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var repository = scope.ServiceProvider.GetRequiredService<IProductCategoryRepository>();
@@ -103,6 +119,7 @@ public sealed class RepositoryDITests
         };
 
         await repository.AddAsync(category, TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var retrieved = await repository.GetByIdAsync(category.Id, TestContext.Current.CancellationToken);
 

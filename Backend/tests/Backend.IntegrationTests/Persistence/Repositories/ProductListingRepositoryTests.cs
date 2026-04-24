@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.IntegrationTests.TestSupport;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
@@ -31,6 +33,7 @@ public sealed class ProductListingRepositoryTests
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await repository.DeleteAsync(listing, TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var storedListing = await dbContext.ProductListings.SingleAsync(entity => entity.Id == listing.Id, TestContext.Current.CancellationToken);
         var productListings = await repository.GetByProductIdAsync(product.Id, TestContext.Current.CancellationToken);
@@ -47,6 +50,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller2@example.com");
         var otherSellerUser = TestEntityFactory.CreateUserAccount("seller3@example.com");
@@ -82,6 +86,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("sku-seller@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
@@ -95,9 +100,11 @@ public sealed class ProductListingRepositoryTests
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await repository.AddAsync(TestEntityFactory.CreateListing(seller.Id, product.Id, "SKU-001", 999m), TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateListing(seller.Id, product.Id, "SKU-001", 899m);
+        await repository.AddAsync(duplicate, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate, TestContext.Current.CancellationToken));
+        await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken));
     }
 }

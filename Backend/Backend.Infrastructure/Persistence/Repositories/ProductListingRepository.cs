@@ -44,19 +44,18 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task AddAsync(ProductListing listing, CancellationToken cancellationToken = default)
     {
         await dbContext.ProductListings.AddAsync(listing, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(ProductListing listing, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(ProductListing listing, CancellationToken cancellationToken = default)
     {
         dbContext.ProductListings.Update(listing);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default)
     {
         listing.IsDeleted = true;
         dbContext.ProductListings.Update(listing);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

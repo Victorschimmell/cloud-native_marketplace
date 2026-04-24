@@ -23,18 +23,17 @@ internal sealed class ProductCategoryRepository(ApplicationDbContext dbContext) 
     public async Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default)
     {
         await dbContext.ProductCategories.AddAsync(category, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
     {
         dbContext.ProductCategories.Update(category);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(ProductCategory category, CancellationToken cancellationToken = default)
     {
         dbContext.ProductCategories.Remove(category);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

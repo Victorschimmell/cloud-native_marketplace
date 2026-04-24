@@ -32,18 +32,17 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
     public async Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         await dbContext.OrderReviews.AddAsync(review, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         dbContext.OrderReviews.Update(review);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         dbContext.OrderReviews.Remove(review);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

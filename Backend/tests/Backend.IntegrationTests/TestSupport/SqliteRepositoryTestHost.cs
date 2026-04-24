@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure.Persistence;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
@@ -31,6 +32,7 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
 
         services.AddLogging();
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(connection));
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
         services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
 
@@ -46,6 +48,7 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
         services.AddScoped<IProductListingRepository, ProductListingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();

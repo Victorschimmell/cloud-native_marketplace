@@ -43,6 +43,5 @@ internal sealed class AuditLogRepository(ApplicationDbContext dbContext) : IAudi
     public async Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default)
     {
         await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

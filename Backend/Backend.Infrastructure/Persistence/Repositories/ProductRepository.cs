@@ -35,18 +35,17 @@ internal sealed class ProductRepository(ApplicationDbContext dbContext) : IProdu
     public async Task AddAsync(Product product, CancellationToken cancellationToken = default)
     {
         await dbContext.Products.AddAsync(product, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
     {
         dbContext.Products.Update(product);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Product product, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Product product, CancellationToken cancellationToken = default)
     {
         dbContext.Products.Remove(product);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }
