@@ -23,7 +23,7 @@ public sealed class CategoryService : ICategoryService
     public async Task<Result<IReadOnlyList<CategoryDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var categories = await _categoryRepository.GetAllAsync(cancellationToken);
-        return Result<IReadOnlyList<CategoryDto>>.Success(categories.Select(ApplicationMappings.ToDto).ToArray());
+        return Result<IReadOnlyList<CategoryDto>>.Success(categories.Select(ApplicationMappings.ToCategoryDto).ToArray());
     }
 
     public Task<Result<CategoryDto>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken = default)
