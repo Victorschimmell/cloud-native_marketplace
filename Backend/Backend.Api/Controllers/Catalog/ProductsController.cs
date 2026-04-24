@@ -14,11 +14,13 @@ public class ProductsController : ApiControllerBase
 {
     private readonly IProductService _productService;
     private readonly IReviewService _reviewService;
+    private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IProductService productService, IReviewService reviewService)
+    public ProductsController(IProductService productService, IReviewService reviewService, ILogger<ProductsController> logger)
     {
         _productService = productService;
         _reviewService = reviewService;
+        _logger = logger;
     }
 
     [HttpGet("{productId:guid}")]
@@ -28,15 +30,25 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PageResponse<ProductModel>>> GetProductsAsync([FromQuery][NotEmptyGuid] Guid? categoryId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<PageResponse<BrowseProductResponse>>> GetProductsAsync([FromQuery][NotEmptyGuid] Guid? categoryId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
-        if (categoryId.HasValue)
-        {
-            return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-        }
+        _logger.LogInformation(
+            "Browse products requested for category {CategoryId}, page {Page}, page size {PageSize}.",
+            categoryId,
+            pageRequest.Page,
+            pageRequest.PageSize);
 
-        // All products
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _productService.GetBrowseProductsAsync(categoryId, pageRequest.ToDto(), cancellationToken);
+
+        return HandleResult(
+            result,
+            page => new PageResponse<BrowseProductResponse>
+            {
+                Items = page.Items.Select(product => product.ToResponse()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
     }
 
     [HttpPost]

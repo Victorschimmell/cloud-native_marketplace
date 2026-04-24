@@ -6,6 +6,29 @@ export interface Product {
   price: number;
 }
 
+export interface BrowseProduct {
+  productId: string;
+  listingId: string;
+  categoryId: string;
+  productName: string;
+  description: string;
+  categoryName: string | null;
+  price: number;
+  stockQuantity: number;
+  productPhotosQty: number;
+  productWeightG: number;
+  productLengthCm: number;
+  productHeightCm: number;
+  productWidthCm: number;
+}
+
+export interface PageResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
 export interface User {
   id: string;
   name: string;

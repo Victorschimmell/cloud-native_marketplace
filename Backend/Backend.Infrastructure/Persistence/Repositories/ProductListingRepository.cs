@@ -1,5 +1,7 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Models;
 using Backend.Domain.Entities.Catalog;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +23,33 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(Guid? categoryId, PagedRequest request, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.ProductListings
+            .AsNoTracking()
+            .Include(l => l.Product)
+                .ThenInclude(p => p!.Category)
+            .Where(l =>
+                !l.IsDeleted &&
+                l.VisibilityStatus == ListingVisibilityStatus.Published &&
+                l.Product != null);
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(l => l.Product!.CategoryId == categoryId.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var listings = await query
+            .OrderByDescending(l => l.PublishedAtUtc ?? l.CreatedAtUtc)
+            .ThenBy(l => l.Product!.ProductName)
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<ProductListing>(listings, request.Page, request.PageSize, totalCount);
     }
 
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
