@@ -15,10 +15,10 @@ public sealed class CurrencyRepositoryTests
 
         var repository = scope.ServiceProvider.GetRequiredService<ICurrencyRepository>();
 
-        await repository.AddAsync(TestEntityFactory.CreateCurrency("USD", "US Dollar"));
+        await repository.AddAsync(TestEntityFactory.CreateCurrency("USD", "US Dollar"), TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateCurrency("USD", "Duplicate Dollar");
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate));
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate, TestContext.Current.CancellationToken));
     }
 }

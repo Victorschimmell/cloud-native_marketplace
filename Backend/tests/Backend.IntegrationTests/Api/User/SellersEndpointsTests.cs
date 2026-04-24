@@ -16,7 +16,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetSellers_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/sellers");
+        var response = await _client.GetAsync("/api/sellers", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -27,7 +27,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var sellerId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/sellers/{sellerId}");
+        var response = await _client.GetAsync($"/api/sellers/{sellerId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

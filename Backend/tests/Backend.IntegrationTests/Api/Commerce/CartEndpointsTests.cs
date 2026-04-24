@@ -26,7 +26,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest);
+        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -47,7 +47,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         {
             Content = JsonContent.Create(removeItemRequest)
         };
-        var response = await _client.SendAsync(request);
+        var response = await _client.SendAsync(request, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

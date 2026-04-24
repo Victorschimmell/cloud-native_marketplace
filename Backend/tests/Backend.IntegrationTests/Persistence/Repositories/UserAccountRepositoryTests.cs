@@ -15,10 +15,10 @@ public sealed class UserAccountRepositoryTests
 
         var repository = scope.ServiceProvider.GetRequiredService<IUserAccountRepository>();
 
-        await repository.AddAsync(TestEntityFactory.CreateUserAccount("duplicate@example.com"));
+        await repository.AddAsync(TestEntityFactory.CreateUserAccount("duplicate@example.com"), TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateUserAccount("duplicate@example.com");
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate));
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate, TestContext.Current.CancellationToken));
     }
 }

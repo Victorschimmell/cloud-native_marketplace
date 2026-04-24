@@ -27,7 +27,7 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         var invalidGuidFormat = "invalid-guid";
 
         // Act
-        var response = await _client.GetAsync($"/api/orders/{invalidGuidFormat}");
+        var response = await _client.GetAsync($"/api/orders/{invalidGuidFormat}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -49,11 +49,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest);
+        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("OrderId", content);
     }
 
@@ -73,11 +73,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/registration/seller", registerRequest);
+        var response = await _client.PostAsJsonAsync("/api/registration/seller", registerRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("Email", content);
     }
 
@@ -94,11 +94,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/reviews", recordRequest);
+        var response = await _client.PostAsJsonAsync("/api/reviews", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("ReviewScore", content);
     }
 
@@ -122,11 +122,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/products", createRequest);
+        var response = await _client.PostAsJsonAsync("/api/products", createRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("ProductName", content);
     }
 
@@ -144,11 +144,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest);
+        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         // Should indicate that at least one of the three fields is required
         Assert.True(content.Contains("UserId") || content.Contains("CartId") || content.Contains("SessionId"));
     }
@@ -171,7 +171,7 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest);
+        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

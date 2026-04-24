@@ -3,10 +3,10 @@
     <AspNetCoreVersion>10.0.3</AspNetCoreVersion>
     <EntityFrameworkCoreVersion>10.0.5</EntityFrameworkCoreVersion>
     <EntityFrameworkCoreDesignVersion>10.0.5</EntityFrameworkCoreDesignVersion>
-    <NpgsqlEfCoreVersion>10.0.0</NpgsqlEfCoreVersion>
-    <NetTestSdkVersion>17.14.1</NetTestSdkVersion>
-    <XunitVersion>2.9.3</XunitVersion>
-    <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
-    <CoverletCollectorVersion>6.0.4</CoverletCollectorVersion>
+    <NpgsqlEfCoreVersion>10.0.1</NpgsqlEfCoreVersion>
+    <NetTestSdkVersion>18.4.0</NetTestSdkVersion>
+    <XunitVersion>3.2.2</XunitVersion>
+    <XunitRunnerVersion>3.1.5</XunitRunnerVersion>
+    <CoverletCollectorVersion>8.0.1</CoverletCollectorVersion>
   </PropertyGroup>
 </Project>

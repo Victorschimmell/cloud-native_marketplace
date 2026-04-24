@@ -25,7 +25,7 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/reviews", recordRequest);
+        var response = await _client.PostAsJsonAsync("/api/reviews", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

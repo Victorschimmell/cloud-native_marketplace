@@ -92,7 +92,7 @@ public sealed class RepositoryDITests
         using var scope = provider.CreateScope();
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var repository = scope.ServiceProvider.GetRequiredService<IProductCategoryRepository>();
 
@@ -102,9 +102,9 @@ public sealed class RepositoryDITests
             CategoryNameEn = "Electronics"
         };
 
-        await repository.AddAsync(category);
+        await repository.AddAsync(category, TestContext.Current.CancellationToken);
 
-        var retrieved = await repository.GetByIdAsync(category.Id);
+        var retrieved = await repository.GetByIdAsync(category.Id, TestContext.Current.CancellationToken);
 
         Assert.NotNull(retrieved);
         Assert.Equal("Eletronicos", retrieved.CategoryNamePt);

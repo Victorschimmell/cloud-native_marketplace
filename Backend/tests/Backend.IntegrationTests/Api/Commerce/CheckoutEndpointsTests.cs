@@ -28,7 +28,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/checkout", checkoutRequest);
+        var response = await _client.PostAsJsonAsync("/api/checkout", checkoutRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -44,7 +44,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.GetAsync($"/api/checkout/preview?userId={previewRequest.UserId}");
+        var response = await _client.GetAsync($"/api/checkout/preview?userId={previewRequest.UserId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

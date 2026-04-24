@@ -24,12 +24,14 @@ public sealed class OrderRepositoryTests
         dbContext.UserAccounts.Add(user);
         dbContext.Addresses.Add(address);
         dbContext.Customers.Add(customer);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await repository.AddAsync(TestEntityFactory.CreateOrder(customer.Id, address.Id, "ORD-001", DateTimeOffset.UtcNow.AddMinutes(-10)));
+        await repository.AddAsync(
+            TestEntityFactory.CreateOrder(customer.Id, address.Id, "ORD-001", DateTimeOffset.UtcNow.AddMinutes(-10)),
+            TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateOrder(customer.Id, address.Id, "ORD-001", DateTimeOffset.UtcNow);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate));
+        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate, TestContext.Current.CancellationToken));
     }
 }

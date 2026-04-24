@@ -23,7 +23,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var blockRequest = new AdminBlockUserRequest();
 
         // Act
-        var response = await _client.PostAsJsonAsync($"/api/admin/users/{userId}/block", blockRequest);
+        var response = await _client.PostAsJsonAsync($"/api/admin/users/{userId}/block", blockRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -37,7 +37,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var unblockRequest = new AdminUnblockUserRequest();
 
         // Act
-        var response = await _client.PostAsJsonAsync($"/api/admin/users/{userId}/unblock", unblockRequest);
+        var response = await _client.PostAsJsonAsync($"/api/admin/users/{userId}/unblock", unblockRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -53,7 +53,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.GetAsync($"/api/admin/audit-logs?actorUserId={getLogsRequest.ActorUserId}");
+        var response = await _client.GetAsync($"/api/admin/audit-logs?actorUserId={getLogsRequest.ActorUserId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -63,7 +63,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetSellerVerificationRequests_ReturnsNotImplemented()
     {
         // Act
-        var response = await _client.GetAsync("/api/admin/sellers/verifications");
+        var response = await _client.GetAsync("/api/admin/sellers/verifications", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -81,7 +81,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync($"/api/admin/sellers/{sellerId}/verify", verifyRequest);
+        var response = await _client.PostAsJsonAsync($"/api/admin/sellers/{sellerId}/verify", verifyRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

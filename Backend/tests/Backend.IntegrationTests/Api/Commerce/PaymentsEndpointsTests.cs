@@ -19,7 +19,7 @@ public class PaymentsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var orderId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/payments/{orderId}");
+        var response = await _client.GetAsync($"/api/payments/{orderId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
@@ -39,7 +39,7 @@ public class PaymentsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest);
+        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);

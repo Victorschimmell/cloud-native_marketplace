@@ -17,7 +17,7 @@ public class MarketplaceApiFactory : WebApplicationFactory<Program>, IAsyncLifet
             "Host=localhost;Port=5433;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _databaseName = $"marketplace_api_test_{Guid.NewGuid():N}";
 
@@ -43,7 +43,7 @@ public class MarketplaceApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("Database:ApplyMigrationsOnStartup", "true");
     }
 
-    public async Task DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         await using var adminConnection = new NpgsqlConnection(_adminConnectionString);
         await adminConnection.OpenAsync();
@@ -64,5 +64,7 @@ public class MarketplaceApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await using var dropCommand = adminConnection.CreateCommand();
         dropCommand.CommandText = $"""DROP DATABASE IF EXISTS "{_databaseName}" """;
         await dropCommand.ExecuteNonQueryAsync();
+
+        await base.DisposeAsync();
     }
 }
