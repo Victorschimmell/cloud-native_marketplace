@@ -5,7 +5,7 @@
     <NpgsqlEfCoreVersion>10.0.0</NpgsqlEfCoreVersion>
     <ScalarVersion>2.12.54</ScalarVersion>
     <NetTestSdkVersion>17.14.1</NetTestSdkVersion>
-    <XunitVersion>2.9.3</XunitVersion>
+    <XunitVersion>3.1.4</XunitVersion>
     <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
     <CoverletCollectorVersion>6.0.4</CoverletCollectorVersion>
   </PropertyGroup>
