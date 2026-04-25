@@ -14,7 +14,7 @@ public class MarketplaceApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     public MarketplaceApiFactory()
     {
         _adminConnectionString = Environment.GetEnvironmentVariable("SeedTests__AdminConnectionString") ??
-            "Host=localhost;Port=5433;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
+            "Host=localhost;Port=5434;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
     }
 
     public async ValueTask InitializeAsync()

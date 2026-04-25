@@ -34,14 +34,14 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
 
         while (dir is not null)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "docker-compose.yml")))
+            if (File.Exists(Path.Combine(dir.FullName, "docker-compose.test.yml")))
                 return dir.FullName;
 
             dir = dir.Parent;
         }
 
         throw new InvalidOperationException(
-            "docker-compose.yml not found in any parent directory of the test output directory."
+            "docker-compose.test.yml not found in any parent directory of the test output directory."
         );
     }
 
@@ -52,7 +52,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
             StartInfo = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = $"compose -p {_composeProjectName} {args}",
+                Arguments = $"compose -f docker-compose.test.yml -p {_composeProjectName} {args}",
                 WorkingDirectory = _composeRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -74,7 +74,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
     {
         var connectionString =
             Environment.GetEnvironmentVariable("SeedTests__AdminConnectionString")
-            ?? "Host=localhost;Port=5433;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
+            ?? "Host=localhost;Port=5434;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
 
         for (var attempt = 0; attempt < 30; attempt++)
         {
