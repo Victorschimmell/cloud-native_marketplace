@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Operation.AuditLog;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;

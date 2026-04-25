@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Commerce.Shipments;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class ShipmentsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;
