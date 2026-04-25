@@ -11,10 +11,12 @@ namespace Backend.IntegrationTests.TestSupport;
 public sealed class PostgresDockerFixture : IAsyncLifetime
 {
     private string _composeRoot = string.Empty;
+    private string _composeProjectName = string.Empty;
 
     public async Task InitializeAsync()
     {
         _composeRoot = FindComposeRoot();
+        _composeProjectName = $"marketplace-tests-{Guid.NewGuid():N}";
         await RunComposeAsync("up -d postgres");
         await WaitForPostgresAsync();
     }
@@ -39,7 +41,8 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
         }
 
         throw new InvalidOperationException(
-            "docker-compose.yml not found in any parent directory of the test output directory.");
+            "docker-compose.yml not found in any parent directory of the test output directory."
+        );
     }
 
     private async Task RunComposeAsync(string args)
@@ -49,7 +52,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
             StartInfo = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = $"compose {args}",
+                Arguments = $"compose -p {_composeProjectName} {args}",
                 WorkingDirectory = _composeRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
