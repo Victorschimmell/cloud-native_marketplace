@@ -13,7 +13,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
     private string _composeRoot = string.Empty;
     private string _composeProjectName = string.Empty;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _composeRoot = FindComposeRoot();
         _composeProjectName = $"marketplace-tests-{Guid.NewGuid():N}";
@@ -21,7 +21,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
         await WaitForPostgresAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await RunComposeAsync("down --rmi all -v");
     }
