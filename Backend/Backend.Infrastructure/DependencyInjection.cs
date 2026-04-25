@@ -1,5 +1,9 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
+using Backend.Infrastructure.Auth;
+using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
 using Backend.Infrastructure.Persistence.Repositories;
@@ -22,13 +26,19 @@ public static class DependencyInjection
             throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
         }
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddScoped<AuditTimestampInterceptor>();
+        services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+            options.UseNpgsql(connectionString)
+                .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         var olistOptions = BuildOlistSeedOptions(configuration);
         services.AddSingleton(Options.Create(olistOptions));
         services.AddScoped<ICsvDatasetReader, CsvDatasetReader>();
         services.AddScoped<IOlistDataSeeder, OlistDataSeeder>();
+        services.AddScoped<IDateTimeProvider, InfrastructureDateTimeProvider>();
+        services.AddScoped<IPasswordHasher, InfrastructurePasswordHasher>();
+        services.AddScoped<IAuthTokenGenerator, InfrastructureAuthTokenGenerator>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -38,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IProductListingRepository, ProductListingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();

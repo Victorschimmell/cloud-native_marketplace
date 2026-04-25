@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.IntegrationTests.TestSupport;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
@@ -28,12 +30,13 @@ public sealed class ProductListingRepositoryTests
         dbContext.ProductCategories.Add(category);
         dbContext.Products.Add(product);
         dbContext.ProductListings.Add(listing);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await repository.DeleteAsync(listing);
+        await repository.DeleteAsync(listing, TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var storedListing = await dbContext.ProductListings.SingleAsync(entity => entity.Id == listing.Id);
-        var productListings = await repository.GetByProductIdAsync(product.Id);
+        var storedListing = await dbContext.ProductListings.SingleAsync(entity => entity.Id == listing.Id, TestContext.Current.CancellationToken);
+        var productListings = await repository.GetByProductIdAsync(product.Id, TestContext.Current.CancellationToken);
 
         Assert.True(storedListing.IsDeleted);
         Assert.Empty(productListings);
@@ -47,6 +50,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller2@example.com");
         var otherSellerUser = TestEntityFactory.CreateUserAccount("seller3@example.com");
@@ -67,9 +71,9 @@ public sealed class ProductListingRepositoryTests
         dbContext.ProductCategories.Add(category);
         dbContext.Products.AddRange(targetProduct, otherProduct);
         dbContext.ProductListings.AddRange(lowPrice, highPrice, deleted, unrelated);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var listings = await repository.GetByProductIdAsync(targetProduct.Id);
+        var listings = await repository.GetByProductIdAsync(targetProduct.Id, TestContext.Current.CancellationToken);
 
         Assert.Equal(["CONSOLE-LOW", "CONSOLE-HIGH"], listings.Select(listing => listing.Sku).ToArray());
     }
@@ -82,6 +86,7 @@ public sealed class ProductListingRepositoryTests
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var repository = scope.ServiceProvider.GetRequiredService<IProductListingRepository>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("sku-seller@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
@@ -92,12 +97,14 @@ public sealed class ProductListingRepositoryTests
         dbContext.Sellers.Add(seller);
         dbContext.ProductCategories.Add(category);
         dbContext.Products.Add(product);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await repository.AddAsync(TestEntityFactory.CreateListing(seller.Id, product.Id, "SKU-001", 999m));
+        await repository.AddAsync(TestEntityFactory.CreateListing(seller.Id, product.Id, "SKU-001", 999m), TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var duplicate = TestEntityFactory.CreateListing(seller.Id, product.Id, "SKU-001", 899m);
+        await repository.AddAsync(duplicate, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => repository.AddAsync(duplicate));
+        await Assert.ThrowsAsync<DbUpdateException>(() => unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken));
     }
 }

@@ -26,21 +26,21 @@ internal sealed class CurrencyRepository(ApplicationDbContext dbContext) : ICurr
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(Currency currency, CancellationToken cancellationToken = default)
+    public Task AddAsync(Currency currency, CancellationToken cancellationToken = default)
     {
-        await dbContext.Currencies.AddAsync(currency, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.Currencies.Add(currency);
+        return Task.CompletedTask;
     }
 
-    public async Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default)
     {
         dbContext.Currencies.Update(currency);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default)
     {
         dbContext.Currencies.Remove(currency);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

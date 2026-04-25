@@ -21,21 +21,29 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
             .ToListAsync(cancellationToken);
     }
 
-    public async Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<OrderReview>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        await dbContext.OrderReviews.AddAsync(review, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return await dbContext.OrderReviews
+            .Where(review => review.Order != null && review.Order.Items.Any(item => item.ProductId == productId))
+            .OrderBy(review => review.ReviewCreationDateUtc)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
+    {
+        dbContext.OrderReviews.Add(review);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         dbContext.OrderReviews.Update(review);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         dbContext.OrderReviews.Remove(review);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

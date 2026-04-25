@@ -1,5 +1,8 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
+using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +15,12 @@ public sealed class RepositoryDITests
     {
         var services = new ServiceCollection();
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+        services.AddScoped<IDateTimeProvider, InfrastructureDateTimeProvider>();
+        services.AddScoped<AuditTimestampInterceptor>();
+        services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
+            options.UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
@@ -23,6 +30,7 @@ public sealed class RepositoryDITests
         services.AddScoped<IProductListingRepository, ProductListingRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IOrderItemRepository, OrderItemRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
@@ -55,6 +63,17 @@ public sealed class RepositoryDITests
         Assert.NotNull(dbContext.Model);
     }
 
+    [Fact]
+    public void UnitOfWork_CanBeResolved()
+    {
+        using var provider = BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        Assert.NotNull(unitOfWork);
+    }
+
     public static TheoryData<Type> RepositoryTypes =>
     [
         typeof(IUserAccountRepository),
@@ -65,6 +84,7 @@ public sealed class RepositoryDITests
         typeof(IProductListingRepository),
         typeof(IOrderRepository),
         typeof(IOrderItemRepository),
+        typeof(IPaymentRepository),
         typeof(IOrderReviewRepository),
         typeof(ICartRepository),
         typeof(IAuditLogRepository),
@@ -92,7 +112,8 @@ public sealed class RepositoryDITests
         using var scope = provider.CreateScope();
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
 
         var repository = scope.ServiceProvider.GetRequiredService<IProductCategoryRepository>();
 
@@ -102,12 +123,48 @@ public sealed class RepositoryDITests
             CategoryNameEn = "Electronics"
         };
 
-        await repository.AddAsync(category);
+        await repository.AddAsync(category, TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var retrieved = await repository.GetByIdAsync(category.Id);
+        var retrieved = await repository.GetByIdAsync(category.Id, TestContext.Current.CancellationToken);
 
         Assert.NotNull(retrieved);
         Assert.Equal("Eletronicos", retrieved.CategoryNamePt);
         Assert.Equal("Electronics", retrieved.CategoryNameEn);
+    }
+
+    [Fact]
+    public async Task UnitOfWork_SetsAuditTimestamps_ForAuditableEntities()
+    {
+        using var provider = BuildServiceProvider();
+        using var scope = provider.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+
+        var category = new Domain.Entities.Catalog.ProductCategory
+        {
+            CategoryNamePt = "Livros",
+            CategoryNameEn = "Books"
+        };
+        dbContext.ProductCategories.Add(category);
+
+        var product = new Domain.Entities.Catalog.Product
+        {
+            CategoryId = category.Id,
+            ProductName = "Domain-Driven Design",
+            Description = "Blue book",
+            ProductNameLength = 20,
+            ProductDescriptionLength = 9
+        };
+
+        var repository = scope.ServiceProvider.GetRequiredService<IProductRepository>();
+        await repository.AddAsync(product, TestContext.Current.CancellationToken);
+        await unitOfWork.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(default, product.CreatedAtUtc);
+        Assert.NotEqual(default, product.UpdatedAtUtc);
+        Assert.Equal(product.CreatedAtUtc, product.UpdatedAtUtc);
     }
 }

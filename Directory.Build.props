@@ -1,12 +1,12 @@
 <Project>
   <PropertyGroup>
     <AspNetCoreVersion>10.0.3</AspNetCoreVersion>
-    <EntityFrameworkCoreVersion>10.0.0</EntityFrameworkCoreVersion>
-    <NpgsqlEfCoreVersion>10.0.0</NpgsqlEfCoreVersion>
-    <ScalarVersion>2.12.54</ScalarVersion>
-    <NetTestSdkVersion>17.14.1</NetTestSdkVersion>
-    <XunitVersion>3.1.4</XunitVersion>
-    <XunitRunnerVersion>3.1.4</XunitRunnerVersion>
-    <CoverletCollectorVersion>6.0.4</CoverletCollectorVersion>
+    <EntityFrameworkCoreVersion>10.0.5</EntityFrameworkCoreVersion>
+    <EntityFrameworkCoreDesignVersion>10.0.5</EntityFrameworkCoreDesignVersion>
+    <NpgsqlEfCoreVersion>10.0.1</NpgsqlEfCoreVersion>
+    <NetTestSdkVersion>18.4.0</NetTestSdkVersion>
+    <XunitVersion>3.2.2</XunitVersion>
+    <XunitRunnerVersion>3.1.5</XunitRunnerVersion>
+    <CoverletCollectorVersion>8.0.1</CoverletCollectorVersion>
   </PropertyGroup>
 </Project>
