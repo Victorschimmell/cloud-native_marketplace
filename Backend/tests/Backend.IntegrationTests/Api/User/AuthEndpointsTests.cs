@@ -5,6 +5,7 @@ using Backend.Api.Contracts.User.Auth;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class AuthEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;

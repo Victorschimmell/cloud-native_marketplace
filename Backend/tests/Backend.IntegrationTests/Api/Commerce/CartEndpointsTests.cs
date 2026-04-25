@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Commerce.Cart;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;

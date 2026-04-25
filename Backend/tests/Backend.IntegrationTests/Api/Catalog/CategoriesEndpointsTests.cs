@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Catalog.Categories;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class CategoriesEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;

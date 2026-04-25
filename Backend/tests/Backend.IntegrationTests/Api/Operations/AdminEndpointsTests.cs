@@ -6,6 +6,7 @@ using Backend.Api.Contracts.User.SellerVerification;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;
