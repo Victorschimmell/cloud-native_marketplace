@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.IntegrationTests.Persistence.Seeding;
 
+[Collection("PostgresDocker")]
 public sealed class OlistDataSeederPostgresTests
 {
     [Fact]

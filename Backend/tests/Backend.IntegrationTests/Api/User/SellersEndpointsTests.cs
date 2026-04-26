@@ -3,6 +3,7 @@ using Backend.Api;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;

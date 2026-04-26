@@ -5,6 +5,7 @@ using Backend.Api.Contracts.User.Registration;
 
 namespace Backend.IntegrationTests;
 
+[Collection("PostgresDocker")]
 public class RegistrationEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;
