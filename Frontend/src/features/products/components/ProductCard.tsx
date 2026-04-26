@@ -8,7 +8,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ priceFormatter, product }: ProductCardProps) {
-  const stockText = product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Stock pending';
+  const stockText = product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock';
 
   return (
     <Link

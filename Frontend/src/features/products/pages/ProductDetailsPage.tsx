@@ -61,7 +61,7 @@ export default function ProductDetailsPage() {
   }, [currency, id, listingId]);
 
   async function addToCart() {
-    if (!product) {
+    if (!product || product.stockQuantity <= 0) {
       return;
     }
 
@@ -81,12 +81,18 @@ export default function ProductDetailsPage() {
 
   function updateQuantity(value: string) {
     const nextQuantity = Number(value);
-    setQuantity(Number.isFinite(nextQuantity) && nextQuantity > 0 ? nextQuantity : 1);
+    if (!Number.isFinite(nextQuantity) || nextQuantity < 1) {
+      setQuantity(1);
+      return;
+    }
+
+    setQuantity(product?.stockQuantity ? Math.min(nextQuantity, product.stockQuantity) : nextQuantity);
   }
 
   const title = product?.productName ?? 'Product Details';
   const summary = product?.categoryName ?? (isLoading ? 'Loading product...' : undefined);
-  const stockText = product && product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Stock pending';
+  const isInStock = Boolean(product && product.stockQuantity > 0);
+  const stockText = isInStock && product ? `${product.stockQuantity} in stock` : 'Out of stock';
 
   return (
     <PageSkeleton summary={summary} title={title} titleId="product-details-page-title">
@@ -158,14 +164,16 @@ export default function ProductDetailsPage() {
                 <label className="product-details-page__quantity">
                   Quantity
                   <input
+                    disabled={!isInStock}
+                    max={product.stockQuantity > 0 ? product.stockQuantity : undefined}
                     min="1"
                     onChange={(event) => updateQuantity(event.target.value)}
                     type="number"
                     value={quantity}
                   />
                 </label>
-                <button disabled={isAdding} onClick={addToCart} type="button">
-                  {isAdding ? 'Adding...' : 'Add to cart'}
+                <button disabled={isAdding || !isInStock} onClick={addToCart} type="button">
+                  {isAdding ? 'Adding...' : isInStock ? 'Add to cart' : 'Out of stock'}
                 </button>
               </div>
 

@@ -88,6 +88,42 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task AddCartItem_WhenListingIsOutOfStock_ReturnsBadRequest()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Out of stock cart product", "CART-OUT-001", 39.95m, inventoryQuantity: 0);
+        var addItemRequest = new AddCartItemRequest
+        {
+            ListingId = listingId,
+            Quantity = 1
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddCartItem_WhenQuantityExceedsStock_ReturnsBadRequest()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Limited stock cart product", "CART-LIMIT-001", 39.95m, inventoryQuantity: 2);
+        var addItemRequest = new AddCartItemRequest
+        {
+            ListingId = listingId,
+            Quantity = 3
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/cart", addItemRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task RemoveCartItem_ReturnsNotImplemented()
     {
         // Arrange
@@ -108,7 +144,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
     }
 
-    private async Task<Guid> SeedProductListingAsync(string productName, string sku, decimal price)
+    private async Task<Guid> SeedProductListingAsync(string productName, string sku, decimal price, int inventoryQuantity = 10)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -117,6 +153,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var category = TestEntityFactory.CreateCategory("cart_category", "Cart category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, sku, price);
+        listing.InventoryQuantity = inventoryQuantity;
 
         dbContext.UserAccounts.Add(sellerUser);
         dbContext.Sellers.Add(seller);

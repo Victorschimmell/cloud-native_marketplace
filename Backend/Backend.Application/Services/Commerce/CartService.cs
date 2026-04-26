@@ -50,7 +50,12 @@ public sealed class CartService : ICartService
             return Result<CartDto>.NotFound("Product listing was not found.");
         }
 
-        if (listing.InventoryQuantity > 0 && request.Quantity > listing.InventoryQuantity)
+        if (listing.InventoryQuantity <= 0)
+        {
+            return Result<CartDto>.ValidationFailure("Product listing is out of stock.");
+        }
+
+        if (request.Quantity > listing.InventoryQuantity)
         {
             return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
         }
@@ -76,7 +81,7 @@ public sealed class CartService : ICartService
         else
         {
             var newQuantity = existingItem.Quantity + request.Quantity;
-            if (listing.InventoryQuantity > 0 && newQuantity > listing.InventoryQuantity)
+            if (newQuantity > listing.InventoryQuantity)
             {
                 return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
             }

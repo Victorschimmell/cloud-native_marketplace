@@ -54,6 +54,7 @@ public sealed class OlistDataSeederTests
         var listing = await dbContext.ProductListings
             .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2", TestContext.Current.CancellationToken);
         Assert.Equal(60m, listing.ListingPrice);
+        Assert.InRange(listing.InventoryQuantity, 0, 10);
 
         var importedReviews = await dbContext.OrderReviews
             .Where(review => review.Order!.OrderNumber == "order-3")
