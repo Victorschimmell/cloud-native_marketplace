@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
+import { getCurrencyLocale, useCurrency } from '../../../shared/currency/CurrencyContext';
 import { cartApi } from '../../cart/api/cartApi';
 import { productApi } from '../api/productApi';
 import type { ProductDetails } from '../types';
@@ -18,9 +19,10 @@ export default function ProductDetailsPage() {
   const [quantity, setQuantity] = useState(1);
 
   const listingId = searchParams.get('listingId');
+  const { currency } = useCurrency();
   const priceFormatter = useMemo(
-    () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
-    [],
+    () => new Intl.NumberFormat(getCurrencyLocale(product?.currencyCode ?? currency), { style: 'currency', currency: product?.currencyCode ?? currency }),
+    [currency, product?.currencyCode],
   );
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function ProductDetailsPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await productApi.getProduct(id, listingId, abortController.signal);
+        const response = await productApi.getProduct(id, listingId, currency, abortController.signal);
         setProduct(response);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
@@ -56,7 +58,7 @@ export default function ProductDetailsPage() {
     return () => {
       abortController.abort();
     };
-  }, [id, listingId]);
+  }, [currency, id, listingId]);
 
   async function addToCart() {
     if (!product) {

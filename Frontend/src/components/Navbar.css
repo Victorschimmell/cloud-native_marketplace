@@ -1,0 +1,152 @@
+.navbar {
+  width: 100%;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  padding: 16px 0;
+}
+
+.navbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.navbar__brand {
+  color: var(--primary-color);
+  font-size: 28px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.navbar__links,
+.navbar__actions {
+  display: flex;
+  align-items: center;
+}
+
+.navbar__links {
+  gap: 32px;
+  font-size: 15px;
+}
+
+.navbar__links a {
+  color: var(--text-dark);
+}
+
+.navbar__actions {
+  gap: 14px;
+}
+
+.navbar__currency {
+  position: relative;
+  padding: 8px 0;
+}
+
+.navbar__currency-trigger {
+  border: 0;
+  background: transparent;
+  color: var(--text-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0;
+}
+
+.navbar__currency-trigger::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 10px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.navbar__currency-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  display: none;
+  min-width: 214px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
+  padding: 8px 0;
+}
+
+.navbar__currency:hover .navbar__currency-menu,
+.navbar__currency:focus-within .navbar__currency-menu,
+.navbar__currency[data-open="true"] .navbar__currency-menu {
+  display: grid;
+}
+
+.navbar__currency-menu button {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 5px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.navbar__currency-menu button span {
+  font-weight: 800;
+}
+
+.navbar__currency-menu button:hover,
+.navbar__currency-menu button[aria-pressed="true"] {
+  background: #eff6ff;
+  color: var(--primary-color);
+}
+
+.navbar__utility-divider {
+  width: 1px;
+  height: 24px;
+  background: #e5e7eb;
+}
+
+.navbar__login,
+.navbar__register {
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 8px 24px;
+}
+
+.navbar__login {
+  border: 1px solid #d1d5db;
+  color: var(--text-dark);
+}
+
+.navbar__register {
+  background: var(--primary-color);
+  color: var(--text-light);
+}
+
+@media (max-width: 960px) {
+  .navbar__inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .navbar__links,
+  .navbar__actions {
+    flex-wrap: wrap;
+  }
+}

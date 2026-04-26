@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import StatusMessage from '../../../shared/components/StatusMessage';
+import { getCurrencyLocale, useCurrency } from '../../../shared/currency/CurrencyContext';
 import { productApi } from '../api/productApi';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
@@ -21,10 +22,11 @@ export default function ProductListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortOption, setSortOption] = useState<ProductSortOption>('newest');
+  const { currency } = useCurrency();
 
   const priceFormatter = useMemo(
-    () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
-    [],
+    () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
+    [currency],
   );
 
   const totalPages = Math.max(1, Math.ceil(totalCount / productPageSize));
@@ -59,6 +61,7 @@ export default function ProductListPage() {
         setError(null);
         const response = await productApi.getProducts(page, productPageSize, {
           categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
+          currency,
           search: searchTerm.trim() || undefined,
           signal: abortController.signal,
           sort: sortOption,
@@ -84,7 +87,7 @@ export default function ProductListPage() {
     return () => {
       abortController.abort();
     };
-  }, [categoryFilter, page, searchTerm, sortOption]);
+  }, [categoryFilter, currency, page, searchTerm, sortOption]);
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(1, currentPage - 1));

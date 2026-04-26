@@ -27,8 +27,14 @@ public sealed class ProductService : IProductService
         return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
-    public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, string? currency, CancellationToken cancellationToken = default)
     {
+        var currencyCode = CurrencyConversion.NormalizeOrDefault(currency);
+        if (!CurrencyConversion.IsSupported(currencyCode))
+        {
+            return Result<ProductDetailsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var listing = await _productListingRepository.GetAvailableProductDetailAsync(productId, listingId, cancellationToken);
 
         if (listing is null)
@@ -36,7 +42,8 @@ public sealed class ProductService : IProductService
             return Result<ProductDetailsDto>.NotFound("Product was not found.");
         }
 
-        return Result<ProductDetailsDto>.Success(listing.ToProductDetailsDto());
+        return Result<ProductDetailsDto>.Success(
+            listing.ToProductDetailsDto(currencyCode, CurrencyConversion.FromBrl(listing.ListingPrice, currencyCode)));
     }
 
     public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
@@ -51,8 +58,16 @@ public sealed class ProductService : IProductService
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Sort must be one of newest, price-asc, price-desc, or name-asc.");
         }
 
+        var currencyCode = CurrencyConversion.NormalizeOrDefault(request.Currency);
+        if (!CurrencyConversion.IsSupported(currencyCode))
+        {
+            return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var listings = await _productListingRepository.GetAvailableForBrowseAsync(request, cancellationToken);
-        var products = listings.Items.Select(ApplicationMappings.ToBrowseDto).ToArray();
+        var products = listings.Items
+            .Select(listing => listing.ToBrowseDto(currencyCode, CurrencyConversion.FromBrl(listing.ListingPrice, currencyCode)))
+            .ToArray();
 
         return Result<PagedResult<BrowseProductDto>>.Success(
             new PagedResult<BrowseProductDto>(products, listings.Page, listings.PageSize, listings.TotalCount));

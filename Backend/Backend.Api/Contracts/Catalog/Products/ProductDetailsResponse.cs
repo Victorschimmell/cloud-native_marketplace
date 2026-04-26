@@ -9,6 +9,7 @@ public sealed record ProductDetailsResponse
     public required string Description { get; init; }
     public required string? CategoryName { get; init; }
     public required decimal Price { get; init; }
+    public required string CurrencyCode { get; init; }
     public required int StockQuantity { get; init; }
     public required int ProductPhotosQty { get; init; }
     public required int ProductWeightG { get; init; }

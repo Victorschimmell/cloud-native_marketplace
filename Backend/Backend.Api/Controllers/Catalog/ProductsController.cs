@@ -28,11 +28,12 @@ public class ProductsController : ApiControllerBase
     public async Task<ActionResult<ProductDetailsResponse>> GetByIdAsync(
         [NotEmptyGuid] Guid productId,
         [FromQuery][NotEmptyGuid] Guid? listingId,
+        [FromQuery] string? currency,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Product details requested for product {ProductId} and listing {ListingId}.", productId, listingId);
+        _logger.LogInformation("Product details requested for product {ProductId}, listing {ListingId}, currency {Currency}.", productId, listingId, currency);
 
-        var result = await _productService.GetDetailsAsync(productId, listingId, cancellationToken);
+        var result = await _productService.GetDetailsAsync(productId, listingId, currency, cancellationToken);
 
         return HandleResult(result, product => product.ToResponse());
     }
@@ -42,14 +43,16 @@ public class ProductsController : ApiControllerBase
         [FromQuery][NotEmptyGuid] Guid? categoryId,
         [FromQuery] string? search,
         [FromQuery] string? sort,
+        [FromQuery] string? currency,
         [FromQuery] PageRequest pageRequest,
         CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "Browse products requested for category {CategoryId}, search {Search}, sort {Sort}, page {Page}, page size {PageSize}.",
+            "Browse products requested for category {CategoryId}, search {Search}, sort {Sort}, currency {Currency}, page {Page}, page size {PageSize}.",
             categoryId,
             search,
             sort,
+            currency,
             pageRequest.Page,
             pageRequest.PageSize);
 
@@ -57,6 +60,7 @@ public class ProductsController : ApiControllerBase
             CategoryId: categoryId,
             Search: search,
             Sort: string.IsNullOrWhiteSpace(sort) ? "newest" : sort,
+            Currency: string.IsNullOrWhiteSpace(currency) ? "BRL" : currency,
             Page: pageRequest.Page,
             PageSize: pageRequest.PageSize);
 

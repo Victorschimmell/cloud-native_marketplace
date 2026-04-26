@@ -1,3 +1,5 @@
+import type { CurrencyCode } from '../../shared/currency/CurrencyContext';
+
 export interface BrowseProduct {
   productId: string;
   listingId: string;
@@ -6,6 +8,7 @@ export interface BrowseProduct {
   description: string;
   categoryName: string | null;
   price: number;
+  currencyCode: ProductCurrencyCode;
   stockQuantity: number;
   productPhotosQty: number;
   productWeightG: number;
@@ -22,6 +25,7 @@ export interface ProductDetails {
   description: string;
   categoryName: string | null;
   price: number;
+  currencyCode: ProductCurrencyCode;
   stockQuantity: number;
   productPhotosQty: number;
   productWeightG: number;
@@ -35,5 +39,7 @@ export interface Category {
   categoryNamePt: string;
   categoryNameEn: string | null;
 }
+
+export type ProductCurrencyCode = CurrencyCode;
 
 export type ProductSortOption = 'newest' | 'price-asc' | 'price-desc' | 'name-asc';

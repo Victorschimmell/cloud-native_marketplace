@@ -53,7 +53,26 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(productId, product.ProductId);
         Assert.Equal(listingId, product.ListingId);
         Assert.Equal(149.99m, product.Price);
+        Assert.Equal("BRL", product.CurrencyCode);
         Assert.Equal(10, product.StockQuantity);
+    }
+
+    [Fact]
+    public async Task GetProductById_WithCurrency_ReturnsConvertedProductDetails()
+    {
+        // Arrange
+        var (productId, listingId) = await SeedProductListingAsync("Converted product details test", "DETAIL-USD-001", 100m);
+
+        // Act
+        var response = await _client.GetAsync($"/api/products/{productId}?listingId={listingId}&currency=USD", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var product = await response.Content.ReadFromJsonAsync<ProductDetailsResponse>(TestContext.Current.CancellationToken);
+        Assert.NotNull(product);
+        Assert.Equal("USD", product.CurrencyCode);
+        Assert.Equal(18m, product.Price);
     }
 
     [Fact]
