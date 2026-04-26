@@ -172,7 +172,12 @@ export default function ProductDetailsPage() {
                     value={quantity}
                   />
                 </label>
-                <button disabled={isAdding || !isInStock} onClick={addToCart} type="button">
+                <button
+                  className={isAdding ? 'product-details-page__add-button--loading' : undefined}
+                  disabled={isAdding || !isInStock}
+                  onClick={addToCart}
+                  type="button"
+                >
                   {isAdding ? 'Adding...' : isInStock ? 'Add to cart' : 'Out of stock'}
                 </button>
               </div>
