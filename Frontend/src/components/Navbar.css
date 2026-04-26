@@ -48,6 +48,9 @@
 }
 
 .navbar__currency-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
   border: 0;
   background: transparent;
   color: var(--text-dark);
@@ -55,6 +58,7 @@
   font: inherit;
   font-size: 14px;
   font-weight: 700;
+  min-width: 50px;
   padding: 0;
 }
 
