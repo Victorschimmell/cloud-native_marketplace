@@ -522,12 +522,6 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                     listingChanged = true;
                 }
 
-                if (existingListing.InventoryQuantity != seededInventoryQuantity)
-                {
-                    existingListing.InventoryQuantity = seededInventoryQuantity;
-                    listingChanged = true;
-                }
-
                 if (listingChanged)
                 {
                     updatedListingsCount++;

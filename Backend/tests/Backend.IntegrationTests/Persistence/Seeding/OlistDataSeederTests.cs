@@ -23,9 +23,15 @@ public sealed class OlistDataSeederTests
         var seeder = firstScope.ServiceProvider.GetRequiredService<IOlistDataSeeder>();
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
-
         var dbContext = firstScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var listingBeforeReseed = await dbContext.ProductListings
+            .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2", TestContext.Current.CancellationToken);
+        Assert.InRange(listingBeforeReseed.InventoryQuantity, 0, 10);
+
+        listingBeforeReseed.InventoryQuantity = 0;
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, await dbContext.Currencies.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(3, await dbContext.ProductCategories.CountAsync(TestContext.Current.CancellationToken));
@@ -54,7 +60,7 @@ public sealed class OlistDataSeederTests
         var listing = await dbContext.ProductListings
             .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2", TestContext.Current.CancellationToken);
         Assert.Equal(60m, listing.ListingPrice);
-        Assert.InRange(listing.InventoryQuantity, 0, 10);
+        Assert.Equal(0, listing.InventoryQuantity);
 
         var importedReviews = await dbContext.OrderReviews
             .Where(review => review.Order!.OrderNumber == "order-3")

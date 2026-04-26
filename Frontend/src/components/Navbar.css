@@ -71,7 +71,7 @@
 
 .navbar__currency-menu {
   position: absolute;
-  right: 0;
+  right: -18px;
   top: 100%;
   z-index: 10;
   display: none;

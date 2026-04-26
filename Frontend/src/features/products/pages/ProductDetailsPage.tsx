@@ -60,6 +60,20 @@ export default function ProductDetailsPage() {
     };
   }, [currency, id, listingId]);
 
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    setQuantity((currentQuantity) => {
+      if (product.stockQuantity <= 0) {
+        return 1;
+      }
+
+      return Math.min(Math.max(currentQuantity, 1), product.stockQuantity);
+    });
+  }, [product?.listingId, product?.stockQuantity]);
+
   async function addToCart() {
     if (!product || product.stockQuantity <= 0) {
       return;
