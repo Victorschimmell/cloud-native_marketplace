@@ -510,7 +510,6 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             var row = candidate.Row;
             var productId = productLookup[row.ProductId];
             var sellerId = sellerLookup[row.SellerId];
-            var seededInventoryQuantity = CreateSeededInventoryQuantity(candidate.Sku);
 
             if (existingListings.TryGetValue(candidate.Sku, out var existingListing))
             {
@@ -536,7 +535,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 ProductId = productId,
                 Sku = candidate.Sku,
                 ListingPrice = row.Price,
-                InventoryQuantity = seededInventoryQuantity,
+                InventoryQuantity = Random.Shared.Next(0, 11),
                 VisibilityStatus = ListingVisibilityStatus.Published,
                 PublishedAtUtc = DateTimeOffset.UtcNow
             });
@@ -558,21 +557,6 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             "Inserted {InsertedCount} product listings and updated {UpdatedCount}.",
             listingsToInsert.Count,
             updatedListingsCount);
-    }
-
-    private static int CreateSeededInventoryQuantity(string sku)
-    {
-        const uint offsetBasis = 2166136261;
-        const uint prime = 16777619;
-        var hash = offsetBasis;
-
-        foreach (var character in sku)
-        {
-            hash ^= character;
-            hash *= prime;
-        }
-
-        return (int)(hash % 11);
     }
 
     private async Task SeedOrdersAsync(
