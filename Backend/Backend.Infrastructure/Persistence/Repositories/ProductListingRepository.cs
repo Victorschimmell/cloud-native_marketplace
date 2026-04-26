@@ -1,5 +1,8 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Models;
+using Backend.Application.DTOs;
 using Backend.Domain.Entities.Catalog;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +24,50 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.ProductListings
+            .AsNoTracking()
+            .Include(l => l.Product)
+                .ThenInclude(p => p!.Category)
+            .Where(l =>
+                !l.IsDeleted &&
+                l.VisibilityStatus == ListingVisibilityStatus.Published &&
+                l.Product != null);
+
+        if (request.CategoryId.HasValue)
+        {
+            query = query.Where(l => l.Product!.CategoryId == request.CategoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim();
+            query = query.Where(l =>
+                EF.Functions.ILike(l.Product!.ProductName, $"%{search}%") ||
+                EF.Functions.ILike(l.Product.Description, $"%{search}%") ||
+                (l.Product.Category != null && (
+                    EF.Functions.ILike(l.Product.Category.CategoryNamePt, $"%{search}%") ||
+                    (l.Product.Category.CategoryNameEn != null && EF.Functions.ILike(l.Product.Category.CategoryNameEn, $"%{search}%")))));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orderedQuery = request.Sort switch
+        {
+            "price-asc" => query.OrderBy(l => l.ListingPrice).ThenBy(l => l.Product!.ProductName),
+            "price-desc" => query.OrderByDescending(l => l.ListingPrice).ThenBy(l => l.Product!.ProductName),
+            "name-asc" => query.OrderBy(l => l.Product!.ProductName).ThenBy(l => l.ListingPrice),
+            _ => query.OrderByDescending(l => l.PublishedAtUtc ?? l.CreatedAtUtc).ThenBy(l => l.Product!.ProductName)
+        };
+
+        var listings = await orderedQuery
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<ProductListing>(listings, request.Page, request.PageSize, totalCount);
     }
 
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)

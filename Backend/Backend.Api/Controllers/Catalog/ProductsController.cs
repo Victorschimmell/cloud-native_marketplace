@@ -6,6 +6,7 @@ using Backend.Api.Mappings.Catalog.Products;
 using Backend.Api.Mappings.Common;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.Catalog;
 
@@ -14,11 +15,13 @@ public class ProductsController : ApiControllerBase
 {
     private readonly IProductService _productService;
     private readonly IReviewService _reviewService;
+    private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IProductService productService, IReviewService reviewService)
+    public ProductsController(IProductService productService, IReviewService reviewService, ILogger<ProductsController> logger)
     {
         _productService = productService;
         _reviewService = reviewService;
+        _logger = logger;
     }
 
     [HttpGet("{productId:guid}")]
@@ -28,15 +31,39 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PageResponse<ProductModel>>> GetProductsAsync([FromQuery][NotEmptyGuid] Guid? categoryId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<PageResponse<BrowseProductResponse>>> GetProductsAsync(
+        [FromQuery][NotEmptyGuid] Guid? categoryId,
+        [FromQuery] string? search,
+        [FromQuery] string? sort,
+        [FromQuery] PageRequest pageRequest,
+        CancellationToken cancellationToken)
     {
-        if (categoryId.HasValue)
-        {
-            return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-        }
+        _logger.LogInformation(
+            "Browse products requested for category {CategoryId}, search {Search}, sort {Sort}, page {Page}, page size {PageSize}.",
+            categoryId,
+            search,
+            sort,
+            pageRequest.Page,
+            pageRequest.PageSize);
 
-        // All products
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var request = new App.BrowseProductsRequest(
+            CategoryId: categoryId,
+            Search: search,
+            Sort: string.IsNullOrWhiteSpace(sort) ? "newest" : sort,
+            Page: pageRequest.Page,
+            PageSize: pageRequest.PageSize);
+
+        var result = await _productService.GetBrowseProductsAsync(request, cancellationToken);
+
+        return HandleResult(
+            result,
+            page => new PageResponse<BrowseProductResponse>
+            {
+                Items = page.Items.Select(product => product.ToResponse()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
     }
 
     [HttpPost]

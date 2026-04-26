@@ -9,7 +9,7 @@ namespace Backend.Application.Services;
 
 internal static class ApplicationMappings
 {
-    public static CustomerDto ToDto(this Customer customer) =>
+    public static CustomerDto ToCustomerDto(this Customer customer) =>
         new(
             customer.Id,
             customer.UserId,
@@ -20,7 +20,7 @@ internal static class ApplicationMappings
             customer.OlistCustomerId,
             customer.OlistCustomerUniqueId);
 
-    public static SellerDto ToDto(this Seller seller) =>
+    public static SellerDto ToSellerDto(this Seller seller) =>
         new(
             seller.Id,
             seller.UserId,
@@ -32,7 +32,7 @@ internal static class ApplicationMappings
             seller.VerifiedAtUtc,
             seller.OlistSellerId);
 
-    public static UserAccountDto ToDto(this UserAccount userAccount) =>
+    public static UserAccountDto ToUserAccountDto(this UserAccount userAccount) =>
         new(
             userAccount.Id,
             userAccount.Email.Value,
@@ -43,7 +43,7 @@ internal static class ApplicationMappings
             userAccount.LockedUntilUtc,
             userAccount.LastLoginAtUtc);
 
-    public static ProductDto ToDto(this Product product) =>
+    public static ProductDto ToProductDto(this Product product) =>
         new(
             product.Id,
             product.CategoryId,
@@ -57,16 +57,36 @@ internal static class ApplicationMappings
             product.ProductHeightCm,
             product.ProductWidthCm);
 
-    public static CategoryDto ToDto(this ProductCategory category) =>
+    public static BrowseProductDto ToBrowseDto(this ProductListing listing)
+    {
+        var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
+
+        return new BrowseProductDto(
+            product.Id,
+            listing.Id,
+            product.CategoryId,
+            product.ProductName,
+            product.Description,
+            product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
+            listing.ListingPrice,
+            listing.InventoryQuantity,
+            product.ProductPhotosQty,
+            product.ProductWeightG,
+            product.ProductLengthCm,
+            product.ProductHeightCm,
+            product.ProductWidthCm);
+    }
+
+    public static CategoryDto ToCategoryDto(this ProductCategory category) =>
         new(category.Id, category.CategoryNamePt, category.CategoryNameEn);
 
-    public static CartItemDto ToDto(this CartItem item) =>
+    public static CartItemDto ToCartItemDto(this CartItem item) =>
         new(item.Id, item.CartId, item.ListingId, item.Quantity, item.UnitPriceAtAddition, item.AddedAtUtc, item.UpdatedAtUtc);
 
-    public static CartDto ToDto(this ShoppingCart cart) =>
-        new(cart.Id, cart.UserId, cart.SessionId, cart.Status.ToString(), cart.ExpiresAtUtc, cart.Items.Select(ToDto).ToArray());
+    public static CartDto ToCartDto(this ShoppingCart cart) =>
+        new(cart.Id, cart.UserId, cart.SessionId, cart.Status.ToString(), cart.ExpiresAtUtc, cart.Items.Select(ToCartItemDto).ToArray());
 
-    public static OrderItemDto ToDto(this OrderItem item) =>
+    public static OrderItemDto ToOrderItemDto(this OrderItem item) =>
         new(
             item.OrderId,
             item.OrderItemId,
@@ -78,7 +98,7 @@ internal static class ApplicationMappings
             item.FreightValue,
             item.ShippingLimitDateUtc);
 
-    public static PaymentDto ToDto(this OrderPayment payment) =>
+    public static PaymentDto ToPaymentDto(this OrderPayment payment) =>
         new(
             payment.OrderId,
             payment.PaymentSequential,
@@ -90,7 +110,7 @@ internal static class ApplicationMappings
             payment.ExternalPaymentReference,
             payment.PaidAtUtc);
 
-    public static ReviewDto ToDto(this OrderReview review) =>
+    public static ReviewDto ToReviewDto(this OrderReview review) =>
         new(
             review.Id,
             review.OrderId,
@@ -100,7 +120,7 @@ internal static class ApplicationMappings
             review.ReviewCreationDateUtc,
             review.ReviewAnswerTimestampUtc);
 
-    public static ShipmentDto ToDto(this Shipment shipment) =>
+    public static ShipmentDto ToShipmentDto(this Shipment shipment) =>
         new(
             shipment.Id,
             shipment.OrderId,
@@ -112,7 +132,7 @@ internal static class ApplicationMappings
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
 
-    public static OrderDto ToDto(this Order order) =>
+    public static OrderDto ToOrderDto(this Order order) =>
         new(
             order.Id,
             order.CustomerId,
@@ -128,12 +148,12 @@ internal static class ApplicationMappings
             order.FreightAmount,
             order.TotalAmount,
             order.PlacedFromCartId,
-            order.Items.Select(ToDto).ToArray(),
-            order.Payments.Select(ToDto).ToArray(),
-            order.Reviews.Select(ToDto).ToArray(),
-            order.Shipments.Select(ToDto).ToArray());
+            order.Items.Select(ToOrderItemDto).ToArray(),
+            order.Payments.Select(ToPaymentDto).ToArray(),
+            order.Reviews.Select(ToReviewDto).ToArray(),
+            order.Shipments.Select(ToShipmentDto).ToArray());
 
-    public static AuditLogEntryDto ToDto(this AuditLog auditLog) =>
+    public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(
             auditLog.Id,
             auditLog.ActorUserId,
@@ -145,7 +165,7 @@ internal static class ApplicationMappings
             auditLog.Details,
             auditLog.CreatedAtUtc);
 
-    public static SellerVerificationRequestDto ToDto(this SellerVerificationRequest request) =>
+    public static SellerVerificationRequestDto ToSellerVerificationRequestDto(this SellerVerificationRequest request) =>
         new(
             request.Id,
             request.SellerId,

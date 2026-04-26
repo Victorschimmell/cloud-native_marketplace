@@ -1,4 +1,4 @@
-// types/index.ts - basic types
+// types/index.ts - legacy shared types.
 
 export interface Product {
   id: string;
@@ -18,4 +18,4 @@ export interface Order {
   total: number;
 }
 
-// Add more types later
+// Prefer feature-local types for new feature work.

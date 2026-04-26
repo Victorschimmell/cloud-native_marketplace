@@ -1,14 +1,9 @@
-// api.ts - placeholder for backend calls
+import { request } from '../shared/api/request';
 
+// Legacy placeholder API surface. New feature work should use feature-local api modules.
 const api = {
-  getProducts: async () => {
-    console.log('Fetching products...');
-    return { message: 'Products will come from backend later' };
-  },
-
   getProductById: async (id: string) => {
-    console.log(`Fetching product ${id}`);
-    return { message: `Product ${id} details` };
+    return request<{ message: string }>(`/api/products/${id}`);
   },
 
   login: async () => {

@@ -20,9 +20,10 @@ public sealed class CategoryService : ICategoryService
         return Task.FromResult(Result<CategoryDto>.NotImplemented());
     }
 
-    public Task<Result<IReadOnlyList<CategoryDto>>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<CategoryDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<IReadOnlyList<CategoryDto>>.NotImplemented());
+        var categories = await _categoryRepository.GetAllAsync(cancellationToken);
+        return Result<IReadOnlyList<CategoryDto>>.Success(categories.Select(ApplicationMappings.ToCategoryDto).ToArray());
     }
 
     public Task<Result<CategoryDto>> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken = default)

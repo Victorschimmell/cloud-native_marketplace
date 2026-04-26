@@ -16,13 +16,16 @@ public class CategoriesEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetCategories_ReturnsNotImplemented()
+    public async Task GetCategories_ReturnsOk()
     {
         // Act
         var response = await _client.GetAsync("/api/categories", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var categories = await response.Content.ReadFromJsonAsync<IReadOnlyList<CategoryResponse>>(TestContext.Current.CancellationToken);
+        Assert.NotNull(categories);
     }
 
     [Fact]

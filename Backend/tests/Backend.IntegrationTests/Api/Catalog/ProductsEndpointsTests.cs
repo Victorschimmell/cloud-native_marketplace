@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
+using Backend.Api.Contracts.Common;
 
 namespace Backend.IntegrationTests;
 
@@ -16,13 +17,18 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetProducts_ReturnsNotImplemented()
+    public async Task GetProducts_ReturnsBrowseProductsPage()
     {
         // Act
         var response = await _client.GetAsync("/api/products", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var products = await response.Content.ReadFromJsonAsync<PageResponse<BrowseProductResponse>>(TestContext.Current.CancellationToken);
+        Assert.NotNull(products);
+        Assert.Equal(1, products.Page);
+        Assert.Equal(20, products.PageSize);
     }
 
     [Fact]

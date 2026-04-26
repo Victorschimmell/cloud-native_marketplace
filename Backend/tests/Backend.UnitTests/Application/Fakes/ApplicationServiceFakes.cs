@@ -1,5 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
+using Backend.Application.Common.Models;
 using Backend.Application.DTOs;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
@@ -61,6 +62,7 @@ internal sealed class FakeProductListingRepository : IProductListingRepository
     public Task AddAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<ProductListing>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
+    public Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<ProductListing>([], request.Page, request.PageSize, 0));
     public Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<ProductListing?>(null);
     public Task<IReadOnlyList<ProductListing>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
     public Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);

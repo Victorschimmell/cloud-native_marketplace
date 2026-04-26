@@ -16,6 +16,7 @@ internal sealed class ProductCategoryRepository(ApplicationDbContext dbContext) 
     public async Task<IReadOnlyList<ProductCategory>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductCategories
+            .AsNoTracking()
             .OrderBy(c => c.CategoryNamePt)
             .ToListAsync(cancellationToken);
     }
