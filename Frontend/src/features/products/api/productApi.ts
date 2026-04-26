@@ -1,6 +1,6 @@
 import { request } from '../../../shared/api/request';
 import type { PageResponse } from '../../../shared/types/pagination';
-import type { BrowseProduct, Category, ProductSortOption } from '../types';
+import type { BrowseProduct, Category, ProductDetails, ProductSortOption } from '../types';
 
 interface GetProductsOptions {
   categoryId?: string;
@@ -33,5 +33,16 @@ export const productApi = {
 
   getCategories: async (signal?: AbortSignal) => {
     return request<Category[]>('/api/categories', { signal });
+  },
+
+  getProduct: async (productId: string, listingId?: string | null, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+
+    if (listingId) {
+      params.set('listingId', listingId);
+    }
+
+    const query = params.size > 0 ? `?${params}` : '';
+    return request<ProductDetails>(`/api/products/${productId}${query}`, { signal });
   },
 };

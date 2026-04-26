@@ -25,9 +25,16 @@ public class ProductsController : ApiControllerBase
     }
 
     [HttpGet("{productId:guid}")]
-    public async Task<ActionResult<ProductResponse>> GetByIdAsync([NotEmptyGuid] Guid productId, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductDetailsResponse>> GetByIdAsync(
+        [NotEmptyGuid] Guid productId,
+        [FromQuery][NotEmptyGuid] Guid? listingId,
+        CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        _logger.LogInformation("Product details requested for product {ProductId} and listing {ListingId}.", productId, listingId);
+
+        var result = await _productService.GetDetailsAsync(productId, listingId, cancellationToken);
+
+        return HandleResult(result, product => product.ToResponse());
     }
 
     [HttpGet]

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import PageSkeleton from '../../../components/PageSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import StatusMessage from '../../../shared/components/StatusMessage';
 import { productApi } from '../api/productApi';
@@ -109,16 +110,11 @@ export default function ProductListPage() {
   }
 
   return (
-    <section className="product-list-page" aria-labelledby="product-list-page-title">
-      <header className="product-list-page__header">
-        <div>
-          <h1 id="product-list-page-title" className="product-list-page__title">Browse Products</h1>
-          <p className="product-list-page__summary">
-            {isLoading ? 'Loading products...' : `${totalCount} products available`}
-          </p>
-        </div>
-      </header>
-
+    <PageSkeleton
+      summary={isLoading ? 'Loading products...' : `${totalCount} products available`}
+      title="Browse Products"
+      titleId="product-list-page-title"
+    >
       <ProductFilters
         categories={categories}
         categoryFilter={categoryFilter}
@@ -161,6 +157,6 @@ export default function ProductListPage() {
           totalPages={totalPages}
         />
       )}
-    </section>
+    </PageSkeleton>
   );
 }

@@ -131,16 +131,15 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         Assert.Contains("ProductName", content);
     }
 
-    // Cross-Field Validation Test (IValidatableObject)
-    // Example: AddCartItemRequest requires at least one of CartId, UserId, or SessionId
+    // NotEmptyGuid Validation Test
+    // Example: AddCartItemRequest.ListingId must not be empty
     [Fact]
-    public async Task AddCartItem_WithoutUserIdCartIdOrSessionId_ReturnsBadRequest()
+    public async Task AddCartItem_WithEmptyListingId_ReturnsBadRequest()
     {
         // Arrange
         var addItemRequest = new AddCartItemRequest
         {
-            // All identifier fields are null - invalid
-            ListingId = Guid.NewGuid(),
+            ListingId = Guid.Empty,
             Quantity = 1
         };
 
@@ -150,8 +149,7 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        // Should indicate that at least one of the three fields is required
-        Assert.True(content.Contains("UserId") || content.Contains("CartId") || content.Contains("SessionId"));
+        Assert.Contains("ListingId", content);
     }
 
 

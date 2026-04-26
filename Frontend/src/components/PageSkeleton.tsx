@@ -1,34 +1,31 @@
-// reusable skeleton
-interface PageSkeletonProps {
+import type { PropsWithChildren } from 'react';
+import './PageSkeleton.css';
+
+interface PageSkeletonProps extends PropsWithChildren {
   title: string;
+  summary?: string;
+  titleId?: string;
 }
 
-export default function PageSkeleton({ title }: PageSkeletonProps) {
+export default function PageSkeleton({ children, summary, title, titleId }: PageSkeletonProps) {
   return (
-    <div style={{
-      maxWidth: '1280px',
-      margin: '0 auto',
-      padding: '40px 40px',
-      backgroundColor: '#ffffff'
-    }}>
-      <h1 style={{
-        fontSize: '42px',
-        fontWeight: '700',
-        color: '#1e40af',
-        marginBottom: '30px'
-      }}>
-        {title}
-      </h1>
-      
-      <p style={{
-        fontSize: '19px',
-        color: '#374151',
-        lineHeight: '1.6',
-        marginBottom: '50px'
-      }}>
-        This is the skeleton page.<br />
-        Implementation of the page goes here.
-      </p>
-    </div>
+    <section className="page-skeleton" aria-labelledby={titleId}>
+      <header className="page-skeleton__header">
+        <div>
+          <h1 id={titleId} className="page-skeleton__title">
+            {title}
+          </h1>
+          {summary ? <p className="page-skeleton__summary">{summary}</p> : null}
+        </div>
+      </header>
+
+      {children ?? (
+        <p className="page-skeleton__placeholder">
+          This is the skeleton page.
+          <br />
+          Implementation of the page goes here.
+        </p>
+      )}
+    </section>
   );
 }

@@ -27,6 +27,18 @@ public sealed class ProductService : IProductService
         return Task.FromResult(Result<ProductDto>.NotImplemented());
     }
 
+    public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default)
+    {
+        var listing = await _productListingRepository.GetAvailableProductDetailAsync(productId, listingId, cancellationToken);
+
+        if (listing is null)
+        {
+            return Result<ProductDetailsDto>.NotFound("Product was not found.");
+        }
+
+        return Result<ProductDetailsDto>.Success(listing.ToProductDetailsDto());
+    }
+
     public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Page < 1 || request.PageSize < 1)

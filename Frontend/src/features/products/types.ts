@@ -14,6 +14,22 @@ export interface BrowseProduct {
   productWidthCm: number;
 }
 
+export interface ProductDetails {
+  productId: string;
+  listingId: string;
+  categoryId: string;
+  productName: string;
+  description: string;
+  categoryName: string | null;
+  price: number;
+  stockQuantity: number;
+  productPhotosQty: number;
+  productWeightG: number;
+  productLengthCm: number;
+  productHeightCm: number;
+  productWidthCm: number;
+}
+
 export interface Category {
   id: string;
   categoryNamePt: string;

@@ -3,7 +3,7 @@ using Backend.Api.Attributes;
 
 namespace Backend.Api.Contracts.Commerce.Cart;
 
-public sealed record AddCartItemRequest : IValidatableObject
+public sealed record AddCartItemRequest
 {
     [NotEmptyGuid]
     public Guid? CartId { get; init; }
@@ -19,14 +19,4 @@ public sealed record AddCartItemRequest : IValidatableObject
 
     [Range(1, int.MaxValue)]
     public required int Quantity { get; init; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (!CartId.HasValue && !UserId.HasValue && !SessionId.HasValue)
-        {
-            yield return new ValidationResult(
-                "At least one of CartId, UserId, or SessionId must be provided.",
-                [nameof(CartId), nameof(UserId), nameof(SessionId)]);
-        }
-    }
 }

@@ -5,6 +5,26 @@ namespace Backend.Api.Mappings.Catalog.Products;
 
 public static class ProductsMappingExtensions
 {
+    public static ProductDetailsResponse ToResponse(this App.ProductDetailsDto product)
+    {
+        return new ProductDetailsResponse
+        {
+            ProductId = product.ProductId,
+            ListingId = product.ListingId,
+            CategoryId = product.CategoryId,
+            ProductName = product.ProductName,
+            Description = product.Description,
+            CategoryName = product.CategoryName,
+            Price = product.Price,
+            StockQuantity = product.StockQuantity,
+            ProductPhotosQty = product.ProductPhotosQty,
+            ProductWeightG = product.ProductWeightG,
+            ProductLengthCm = product.ProductLengthCm,
+            ProductHeightCm = product.ProductHeightCm,
+            ProductWidthCm = product.ProductWidthCm
+        };
+    }
+
     public static BrowseProductResponse ToResponse(this App.BrowseProductDto product)
     {
         return new BrowseProductResponse
