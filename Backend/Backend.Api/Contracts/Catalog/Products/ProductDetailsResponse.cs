@@ -16,4 +16,7 @@ public sealed record ProductDetailsResponse
     public required int ProductLengthCm { get; init; }
     public required int ProductHeightCm { get; init; }
     public required int ProductWidthCm { get; init; }
+    public required Guid SellerId { get; init; }
+    public required string SellerName { get; init; }
+    public required string SellerVerificationStatus { get; init; }
 }

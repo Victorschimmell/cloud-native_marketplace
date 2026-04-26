@@ -112,7 +112,29 @@ export default function ProductDetailsPage() {
             </div>
 
             <section className="product-details-page__panel" aria-labelledby="product-details-page-title">
-              <p className="product-details-page__description">{product.description}</p>
+              <section className="product-details-page__description-section">
+                <h2>Description</h2>
+                <p className="product-details-page__description">{product.description}</p>
+              </section>
+
+              <div className="product-details-page__seller-review">
+                <span className="product-details-page__seller">
+                  Sold by <strong>{product.sellerName}</strong>
+                </span>
+                {/* Temporary placeholder until a product review summary endpoint is implemented. */}
+                <span className="product-details-page__rating" aria-label="Review summary placeholder: 4.6 out of 5 stars from 4,009 reviews">
+                  <strong>4.6</strong>
+                  <span className="product-details-page__stars" aria-hidden="true">
+                    <span className="product-details-page__star product-details-page__star--filled" />
+                    <span className="product-details-page__star product-details-page__star--filled" />
+                    <span className="product-details-page__star product-details-page__star--filled" />
+                    <span className="product-details-page__star product-details-page__star--filled" />
+                    <span className="product-details-page__star product-details-page__star--half" />
+                  </span>
+                  <span className="product-details-page__rating-caret" aria-hidden="true" />
+                  <span className="product-details-page__rating-count">(4,009)</span>
+                </span>
+              </div>
 
               <dl className="product-details-page__facts">
                 <div>

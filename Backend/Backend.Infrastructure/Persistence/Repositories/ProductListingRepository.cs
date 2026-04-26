@@ -76,11 +76,13 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
             .AsNoTracking()
             .Include(l => l.Product)
                 .ThenInclude(p => p!.Category)
+            .Include(l => l.Seller)
             .Where(l =>
                 l.ProductId == productId &&
                 !l.IsDeleted &&
                 l.VisibilityStatus == ListingVisibilityStatus.Published &&
-                l.Product != null);
+                l.Product != null &&
+                l.Seller != null);
 
         if (listingId.HasValue)
         {

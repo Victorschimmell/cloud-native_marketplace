@@ -81,6 +81,7 @@ internal static class ApplicationMappings
     public static ProductDetailsDto ToProductDetailsDto(this ProductListing listing, string currencyCode, decimal convertedPrice)
     {
         var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
+        var seller = listing.Seller ?? throw new InvalidOperationException("Product listing must include seller details.");
 
         return new ProductDetailsDto(
             product.Id,
@@ -96,7 +97,10 @@ internal static class ApplicationMappings
             product.ProductWeightG,
             product.ProductLengthCm,
             product.ProductHeightCm,
-            product.ProductWidthCm);
+            product.ProductWidthCm,
+            seller.Id,
+            seller.BusinessName,
+            seller.VerificationStatus.ToString());
     }
 
     public static CategoryDto ToCategoryDto(this ProductCategory category) =>

@@ -55,6 +55,8 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(149.99m, product.Price);
         Assert.Equal("BRL", product.CurrencyCode);
         Assert.Equal(10, product.StockQuantity);
+        Assert.Equal("MarketplaceTraders", product.SellerName);
+        Assert.Equal("Pending", product.SellerVerificationStatus);
     }
 
     [Fact]

@@ -22,7 +22,10 @@ public static class ProductsMappingExtensions
             ProductWeightG = product.ProductWeightG,
             ProductLengthCm = product.ProductLengthCm,
             ProductHeightCm = product.ProductHeightCm,
-            ProductWidthCm = product.ProductWidthCm
+            ProductWidthCm = product.ProductWidthCm,
+            SellerId = product.SellerId,
+            SellerName = product.SellerName,
+            SellerVerificationStatus = product.SellerVerificationStatus
         };
     }
 

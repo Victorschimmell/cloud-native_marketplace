@@ -32,6 +32,9 @@ export interface ProductDetails {
   productLengthCm: number;
   productHeightCm: number;
   productWidthCm: number;
+  sellerId: string;
+  sellerName: string;
+  sellerVerificationStatus: string;
 }
 
 export interface Category {

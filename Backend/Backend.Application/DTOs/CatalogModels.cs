@@ -43,7 +43,10 @@ public sealed record ProductDetailsDto(
     int ProductWeightG,
     int ProductLengthCm,
     int ProductHeightCm,
-    int ProductWidthCm);
+    int ProductWidthCm,
+    Guid SellerId,
+    string SellerName,
+    string SellerVerificationStatus);
 
 public sealed record BrowseProductsRequest(
     Guid? CategoryId,
