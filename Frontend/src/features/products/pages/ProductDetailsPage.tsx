@@ -147,15 +147,17 @@ export default function ProductDetailsPage() {
                 </button>
               </div>
 
-              {cartMessage ? (
-                <p
-                  className={`product-details-page__cart-message product-details-page__cart-message--${cartMessageVariant}`}
-                  role={cartMessageVariant === 'success' ? 'status' : 'alert'}
-                >
-                  {cartMessage}
-                  {cartMessageVariant === 'success' ? <> <Link to="/cart">View cart</Link></> : null}
-                </p>
-              ) : null}
+              <div className="product-details-page__cart-status">
+                {cartMessage ? (
+                  <p
+                    className={`product-details-page__cart-message product-details-page__cart-message--${cartMessageVariant}`}
+                    role={cartMessageVariant === 'success' ? 'status' : 'alert'}
+                  >
+                    {cartMessage}
+                    {cartMessageVariant === 'success' ? <> <Link to="/cart">View cart</Link></> : null}
+                  </p>
+                ) : null}
+              </div>
             </section>
           </div>
         ) : null}

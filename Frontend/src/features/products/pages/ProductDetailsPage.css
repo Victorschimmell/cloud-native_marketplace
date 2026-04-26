@@ -104,6 +104,7 @@
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
+  min-width: 112px;
   padding: 11px 18px;
 }
 
@@ -125,7 +126,12 @@
 }
 
 .product-details-page__cart-message {
+  margin: 0;
+}
+
+.product-details-page__cart-status {
   margin-top: 20px;
+  min-height: 48px;
 }
 
 .product-details-page__cart-message--success {
