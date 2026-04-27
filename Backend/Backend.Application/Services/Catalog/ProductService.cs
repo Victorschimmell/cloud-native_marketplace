@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
@@ -10,16 +11,20 @@ public sealed class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IProductListingRepository _productListingRepository;
+    private readonly ICurrencyConversionService _currencyConversionService;
 
     public ProductService(
         IProductRepository productRepository,
-        IProductListingRepository productListingRepository)
+        IProductListingRepository productListingRepository,
+        ICurrencyConversionService currencyConversionService)
     {
         ArgumentNullException.ThrowIfNull(productRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
+        ArgumentNullException.ThrowIfNull(currencyConversionService);
 
         _productRepository = productRepository;
         _productListingRepository = productListingRepository;
+        _currencyConversionService = currencyConversionService;
     }
 
     public Task<Result<ProductDto>> GetByIdAsync(Guid productId, CancellationToken cancellationToken = default)
@@ -29,8 +34,8 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, string? currency, CancellationToken cancellationToken = default)
     {
-        var currencyCode = CurrencyConversion.NormalizeOrDefault(currency);
-        if (!CurrencyConversion.IsSupported(currencyCode))
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(currency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
         {
             return Result<ProductDetailsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -43,7 +48,7 @@ public sealed class ProductService : IProductService
         }
 
         return Result<ProductDetailsDto>.Success(
-            listing.ToProductDetailsDto(currencyCode, CurrencyConversion.FromBrl(listing.ListingPrice, currencyCode)));
+            listing.ToProductDetailsDto(currencyCode, _currencyConversionService.FromBaseCurrency(listing.ListingPrice, currencyCode)));
     }
 
     public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
@@ -58,15 +63,15 @@ public sealed class ProductService : IProductService
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Sort must be one of newest, price-asc, price-desc, or name-asc.");
         }
 
-        var currencyCode = CurrencyConversion.NormalizeOrDefault(request.Currency);
-        if (!CurrencyConversion.IsSupported(currencyCode))
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(request.Currency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
         {
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
 
         var listings = await _productListingRepository.GetAvailableForBrowseAsync(request, cancellationToken);
         var products = listings.Items
-            .Select(listing => listing.ToBrowseDto(currencyCode, CurrencyConversion.FromBrl(listing.ListingPrice, currencyCode)))
+            .Select(listing => listing.ToBrowseDto(currencyCode, _currencyConversionService.FromBaseCurrency(listing.ListingPrice, currencyCode)))
             .ToArray();
 
         return Result<PagedResult<BrowseProductDto>>.Success(

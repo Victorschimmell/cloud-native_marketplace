@@ -8,7 +8,7 @@ public sealed class ServiceConstructorTests
     [Fact]
     public void ProductService_Throws_When_ProductRepository_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository()));
+        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository(), new FakeCurrencyConversionService()));
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public sealed class ServiceConstructorTests
     {
         _ = new CustomerService(new FakeCustomerRepository());
         _ = new SellerService(new FakeSellerRepository());
-        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository());
+        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
         _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository());
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());

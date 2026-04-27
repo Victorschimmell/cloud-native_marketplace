@@ -182,6 +182,14 @@ internal sealed class FakeDateTimeProvider : IDateTimeProvider
     public DateTimeOffset UtcNow => new(2026, 4, 9, 12, 0, 0, TimeSpan.Zero);
 }
 
+internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
+{
+    public string BaseCurrency => "BRL";
+    public string NormalizeOrDefault(string? currency) => string.IsNullOrWhiteSpace(currency) ? BaseCurrency : currency.Trim().ToUpperInvariant();
+    public bool IsSupported(string currencyCode) => currencyCode is "BRL" or "USD" or "DKK";
+    public decimal FromBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount * 0.5m, 2, MidpointRounding.AwayFromZero);
+}
+
 internal sealed class FakeUnitOfWork : IUnitOfWork
 {
     public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
