@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { currencyOptions, useCurrency } from '../shared/currency/CurrencyContext';
+import { currencyOptions } from '../shared/currency/currency';
+import { useCurrency } from '../shared/currency/useCurrency';
 import '../css/variables.css';
 import './Navbar.css';
 

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
-import { getCurrencyLocale, useCurrency } from '../../../shared/currency/CurrencyContext';
+import { getCurrencyLocale } from '../../../shared/currency/currency';
+import { useCurrency } from '../../../shared/currency/useCurrency';
 import { cartApi } from '../../cart/api/cartApi';
 import { productApi } from '../api/productApi';
 import type { ProductDetails } from '../types';
@@ -72,7 +73,7 @@ export default function ProductDetailsPage() {
 
       return Math.min(Math.max(currentQuantity, 1), product.stockQuantity);
     });
-  }, [product?.listingId, product?.stockQuantity]);
+  }, [product]);
 
   async function addToCart() {
     if (!product || product.stockQuantity <= 0) {

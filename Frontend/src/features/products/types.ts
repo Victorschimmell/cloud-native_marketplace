@@ -1,4 +1,4 @@
-import type { CurrencyCode } from '../../shared/currency/CurrencyContext';
+import type { CurrencyCode } from '../../shared/currency/currency';
 
 export interface BrowseProduct {
   productId: string;
