@@ -11,7 +11,7 @@ export default function HomePage() {
       label: 'Customer',
       primaryLink: '/products',
       primaryText: 'Browse',
-      title: 'Customer side',
+      title: 'Buying experience',
     },
     {
       accent: 'seller',
@@ -20,7 +20,7 @@ export default function HomePage() {
       label: 'Seller',
       primaryLink: '/seller/products',
       primaryText: 'Seller tools',
-      title: 'Seller side',
+      title: 'Seller management',
     },
     {
       accent: 'admin',
@@ -29,8 +29,14 @@ export default function HomePage() {
       label: 'Admin',
       primaryLink: '/admin/users',
       primaryText: 'Admin panel',
-      title: 'Admin side',
+      title: 'Platform administration',
     },
+  ];
+
+  const includedFeatures = [
+    'Role-based customer, seller, and admin pages',
+    'Product, cart, checkout, and order workflows',
+    'Seller verification, analytics, and audit log support',
   ];
 
   return (
@@ -41,21 +47,45 @@ export default function HomePage() {
     >
       <div className="home-page">
         <section className="home-page__hero-panel" aria-label="Marketplace summary">
-          <h2>Project Scope</h2>
-          <p>
-            This application demonstrates a marketplace with three main roles. Customers can
-            browse and place orders, sellers can manage products and order status, and admins
-            can oversee users, seller verification, analytics and audit logs.
-          </p>
+          <div className="home-page__hero-copy">
+            <h2>Project Scope</h2>
+            <p>
+              This application demonstrates a marketplace with three main roles. Customers can
+              browse and place orders, sellers can manage products and order status, and admins
+              can oversee users, seller verification, analytics and audit logs.
+            </p>
+
+            <div className="home-page__actions" aria-label="Primary actions">
+              <Link className="home-page__button home-page__button--primary" to="/products">
+                Browse Products
+              </Link>
+              <Link className="home-page__button home-page__button--secondary" to="/register">
+                Create Account
+              </Link>
+            </div>
+          </div>
+
+          <aside className="home-page__included" aria-label="Included in this project">
+            <h3>Included in project</h3>
+            <ul>
+              {includedFeatures.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+          </aside>
         </section>
 
-        <section className="home-page__actions" aria-label="Primary actions">
-          <Link className="home-page__button home-page__button--primary" to="/products">
-            Browse Products
-          </Link>
-          <Link className="home-page__button home-page__button--secondary" to="/register">
-            Create Account
-          </Link>
+        <section className="home-page__flow-strip" aria-label="End-to-end commerce flow">
+          <strong>End-to-end flow</strong>
+          <span>Catalog</span>
+          <span aria-hidden="true">→</span>
+          <span>Cart</span>
+          <span aria-hidden="true">→</span>
+          <span>Checkout</span>
+          <span aria-hidden="true">→</span>
+          <span>Orders</span>
+          <span aria-hidden="true">→</span>
+          <span>Audit</span>
         </section>
 
         <section className="home-page__section" aria-labelledby="home-features-title">
@@ -66,7 +96,6 @@ export default function HomePage() {
           <div className="home-page__feature-grid">
             {featureCards.map((feature) => (
               <article className="home-page__feature-card" data-accent={feature.accent} key={feature.label}>
-                <p>{feature.label}</p>
                 <h3>{feature.title}</h3>
                 <span className="home-page__feature-description">{feature.description}</span>
                 <ul>
@@ -78,14 +107,6 @@ export default function HomePage() {
               </article>
             ))}
           </div>
-        </section>
-
-        <section className="home-page__flow-strip" aria-label="End-to-end commerce flow">
-          <span>Catalog</span>
-          <span>Cart</span>
-          <span>Checkout</span>
-          <span>Orders</span>
-          <span>Audit</span>
         </section>
       </div>
     </PageSkeleton>
