@@ -24,7 +24,7 @@ export default function HomePage() {
     },
     {
       accent: 'admin',
-      description: 'Administrators can review platform activity and manage users, verification, and audit information.',
+      description: 'Administrators can review platform activity and manage users, verification and audit information.',
       items: ['Seller verification', 'User access', 'Audit & analytics'],
       label: 'Admin',
       primaryLink: '/admin/users',
@@ -34,10 +34,12 @@ export default function HomePage() {
   ];
 
   const includedFeatures = [
-    'Role-based customer, seller, and admin pages',
-    'Product, cart, checkout, and order workflows',
-    'Seller verification, analytics, and audit log support',
+    'Role-based customer, seller and admin pages',
+    'Product, cart, checkout and order workflows',
+    'Seller verification, analytics and audit log support',
   ];
+
+  const flowSteps = ['Catalog', 'Cart', 'Checkout', 'Orders', 'Audit'];
 
   return (
     <PageSkeleton
@@ -77,15 +79,14 @@ export default function HomePage() {
 
         <section className="home-page__flow-strip" aria-label="End-to-end commerce flow">
           <strong>End-to-end flow</strong>
-          <span>Catalog</span>
-          <span aria-hidden="true">→</span>
-          <span>Cart</span>
-          <span aria-hidden="true">→</span>
-          <span>Checkout</span>
-          <span aria-hidden="true">→</span>
-          <span>Orders</span>
-          <span aria-hidden="true">→</span>
-          <span>Audit</span>
+          <div className="home-page__flow-steps">
+            {flowSteps.map((step, index) => (
+              <div className="home-page__flow-step" key={step}>
+                <span>{index + 1}</span>
+                {step}
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="home-page__section" aria-labelledby="home-features-title">
