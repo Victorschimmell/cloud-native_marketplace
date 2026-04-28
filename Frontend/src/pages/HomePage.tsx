@@ -44,7 +44,7 @@ export default function HomePage() {
   return (
     <PageSkeleton
       summary="A short overview of the features implemented in the B2C marketplace platform."
-      title="Marketplace Platform"
+      title="Cloud-Native Marketplace Platform"
       titleId="home-page-title"
     >
       <div className="home-page">
