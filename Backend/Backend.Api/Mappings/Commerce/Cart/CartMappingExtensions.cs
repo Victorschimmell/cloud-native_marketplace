@@ -8,6 +8,9 @@ public static class CartMappingExtensions
     public static App.AddCartItemRequest ToApplicationRequest(this AddCartItemRequest request) =>
         new(request.CartId, request.UserId, request.SessionId, request.ListingId, request.Quantity);
 
+    public static App.RemoveCartItemRequest ToApplicationRequest(this RemoveCartItemRequest request) =>
+        new(request.CartId, request.UserId, request.SessionId, request.ListingId, request.Quantity);
+
     public static CartResponse ToResponse(this App.CartDto cart) =>
         new()
         {

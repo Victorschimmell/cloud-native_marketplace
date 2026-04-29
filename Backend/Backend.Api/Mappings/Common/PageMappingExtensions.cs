@@ -5,7 +5,7 @@ namespace Backend.Api.Mappings.Common;
 
 public static class PageMappingExtensions
 {
-    public static App.PagedRequest ToDto(this PageRequest request)
+    public static App.PagedRequest ToAppRequest(this PageRequest request)
     {
         return new App.PagedRequest(Page: request.Page, PageSize: request.PageSize);
     }

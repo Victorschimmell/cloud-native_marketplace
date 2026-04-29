@@ -29,13 +29,21 @@ public class CartController : ApiControllerBase
             request.SessionId);
 
         var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), cancellationToken);
-
         return HandleResult(result, cart => cart.ToResponse());
     }
 
     [HttpDelete]
     public async Task<ActionResult<CartResponse>> RemoveCartItemAsync([FromBody] RemoveCartItemRequest request, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        _logger.LogInformation(
+            "Remove cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
+            request.ListingId,
+            request.Quantity,
+            request.CartId,
+            request.UserId,
+            request.SessionId);
+
+        var result = await _cartService.RemoveItemAsync(request.ToApplicationRequest(), cancellationToken);
+        return HandleResult(result, cart => cart.ToResponse());
     }
 }

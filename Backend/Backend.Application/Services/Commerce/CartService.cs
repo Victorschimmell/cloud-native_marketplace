@@ -33,12 +33,22 @@ public sealed class CartService : ICartService
 
     public Task<Result<CartDto>> GetCartAsync(GetCartRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<CartDto>.NotImplemented());
+        return GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken)
+            .ContinueWith(cartTask =>
+            {
+                var cart = cartTask.Result;
+                return Result<CartDto>.Success(cart.ToCartDto());
+            }, cancellationToken);
     }
 
     public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Quantity < 1)
+        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
+        {
+            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+        }
+
+        if (request.Quantity <= 0)
         {
             return Result<CartDto>.ValidationFailure("Quantity must be greater than zero.");
         }
@@ -60,11 +70,11 @@ public sealed class CartService : ICartService
             return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
         }
 
-        var cart = await GetOrCreateActiveCartAsync(request, cancellationToken);
+        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
         var now = _dateTimeProvider.UtcNow;
-        var existingItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
 
-        if (existingItem is null)
+        if (existingCartItem is null)
         {
             var item = new CartItem
             {
@@ -80,15 +90,14 @@ public sealed class CartService : ICartService
         }
         else
         {
-            var newQuantity = existingItem.Quantity + request.Quantity;
+            var newQuantity = existingCartItem.Quantity + request.Quantity;
             if (newQuantity > listing.InventoryQuantity)
             {
                 return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
             }
 
-            existingItem.Quantity = newQuantity;
-            existingItem.UnitPriceAtAddition = listing.ListingPrice;
-            existingItem.UpdatedAtUtc = now;
+            existingCartItem.Quantity = newQuantity;
+            existingCartItem.UpdatedAtUtc = now;
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -96,46 +105,96 @@ public sealed class CartService : ICartService
         return Result<CartDto>.Success(cart.ToCartDto());
     }
 
-    public Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<CartDto>.NotImplemented());
+        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
+        {
+            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+        }
+
+        if (request.Quantity <= 0)
+        {
+            return Result<CartDto>.ValidationFailure("Quantity must be greater than zero.");
+        }
+
+        var listing = await _productListingRepository.GetByIdAsync(request.ListingId, cancellationToken);
+
+        if (listing is null || listing.IsDeleted || listing.VisibilityStatus != ListingVisibilityStatus.Published)
+        {
+            return Result<CartDto>.NotFound("Product listing was not found.");
+        }
+
+        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
+        var now = _dateTimeProvider.UtcNow;
+
+        if (existingCartItem is null)
+        {
+            return Result<CartDto>.NotFound("Cart item was not found in the cart.");
+        }
+
+        if (request.Quantity >= existingCartItem.Quantity)
+        {
+            await _cartRepository.RemoveItemAsync(existingCartItem, cancellationToken);
+        }
+        else
+        {
+            existingCartItem.Quantity -= request.Quantity;
+            existingCartItem.UpdatedAtUtc = now;
+
+            await _cartRepository.UpdateItemAsync(existingCartItem, cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result<CartDto>.Success(cart.ToCartDto());
     }
 
-    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(AddCartItemRequest request, CancellationToken cancellationToken)
+    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = null;
 
-        if (request.CartId.HasValue)
+        if (CartId.HasValue)
         {
-            cart = await _cartRepository.GetByIdAsync(request.CartId.Value, cancellationToken);
+            cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
         }
 
-        if (cart is null && request.UserId.HasValue)
+        if (cart is null && UserId.HasValue)
         {
-            cart = await _cartRepository.GetActiveByUserIdAsync(request.UserId.Value, cancellationToken);
+            cart = await _cartRepository.GetActiveByUserIdAsync(UserId.Value, cancellationToken);
         }
 
-        if (cart is null && request.SessionId.HasValue)
+        if (cart is null && SessionId.HasValue)
         {
-            cart = await _cartRepository.GetActiveBySessionIdAsync(request.SessionId.Value, cancellationToken);
+            cart = await _cartRepository.GetActiveBySessionIdAsync(SessionId.Value, cancellationToken);
         }
 
-        if (cart is { Status: CartStatus.Active })
+        if (cart is not null && cart.ExpiresAtUtc < _dateTimeProvider.UtcNow)
         {
-            return cart;
+            cart.Status = CartStatus.Expired;
+            await _cartRepository.UpdateAsync(cart, cancellationToken);
+            cart = null;
         }
 
         var now = _dateTimeProvider.UtcNow;
+        if (cart is { Status: CartStatus.Active })
+        {
+            cart.ExpiresAtUtc = now.AddDays(14);
+            await _cartRepository.UpdateAsync(cart, cancellationToken);
+            return cart;
+        }
+
         // Temporary anonymous cart for the checkout flow until real auth/session cart ownership is wired up.
+        // TODO: Remember to validate the userid and sessionid is valid
         cart = new ShoppingCart
         {
-            UserId = request.UserId,
-            SessionId = request.SessionId,
+            UserId = UserId,
+            SessionId = SessionId,
             Status = CartStatus.Active,
             ExpiresAtUtc = now.AddDays(14)
         };
-
         await _cartRepository.AddAsync(cart, cancellationToken);
+
         return cart;
     }
 }

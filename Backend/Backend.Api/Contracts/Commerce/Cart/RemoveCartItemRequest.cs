@@ -17,6 +17,9 @@ public sealed record RemoveCartItemRequest : IValidatableObject
     [NotEmptyGuid]
     public required Guid ListingId { get; init; }
 
+    [Range(1, int.MaxValue)]
+    public required int Quantity { get; init; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!CartId.HasValue && !UserId.HasValue && !SessionId.HasValue)
