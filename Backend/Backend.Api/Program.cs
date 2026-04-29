@@ -5,6 +5,7 @@ using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
 using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using Serilog;
@@ -37,6 +38,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services
+    .AddAuthentication(MarketplaceBearerAuthenticationHandler.SchemeName)
+    .AddScheme<AuthenticationSchemeOptions, MarketplaceBearerAuthenticationHandler>(
+        MarketplaceBearerAuthenticationHandler.SchemeName,
+        options => { });
+builder.Services.AddAuthorization();
 
 // Add services to the container.
 builder.Services.AddInfrastructure(builder.Configuration);

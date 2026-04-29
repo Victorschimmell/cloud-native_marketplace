@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace Backend.Api.Contracts.User.Auth;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum AccountStatus
 {
     PendingActivation = 1,
