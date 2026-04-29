@@ -18,7 +18,7 @@ public class CartController : ApiControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, [FromQuery] string currency, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Add cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
@@ -28,12 +28,12 @@ public class CartController : ApiControllerBase
             request.UserId,
             request.SessionId);
 
-        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), cancellationToken);
+        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), currency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
     [HttpDelete]
-    public async Task<ActionResult<CartResponse>> RemoveCartItemAsync([FromBody] RemoveCartItemRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CartResponse>> RemoveCartItemAsync([FromBody] RemoveCartItemRequest request, [FromQuery] string currency, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Remove cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
@@ -43,7 +43,7 @@ public class CartController : ApiControllerBase
             request.UserId,
             request.SessionId);
 
-        var result = await _cartService.RemoveItemAsync(request.ToApplicationRequest(), cancellationToken);
+        var result = await _cartService.RemoveItemAsync(request.ToApplicationRequest(), currency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 }

@@ -30,6 +30,7 @@ public static class CartMappingExtensions
             ListingId = item.ListingId,
             Quantity = item.Quantity,
             UnitPriceAtAddition = item.UnitPriceAtAddition,
+            CurrencyCode = item.CurrencyCode,
             AddedAtUtc = item.AddedAtUtc,
             UpdatedAtUtc = item.UpdatedAtUtc
         };

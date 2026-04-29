@@ -106,11 +106,25 @@ internal static class ApplicationMappings
     public static CategoryDto ToCategoryDto(this ProductCategory category) =>
         new(category.Id, category.CategoryNamePt, category.CategoryNameEn);
 
-    public static CartItemDto ToCartItemDto(this CartItem item) =>
-        new(item.Id, item.CartId, item.ListingId, item.Quantity, item.UnitPriceAtAddition, item.AddedAtUtc, item.UpdatedAtUtc);
+    public static CartItemDto ToCartItemDto(this CartItem item, string currencyCode, Func<decimal, decimal> priceConverter) =>
+        new(
+            item.Id,
+            item.CartId,
+            item.ListingId,
+            item.Quantity,
+            priceConverter(item.UnitPriceAtAddition),
+            currencyCode,
+            item.AddedAtUtc,
+            item.UpdatedAtUtc);
 
-    public static CartDto ToCartDto(this ShoppingCart cart) =>
-        new(cart.Id, cart.UserId, cart.SessionId, cart.Status.ToString(), cart.ExpiresAtUtc, cart.Items.Select(ToCartItemDto).ToArray());
+    public static CartDto ToCartDto(this ShoppingCart cart, string currencyCode, Func<decimal, decimal> priceConverter) =>
+        new(
+            cart.Id,
+            cart.UserId,
+            cart.SessionId,
+            cart.Status.ToString(),
+            cart.ExpiresAtUtc,
+            cart.Items.Select(item => item.ToCartItemDto(currencyCode, priceConverter)).ToArray());
 
     public static OrderItemDto ToOrderItemDto(this OrderItem item) =>
         new(

@@ -12,36 +12,49 @@ public sealed class CartService : ICartService
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CartService(
         ICartRepository cartRepository,
         IProductListingRepository productListingRepository,
         IDateTimeProvider dateTimeProvider,
+        ICurrencyConversionService currencyConversionService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
+        ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _cartRepository = cartRepository;
         _productListingRepository = productListingRepository;
         _dateTimeProvider = dateTimeProvider;
+        _currencyConversionService = currencyConversionService;
         _unitOfWork = unitOfWork;
     }
 
-    public Task<Result<CartDto>> GetCartAsync(GetCartRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> GetCartAsync(GetCartRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        return GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken)
-            .ContinueWith(cartTask =>
-            {
-                var cart = cartTask.Result;
-                return Result<CartDto>.Success(cart.ToCartDto());
-            }, cancellationToken);
+        var cart = await GetCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+
+        if (cart is null)
+        {
+            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
@@ -102,10 +115,17 @@ public sealed class CartService : ICartService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(cart.ToCartDto());
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
@@ -147,10 +167,17 @@ public sealed class CartService : ICartService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(cart.ToCartDto());
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    private async Task<ShoppingCart?> GetCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = null;
 
@@ -169,21 +196,42 @@ public sealed class CartService : ICartService
             cart = await _cartRepository.GetActiveBySessionIdAsync(SessionId.Value, cancellationToken);
         }
 
-        if (cart is not null && cart.ExpiresAtUtc < _dateTimeProvider.UtcNow)
-        {
-            cart.Status = CartStatus.Expired;
-            await _cartRepository.UpdateAsync(cart, cancellationToken);
-            cart = null;
-        }
+        return cart;
+    }
 
-        var now = _dateTimeProvider.UtcNow;
+    private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = await GetCartAsync(CartId, UserId, SessionId, cancellationToken);
+
         if (cart is { Status: CartStatus.Active })
         {
+            // cart expired
+            if (cart.ExpiresAtUtc < _dateTimeProvider.UtcNow)
+            {
+                cart.Status = CartStatus.Expired;
+                await _cartRepository.UpdateAsync(cart, cancellationToken);
+                return null;
+            }
+
+            var now = _dateTimeProvider.UtcNow;
             cart.ExpiresAtUtc = now.AddDays(14);
             await _cartRepository.UpdateAsync(cart, cancellationToken);
             return cart;
         }
 
+        return null;
+    }
+
+    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = await GetActiveCartAsync(CartId, UserId, SessionId, cancellationToken);
+
+        if (cart is not null)
+        {
+            return cart;
+        }
+
+        var now = _dateTimeProvider.UtcNow;
         // Temporary anonymous cart for the checkout flow until real auth/session cart ownership is wired up.
         // TODO: Remember to validate the userid and sessionid is valid
         cart = new ShoppingCart

@@ -6,6 +6,7 @@ public sealed record CartItemDto(
     Guid ListingId,
     int Quantity,
     decimal UnitPriceAtAddition,
+    string CurrencyCode,
     DateTimeOffset AddedAtUtc,
     DateTimeOffset UpdatedAtUtc);
 
@@ -23,7 +24,7 @@ public sealed record AddCartItemRequest(Guid? CartId, Guid? UserId, Guid? Sessio
 
 public sealed record RemoveCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId, int Quantity);
 
-public sealed record CheckoutLineDto(Guid ListingId, int Quantity, decimal UnitPrice, decimal LineTotal);
+public sealed record CheckoutLineDto(Guid ListingId, int Quantity, decimal UnitPrice, decimal LineTotal, string CurrencyCode);
 
 public sealed record GetCheckoutPreviewRequest(Guid? CartId, Guid? UserId, Guid? SessionId);
 
