@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.User.Registration;
+using Backend.Api.Mappings.User.Registration;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,12 +18,16 @@ public class RegistrationController : ApiControllerBase
     [HttpPost("customer")]
     public async Task<ActionResult<RegistrationResponse>> RegisterCustomer(RegisterCustomerRequest request, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _registrationService.RegisterCustomerAsync(request.ToDto(), cancellationToken);
+
+        return HandleResult(result, response => response.ToResponse());
     }
 
     [HttpPost("seller")]
     public async Task<ActionResult<RegistrationResponse>> RegisterSeller(RegisterSellerRequest request, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _registrationService.RegisterSellerAsync(request.ToDto(), cancellationToken);
+
+        return HandleResult(result, response => response.ToResponse());
     }
 }
