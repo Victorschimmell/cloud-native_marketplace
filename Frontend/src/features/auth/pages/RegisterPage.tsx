@@ -69,7 +69,7 @@ export default function RegisterPage() {
         <form className="auth-form" onSubmit={submit}>
           <div className="auth-form__header">
             <span className="auth-form__eyebrow">Marketplace access</span>
-            <h2>Register</h2>
+            <h2>Choose your profile</h2>
           </div>
 
           {error ? <AuthNotice variant="error">{error}</AuthNotice> : null}

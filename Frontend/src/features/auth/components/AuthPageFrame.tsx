@@ -8,13 +8,7 @@ interface AuthPageFrameProps {
 export function AuthPageFrame({ children, variant }: AuthPageFrameProps) {
   return (
     <div className="auth-page">
-      <aside className={`auth-page__panel auth-page__panel--${variant}`} aria-hidden="true">
-        <div className="auth-page__mark">
-          <span />
-          <span />
-          <span />
-        </div>
-      </aside>
+      <aside className={`auth-page__panel auth-page__panel--${variant}`} aria-hidden="true" />
       {children}
     </div>
   );

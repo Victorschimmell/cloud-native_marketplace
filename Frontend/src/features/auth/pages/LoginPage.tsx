@@ -39,7 +39,7 @@ export default function LoginPage() {
         <form className="auth-form" onSubmit={submit}>
           <div className="auth-form__header">
             <span className="auth-form__eyebrow">Welcome back</span>
-            <h2>Sign in</h2>
+            <h2>Continue shopping</h2>
           </div>
 
           {wasRegistered ? <AuthNotice variant="success">Account created. Log in to continue.</AuthNotice> : null}
