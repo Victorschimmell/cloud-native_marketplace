@@ -3,6 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import { useAuth } from '../AuthContext';
+import { AuthField } from '../components/AuthField';
+import { AuthNotice } from '../components/AuthNotice';
+import { AuthPageFrame } from '../components/AuthPageFrame';
 import './AuthPages.css';
 
 export default function LoginPage() {
@@ -32,29 +35,27 @@ export default function LoginPage() {
 
   return (
     <PageSkeleton summary="Access your account and continue shopping with your saved cart." title="Log in">
-      <div className="auth-page">
+      <AuthPageFrame variant="login">
         <form className="auth-form" onSubmit={submit}>
-          {wasRegistered ? (
-            <p className="auth-form__notice auth-form__notice--success" role="status">
-              Account created. Log in to continue.
-            </p>
-          ) : null}
+          <div className="auth-form__header">
+            <span className="auth-form__eyebrow">Welcome back</span>
+            <h2>Sign in</h2>
+          </div>
 
-          {error ? (
-            <p className="auth-form__notice auth-form__notice--error" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {wasRegistered ? <AuthNotice variant="success">Account created. Log in to continue.</AuthNotice> : null}
 
-          <label>
-            Email
-            <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-          </label>
+          {error ? <AuthNotice variant="error">{error}</AuthNotice> : null}
 
-          <label>
-            Password
-            <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-          </label>
+          <AuthField autoComplete="email" label="Email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+
+          <AuthField
+            autoComplete="current-password"
+            label="Password"
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            type="password"
+            value={password}
+          />
 
           <button disabled={isSubmitting} type="submit">
             {isSubmitting ? 'Logging in...' : 'Log in'}
@@ -64,7 +65,7 @@ export default function LoginPage() {
             New here? <Link to="/register">Create an account</Link>
           </p>
         </form>
-      </div>
+      </AuthPageFrame>
     </PageSkeleton>
   );
 }
