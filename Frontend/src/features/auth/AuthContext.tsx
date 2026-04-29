@@ -30,15 +30,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthState(null);
       },
       register: async (registerRequest) => {
+        let response: RegistrationResponse;
+
         if (registerRequest.accountType === 'customer') {
           const { accountType, ...customerRequest } = registerRequest;
           void accountType;
-          return authApi.registerCustomer(customerRequest);
+          response = await authApi.registerCustomer(customerRequest);
+        } else {
+          const { accountType, ...sellerRequest } = registerRequest;
+          void accountType;
+          response = await authApi.registerSeller(sellerRequest);
         }
 
-        const { accountType, ...sellerRequest } = registerRequest;
-        void accountType;
-        return authApi.registerSeller(sellerRequest);
+        if (response.token) {
+          setStoredAuth({ token: response.token, user: response.user });
+          setAuthState({ token: response.token, user: response.user });
+        }
+
+        return response;
       },
     }),
     [storedAuth],

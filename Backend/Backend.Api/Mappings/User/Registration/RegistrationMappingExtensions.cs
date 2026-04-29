@@ -18,7 +18,8 @@ public static class RegistrationMappingExtensions
         {
             User = response.User.ToModel(),
             Customer = response.Customer?.ToModel(),
-            Seller = response.Seller?.ToModel()
+            Seller = response.Seller?.ToModel(),
+            Token = response.Token?.ToModel()
         };
 
     private static CustomerModel ToModel(this App.CustomerDto customer) =>

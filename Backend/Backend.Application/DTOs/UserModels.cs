@@ -58,7 +58,8 @@ public sealed record RegisterSellerRequest(
 public sealed record RegistrationResponse(
     UserAccountDto User,
     CustomerDto? Customer,
-    SellerDto? Seller);
+    SellerDto? Seller,
+    AuthTokenDto? Token = null);
 
 public sealed record SellerVerificationRequestDto(
     Guid Id,

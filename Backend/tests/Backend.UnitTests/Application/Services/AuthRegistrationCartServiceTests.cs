@@ -35,7 +35,15 @@ public sealed class AuthRegistrationCartServiceTests
         var userRepository = new FakeUserAccountRepository();
         var customerRepository = new FakeCustomerRepository();
         var unitOfWork = new FakeUnitOfWork();
-        var service = new RegistrationService(userRepository, customerRepository, new FakeSellerRepository(), new FakePasswordHasher(), unitOfWork);
+        var service = new RegistrationService(
+            userRepository,
+            customerRepository,
+            new FakeSellerRepository(),
+            new FakeSellerVerificationRequestRepository(),
+            new FakePasswordHasher(),
+            new FakeAuthTokenGenerator(),
+            new FakeDateTimeProvider(),
+            unitOfWork);
 
         var result = await service.RegisterCustomerAsync(
             new RegisterCustomerRequest("NEW@EXAMPLE.COM", "Password123!", " Ada ", " Lovelace ", "+4512345678", null),
@@ -45,6 +53,7 @@ public sealed class AuthRegistrationCartServiceTests
         Assert.NotNull(userRepository.UserAccount);
         Assert.Equal("new@example.com", userRepository.UserAccount.Email.Value);
         Assert.Equal("hashed::Password123!", userRepository.UserAccount.PasswordHash);
+        Assert.NotNull(result.Value!.Token);
         Assert.NotNull(customerRepository.Customer);
         Assert.Equal(userRepository.UserAccount.Id, customerRepository.Customer.UserId);
         Assert.Equal("Ada", customerRepository.Customer.FirstName);
@@ -56,7 +65,16 @@ public sealed class AuthRegistrationCartServiceTests
     {
         var userRepository = new FakeUserAccountRepository();
         var sellerRepository = new FakeSellerRepository();
-        var service = new RegistrationService(userRepository, new FakeCustomerRepository(), sellerRepository, new FakePasswordHasher(), new FakeUnitOfWork());
+        var verificationRequestRepository = new FakeSellerVerificationRequestRepository();
+        var service = new RegistrationService(
+            userRepository,
+            new FakeCustomerRepository(),
+            sellerRepository,
+            verificationRequestRepository,
+            new FakePasswordHasher(),
+            new FakeAuthTokenGenerator(),
+            new FakeDateTimeProvider(),
+            new FakeUnitOfWork());
 
         var result = await service.RegisterSellerAsync(
             new RegisterSellerRequest("seller@example.com", "Password123!", "Shop ApS", "DK-123", "IBAN", null),
@@ -66,6 +84,9 @@ public sealed class AuthRegistrationCartServiceTests
         Assert.NotNull(sellerRepository.Seller);
         Assert.Equal(userRepository.UserAccount!.Id, sellerRepository.Seller.UserId);
         Assert.Equal(VerificationStatus.Pending, sellerRepository.Seller.VerificationStatus);
+        Assert.NotNull(verificationRequestRepository.Request);
+        Assert.Equal(sellerRepository.Seller.Id, verificationRequestRepository.Request.SellerId);
+        Assert.Null(result.Value!.Token);
     }
 
     private static UserAccount CreateUser(string email, string passwordHash) =>
