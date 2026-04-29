@@ -21,8 +21,10 @@ public sealed class CustomerService : ICustomerService
         return Task.FromResult(Result<CustomerDto>.NotImplemented());
     }
 
-    public Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<PagedResult<CustomerDto>>.NotImplemented());
+        var result = await _customerRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
+        return Result<PagedResult<CustomerDto>>.Success(new PagedResult<CustomerDto>(
+            result.Items.Select(customer => customer.ToCustomerDto()).ToArray(), request.Page, request.PageSize, result.TotalCount));
     }
 }
