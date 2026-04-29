@@ -7,6 +7,9 @@ import './AuthPages.css';
 
 type AccountType = 'customer' | 'seller';
 
+const phonePattern = String.raw`\+?[0-9][0-9\s().-]{6,24}(?:\s?(?:x|ext\.?)\s?[0-9]{1,6})?`;
+const phoneValidationMessage = 'Use a valid phone number, for example +4512345678.';
+
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -30,9 +33,23 @@ export default function RegisterPage() {
       setError(null);
 
       if (accountType === 'customer') {
-        await register({ accountType, email, password, firstName, lastName, phone });
+        await register({
+          accountType,
+          email: email.trim(),
+          password,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+        });
       } else {
-        await register({ accountType, email, password, businessName, registrationNumber, payoutInformation });
+        await register({
+          accountType,
+          email: email.trim(),
+          password,
+          businessName: businessName.trim(),
+          registrationNumber: registrationNumber.trim(),
+          payoutInformation: payoutInformation.trim(),
+        });
       }
 
       navigate('/login?registered=1');
@@ -87,7 +104,17 @@ export default function RegisterPage() {
               </label>
               <label>
                 Phone
-                <input autoComplete="tel" onChange={(event) => setPhone(event.target.value)} required type="tel" value={phone} />
+                <input
+                  autoComplete="tel"
+                  inputMode="tel"
+                  onChange={(event) => setPhone(event.target.value)}
+                  pattern={phonePattern}
+                  placeholder="+4512345678"
+                  required
+                  title={phoneValidationMessage}
+                  type="tel"
+                  value={phone}
+                />
               </label>
             </>
           ) : (

@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await login({ email, password });
+      await login({ email: email.trim(), password });
       navigate('/products');
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Could not log in right now.');
