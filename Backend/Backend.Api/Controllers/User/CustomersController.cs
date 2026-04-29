@@ -33,7 +33,8 @@ public class CustomersController : ApiControllerBase
     [HttpGet("{customerId:guid}/cart")]
     public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid customerId, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, customerId, null), cancellationToken);
+        return HandleResult(result, cart => cart.ToResponse());
     }
 
     [HttpGet("{customerId:guid}/orders")]
