@@ -1,5 +1,7 @@
 export type AccountStatus = 'PendingActivation' | 'Active' | 'Suspended' | 'Locked' | 'Disabled';
 
+export type AccountType = 'customer' | 'seller';
+
 export interface UserAccount {
   id: string;
   email: string;
@@ -44,8 +46,8 @@ export interface RegisterSellerRequest {
 }
 
 export type RegisterRequest =
-  | ({ accountType: 'customer' } & RegisterCustomerRequest)
-  | ({ accountType: 'seller' } & RegisterSellerRequest);
+  | ({ accountType: Extract<AccountType, 'customer'> } & RegisterCustomerRequest)
+  | ({ accountType: Extract<AccountType, 'seller'> } & RegisterSellerRequest);
 
 export interface CustomerProfile {
   id: string;
