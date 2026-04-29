@@ -12,6 +12,13 @@ export class ApiError extends Error {
   }
 }
 
+interface ValidationProblemDetails {
+  title?: string;
+  detail?: string;
+  error?: string;
+  errors?: Record<string, string[]>;
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   const accessToken = getStoredAccessToken();
@@ -29,8 +36,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     let message = `Request failed with status ${response.status}`;
 
     try {
-      const body = (await response.json()) as { error?: string };
-      message = body.error ?? message;
+      const body = (await response.json()) as ValidationProblemDetails;
+      message = getErrorMessage(body, message);
     } catch {
       // Keep the status-based message when the API does not return JSON.
     }
@@ -39,4 +46,22 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+function getErrorMessage(body: ValidationProblemDetails, fallback: string) {
+  if (body.error) {
+    return body.error;
+  }
+
+  if (body.errors) {
+    const validationMessages = Object.entries(body.errors)
+      .flatMap(([field, messages]) => messages.map((message) => `${field}: ${message}`))
+      .join(' ');
+
+    if (validationMessages) {
+      return validationMessages;
+    }
+  }
+
+  return body.detail ?? body.title ?? fallback;
 }
