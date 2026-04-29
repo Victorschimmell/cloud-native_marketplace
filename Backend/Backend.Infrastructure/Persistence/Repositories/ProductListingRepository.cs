@@ -70,6 +70,30 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
         return new PagedResult<ProductListing>(listings, request.Page, request.PageSize, totalCount);
     }
 
+    public async Task<ProductListing?> GetAvailableProductDetailAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.ProductListings
+            .AsNoTracking()
+            .Include(l => l.Product)
+                .ThenInclude(p => p!.Category)
+            .Include(l => l.Seller)
+            .Where(l =>
+                l.ProductId == productId &&
+                !l.IsDeleted &&
+                l.VisibilityStatus == ListingVisibilityStatus.Published &&
+                l.Product != null &&
+                l.Seller != null);
+
+        if (listingId.HasValue)
+        {
+            query = query.Where(l => l.Id == listingId.Value);
+        }
+
+        return await query
+            .OrderBy(l => l.ListingPrice)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings

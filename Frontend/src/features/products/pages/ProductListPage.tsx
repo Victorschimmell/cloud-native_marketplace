@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import PageSkeleton from '../../../components/PageSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import StatusMessage from '../../../shared/components/StatusMessage';
+import { getCurrencyLocale } from '../../../shared/currency/currency';
+import { useCurrency } from '../../../shared/currency/useCurrency';
 import { productApi } from '../api/productApi';
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
@@ -20,10 +23,11 @@ export default function ProductListPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortOption, setSortOption] = useState<ProductSortOption>('newest');
+  const { currency } = useCurrency();
 
   const priceFormatter = useMemo(
-    () => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
-    [],
+    () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
+    [currency],
   );
 
   const totalPages = Math.max(1, Math.ceil(totalCount / productPageSize));
@@ -58,6 +62,7 @@ export default function ProductListPage() {
         setError(null);
         const response = await productApi.getProducts(page, productPageSize, {
           categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
+          currency,
           search: searchTerm.trim() || undefined,
           signal: abortController.signal,
           sort: sortOption,
@@ -83,7 +88,7 @@ export default function ProductListPage() {
     return () => {
       abortController.abort();
     };
-  }, [categoryFilter, page, searchTerm, sortOption]);
+  }, [categoryFilter, currency, page, searchTerm, sortOption]);
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(1, currentPage - 1));
@@ -109,16 +114,11 @@ export default function ProductListPage() {
   }
 
   return (
-    <section className="product-list-page" aria-labelledby="product-list-page-title">
-      <header className="product-list-page__header">
-        <div>
-          <h1 id="product-list-page-title" className="product-list-page__title">Browse Products</h1>
-          <p className="product-list-page__summary">
-            {isLoading ? 'Loading products...' : `${totalCount} products available`}
-          </p>
-        </div>
-      </header>
-
+    <PageSkeleton
+      summary={isLoading ? 'Loading products...' : `${totalCount} products available`}
+      title="Browse Products"
+      titleId="product-list-page-title"
+    >
       <ProductFilters
         categories={categories}
         categoryFilter={categoryFilter}
@@ -161,6 +161,6 @@ export default function ProductListPage() {
           totalPages={totalPages}
         />
       )}
-    </section>
+    </PageSkeleton>
   );
 }

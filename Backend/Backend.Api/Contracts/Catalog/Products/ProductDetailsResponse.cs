@@ -1,6 +1,6 @@
 namespace Backend.Api.Contracts.Catalog.Products;
 
-public sealed record BrowseProductResponse
+public sealed record ProductDetailsResponse
 {
     public required Guid ProductId { get; init; }
     public required Guid ListingId { get; init; }
@@ -16,4 +16,7 @@ public sealed record BrowseProductResponse
     public required int ProductLengthCm { get; init; }
     public required int ProductHeightCm { get; init; }
     public required int ProductWidthCm { get; init; }
+    public required Guid SellerId { get; init; }
+    public required string SellerName { get; init; }
+    public required string SellerVerificationStatus { get; init; }
 }

@@ -57,7 +57,7 @@ internal static class ApplicationMappings
             product.ProductHeightCm,
             product.ProductWidthCm);
 
-    public static BrowseProductDto ToBrowseDto(this ProductListing listing)
+    public static BrowseProductDto ToBrowseDto(this ProductListing listing, string currencyCode, decimal convertedPrice)
     {
         var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
 
@@ -68,13 +68,39 @@ internal static class ApplicationMappings
             product.ProductName,
             product.Description,
             product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
-            listing.ListingPrice,
+            convertedPrice,
+            currencyCode,
             listing.InventoryQuantity,
             product.ProductPhotosQty,
             product.ProductWeightG,
             product.ProductLengthCm,
             product.ProductHeightCm,
             product.ProductWidthCm);
+    }
+
+    public static ProductDetailsDto ToProductDetailsDto(this ProductListing listing, string currencyCode, decimal convertedPrice)
+    {
+        var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
+        var seller = listing.Seller ?? throw new InvalidOperationException("Product listing must include seller details.");
+
+        return new ProductDetailsDto(
+            product.Id,
+            listing.Id,
+            product.CategoryId,
+            product.ProductName,
+            product.Description,
+            product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
+            convertedPrice,
+            currencyCode,
+            listing.InventoryQuantity,
+            product.ProductPhotosQty,
+            product.ProductWeightG,
+            product.ProductLengthCm,
+            product.ProductHeightCm,
+            product.ProductWidthCm,
+            seller.Id,
+            seller.BusinessName,
+            seller.VerificationStatus.ToString());
     }
 
     public static CategoryDto ToCategoryDto(this ProductCategory category) =>

@@ -63,6 +63,7 @@ internal sealed class FakeProductListingRepository : IProductListingRepository
     public Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<ProductListing>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
     public Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<ProductListing>([], request.Page, request.PageSize, 0));
+    public Task<ProductListing?> GetAvailableProductDetailAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default) => Task.FromResult<ProductListing?>(null);
     public Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<ProductListing?>(null);
     public Task<IReadOnlyList<ProductListing>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
     public Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
@@ -74,6 +75,7 @@ internal sealed class FakeCartRepository : ICartRepository
     public ShoppingCart? Cart { get; set; }
 
     public Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
@@ -178,6 +180,19 @@ internal sealed class FakeUserAccountRepository : IUserAccountRepository
 internal sealed class FakeDateTimeProvider : IDateTimeProvider
 {
     public DateTimeOffset UtcNow => new(2026, 4, 9, 12, 0, 0, TimeSpan.Zero);
+}
+
+internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
+{
+    public string BaseCurrency => "BRL";
+    public string NormalizeOrDefault(string? currency) => string.IsNullOrWhiteSpace(currency) ? BaseCurrency : currency.Trim().ToUpperInvariant();
+    public bool IsSupported(string currencyCode) => currencyCode is "BRL" or "USD" or "DKK";
+    public decimal FromBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount * 0.5m, 2, MidpointRounding.AwayFromZero);
+}
+
+internal sealed class FakeUnitOfWork : IUnitOfWork
+{
+    public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 internal sealed class FakeCurrentUserProvider : ICurrentUserProvider

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Backend.Application.Services;
 
@@ -8,6 +9,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddSingleton<ICurrencyConversionService, FixedRateCurrencyConversionService>();
+
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<ICategoryService, CategoryService>();
 

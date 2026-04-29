@@ -513,9 +513,16 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
             if (existingListings.TryGetValue(candidate.Sku, out var existingListing))
             {
+                var listingChanged = false;
+
                 if (existingListing.ListingPrice != row.Price)
                 {
                     existingListing.ListingPrice = row.Price;
+                    listingChanged = true;
+                }
+
+                if (listingChanged)
+                {
                     updatedListingsCount++;
                 }
 
@@ -528,7 +535,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 ProductId = productId,
                 Sku = candidate.Sku,
                 ListingPrice = row.Price,
-                InventoryQuantity = 0,
+                InventoryQuantity = Random.Shared.Next(0, 11),
                 VisibilityStatus = ListingVisibilityStatus.Published,
                 PublishedAtUtc = DateTimeOffset.UtcNow
             });

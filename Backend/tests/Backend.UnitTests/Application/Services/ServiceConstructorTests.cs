@@ -8,13 +8,13 @@ public sealed class ServiceConstructorTests
     [Fact]
     public void ProductService_Throws_When_ProductRepository_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository()));
+        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository(), new FakeCurrencyConversionService()));
     }
 
     [Fact]
     public void CartService_Throws_When_ProductListingRepository_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new CartService(new FakeCartRepository(), null!, new FakeDateTimeProvider()));
+        Assert.Throws<ArgumentNullException>(() => new CartService(new FakeCartRepository(), null!, new FakeDateTimeProvider(), new FakeUnitOfWork()));
     }
 
     [Fact]
@@ -28,12 +28,12 @@ public sealed class ServiceConstructorTests
     {
         _ = new CustomerService(new FakeCustomerRepository());
         _ = new SellerService(new FakeSellerRepository());
-        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository());
+        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
         _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository());
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
-        _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeDateTimeProvider());
+        _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
         _ = new CheckoutService(new FakeCartRepository(), new FakeOrderRepository(), new FakePaymentRepository(), new FakeDateTimeProvider());
         _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider());

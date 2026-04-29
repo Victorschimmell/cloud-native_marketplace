@@ -21,6 +21,7 @@ public sealed record BrowseProductDto(
     string Description,
     string? CategoryName,
     decimal Price,
+    string CurrencyCode,
     int StockQuantity,
     int ProductPhotosQty,
     int ProductWeightG,
@@ -28,10 +29,30 @@ public sealed record BrowseProductDto(
     int ProductHeightCm,
     int ProductWidthCm);
 
+public sealed record ProductDetailsDto(
+    Guid ProductId,
+    Guid ListingId,
+    Guid CategoryId,
+    string ProductName,
+    string Description,
+    string? CategoryName,
+    decimal Price,
+    string CurrencyCode,
+    int StockQuantity,
+    int ProductPhotosQty,
+    int ProductWeightG,
+    int ProductLengthCm,
+    int ProductHeightCm,
+    int ProductWidthCm,
+    Guid SellerId,
+    string SellerName,
+    string SellerVerificationStatus);
+
 public sealed record BrowseProductsRequest(
     Guid? CategoryId,
     string? Search,
     string Sort,
+    string Currency,
     int Page,
     int PageSize);
 
