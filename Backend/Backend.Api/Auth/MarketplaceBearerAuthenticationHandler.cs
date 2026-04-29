@@ -3,6 +3,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Abstractions;
+using Backend.Domain.Enums;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -12,29 +15,33 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IUserAccountRepository userAccountRepository,
+    IDateTimeProvider dateTimeProvider,
+    IHostEnvironment hostEnvironment)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     public const string SchemeName = "MarketplaceBearer";
+    private const string LocalTokenSecret = "local-development-token-secret-not-for-production-2026";
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var authorization = Request.Headers.Authorization.ToString();
 
         if (string.IsNullOrWhiteSpace(authorization) || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return AuthenticateResult.NoResult();
         }
 
         var token = authorization["Bearer ".Length..].Trim();
-        var principal = ValidateToken(token);
+        var principal = await ValidateTokenAsync(token);
 
-        return Task.FromResult(principal is null
+        return principal is null
             ? AuthenticateResult.Fail("Invalid bearer token.")
-            : AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName)));
+            : AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
     }
 
-    private ClaimsPrincipal? ValidateToken(string token)
+    private async Task<ClaimsPrincipal?> ValidateTokenAsync(string token)
     {
         try
         {
@@ -66,24 +73,29 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
             }
 
             var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresProperty.GetInt64());
-            if (expiresAt <= DateTimeOffset.UtcNow)
+            if (expiresAt <= dateTimeProvider.UtcNow)
+            {
+                return null;
+            }
+
+            var userAccount = await userAccountRepository.GetByIdAsync(userId, Context.RequestAborted);
+            if (userAccount is null ||
+                userAccount.IsBlocked ||
+                userAccount.AccountStatus is AccountStatus.Disabled or AccountStatus.Suspended ||
+                userAccount.LockedUntilUtc is not null && userAccount.LockedUntilUtc > dateTimeProvider.UtcNow)
             {
                 return null;
             }
 
             var claims = new List<Claim>
             {
-                new(ClaimTypes.NameIdentifier, userId.ToString())
+                new(ClaimTypes.NameIdentifier, userAccount.Id.ToString()),
+                new(ClaimTypes.Email, userAccount.Email.Value)
             };
 
-            if (root.TryGetProperty("email", out var emailProperty) && emailProperty.GetString() is { } email)
+            if (userAccount.IsAdmin)
             {
-                claims.Add(new Claim(ClaimTypes.Email, email));
-            }
-
-            if (root.TryGetProperty("role", out var roleProperty) && roleProperty.GetString() is { } role)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim(ClaimTypes.Role, "Admin"));
             }
 
             return new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName));
@@ -100,15 +112,26 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
 
     private string Sign(string value)
     {
-        var secret = configuration["Authentication:TokenSecret"];
-
-        if (string.IsNullOrWhiteSpace(secret) || secret.Length < 32)
-        {
-            throw new InvalidOperationException("Authentication token secret must be configured and at least 32 characters long.");
-        }
-
+        var secret = GetTokenSecret();
         using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
         return Base64UrlEncode(hmac.ComputeHash(Encoding.UTF8.GetBytes(value)));
+    }
+
+    private string GetTokenSecret()
+    {
+        var secret = configuration["Authentication:TokenSecret"];
+
+        if (!string.IsNullOrWhiteSpace(secret) && secret.Length >= 32)
+        {
+            return secret;
+        }
+
+        if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
+        {
+            return LocalTokenSecret;
+        }
+
+        throw new InvalidOperationException("Authentication token secret must be configured and at least 32 characters long.");
     }
 
     private static string Base64UrlEncode(byte[] value) =>

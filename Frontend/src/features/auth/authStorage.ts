@@ -1,6 +1,7 @@
 import type { AuthToken, UserAccount } from './types';
 
 const authStorageKey = 'marketplace.auth';
+let currentAuth: StoredAuth | null = null;
 
 export interface StoredAuth {
   token: AuthToken;
@@ -8,32 +9,17 @@ export interface StoredAuth {
 }
 
 export function getStoredAuth(): StoredAuth | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  const rawValue = window.localStorage.getItem(authStorageKey);
-  if (!rawValue) {
-    return null;
-  }
-
-  try {
-    const storedAuth = JSON.parse(rawValue) as StoredAuth;
-    if (!storedAuth.token?.accessToken || !storedAuth.user?.id) {
-      clearStoredAuth();
-      return null;
-    }
-
-    if (new Date(storedAuth.token.expiresAtUtc).getTime() <= Date.now()) {
-      clearStoredAuth();
-      return null;
-    }
-
-    return storedAuth;
-  } catch {
+  if (!currentAuth?.token.accessToken || !currentAuth.user.id) {
     clearStoredAuth();
     return null;
   }
+
+  if (new Date(currentAuth.token.expiresAtUtc).getTime() <= Date.now()) {
+    clearStoredAuth();
+    return null;
+  }
+
+  return currentAuth;
 }
 
 export function getStoredAccessToken(): string | null {
@@ -41,9 +27,11 @@ export function getStoredAccessToken(): string | null {
 }
 
 export function setStoredAuth(auth: StoredAuth) {
-  window.localStorage.setItem(authStorageKey, JSON.stringify(auth));
+  currentAuth = auth;
+  window.localStorage.removeItem(authStorageKey);
 }
 
 export function clearStoredAuth() {
+  currentAuth = null;
   window.localStorage.removeItem(authStorageKey);
 }

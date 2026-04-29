@@ -14,6 +14,14 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var tokenSecret = builder.Configuration["Authentication:TokenSecret"];
+if (!builder.Environment.IsDevelopment() &&
+    !builder.Environment.IsEnvironment("Testing") &&
+    (string.IsNullOrWhiteSpace(tokenSecret) || tokenSecret.Length < 32))
+{
+    throw new InvalidOperationException("Authentication token secret must be configured and at least 32 characters long.");
+}
+
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     var logDirectory = context.Configuration["LogFiles:DirectoryPath"];

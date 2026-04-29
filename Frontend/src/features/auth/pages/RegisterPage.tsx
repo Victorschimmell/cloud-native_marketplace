@@ -55,7 +55,7 @@ export default function RegisterPage() {
         });
       }
 
-      navigate('/login?registered=1');
+      navigate(accountType === 'customer' ? '/products' : '/login?registered=1');
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Could not create the account right now.');
     } finally {

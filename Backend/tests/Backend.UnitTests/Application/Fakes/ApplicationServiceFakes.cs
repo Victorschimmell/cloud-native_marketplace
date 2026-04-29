@@ -157,7 +157,11 @@ internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificat
     public SellerVerificationRequest? Request { get; set; }
     public int UpdateCalls { get; private set; }
 
-    public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
+    {
+        Request = request;
+        return Task.CompletedTask;
+    }
     public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
     public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Request is not null && Request.Id == id ? Request : null);
     public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Request is not null && Request.SellerId == sellerId ? [Request] : []);

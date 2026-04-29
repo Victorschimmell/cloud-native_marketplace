@@ -73,4 +73,5 @@ export interface RegistrationResponse {
   user: UserAccount;
   customer?: CustomerProfile | null;
   seller?: SellerProfile | null;
+  token?: AuthToken | null;
 }
