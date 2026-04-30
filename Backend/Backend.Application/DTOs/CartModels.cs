@@ -33,8 +33,7 @@ public sealed record CheckoutRequest(
     Guid? UserId,
     Guid? SessionId,
     Guid ShippingAddressId,
-    string OrderNumber,
-    IReadOnlyList<RecordPaymentRequest> Payments);
+    IReadOnlyList<RecordPaymentDetails> Payments);
 
 public sealed record CheckoutResponse(
     OrderDto Order,
