@@ -125,7 +125,7 @@ public sealed class CartService : ICartService
         return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> UpdateItemAsync(UpdateCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
         var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
         if (!_currencyConversionService.IsSupported(currencyCode))
@@ -137,11 +137,6 @@ public sealed class CartService : ICartService
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
             return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
-        }
-
-        if (request.Quantity <= 0)
-        {
-            return Result<CartDto>.ValidationFailure("Quantity must be greater than zero.");
         }
 
         var listing = await _productListingRepository.GetByIdAsync(request.ListingId, cancellationToken);
@@ -160,13 +155,18 @@ public sealed class CartService : ICartService
             return Result<CartDto>.NotFound("Cart item was not found in the cart.");
         }
 
-        if (request.Quantity >= existingCartItem.Quantity)
+        if (request.Quantity > listing.InventoryQuantity)
+        {
+            return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
+        }
+
+        if (request.Quantity <= 0)
         {
             await _cartRepository.RemoveItemAsync(existingCartItem, cancellationToken);
         }
         else
         {
-            existingCartItem.Quantity -= request.Quantity;
+            existingCartItem.Quantity = request.Quantity;
             existingCartItem.UpdatedAtUtc = now;
 
             await _cartRepository.UpdateItemAsync(existingCartItem, cancellationToken);

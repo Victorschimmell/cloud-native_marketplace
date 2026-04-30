@@ -47,13 +47,6 @@ public class CustomersController : ApiControllerBase
         return HandleResult(result, customer => customer.ToResponse());
     }
 
-    [HttpGet("{userId:guid}/cart")]
-    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid userId, [FromQuery] string currency, CancellationToken cancellationToken)
-    {
-        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, userId, null), currency, cancellationToken);
-        return HandleResult(result, cart => cart.ToResponse());
-    }
-
     [HttpGet("{userId:guid}/orders")]
     public async Task<ActionResult<PageResponse<OrderResponse>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid userId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {

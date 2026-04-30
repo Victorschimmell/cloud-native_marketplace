@@ -3,7 +3,7 @@ using Backend.Api.Attributes;
 
 namespace Backend.Api.Contracts.Commerce.Cart;
 
-public sealed record RemoveCartItemRequest : IValidatableObject
+public sealed record UpdateCartItemRequest : IValidatableObject
 {
     [NotEmptyGuid]
     public Guid? CartId { get; init; }
@@ -14,10 +14,6 @@ public sealed record RemoveCartItemRequest : IValidatableObject
     [NotEmptyGuid]
     public Guid? SessionId { get; init; }
 
-    [NotEmptyGuid]
-    public required Guid ListingId { get; init; }
-
-    [Range(1, int.MaxValue)]
     public required int Quantity { get; init; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

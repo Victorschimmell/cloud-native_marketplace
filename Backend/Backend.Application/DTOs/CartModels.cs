@@ -22,7 +22,7 @@ public sealed record GetCartRequest(Guid? CartId, Guid? UserId, Guid? SessionId)
 
 public sealed record AddCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId, int Quantity);
 
-public sealed record RemoveCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId, int Quantity);
+public sealed record UpdateCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId, int Quantity);
 
 public sealed record CheckoutLineDto(Guid ListingId, int Quantity, decimal UnitPrice, decimal LineTotal, string CurrencyCode);
 

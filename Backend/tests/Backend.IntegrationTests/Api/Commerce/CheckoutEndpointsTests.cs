@@ -36,7 +36,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task PreviewCheckout_ReturnsNotImplemented()
+    public async Task PreviewCheckout_ReturnsNotFound()
     {
         // Arrange
         var previewRequest = new CheckoutPreviewRequest
@@ -45,9 +45,9 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.GetAsync($"/api/checkout/preview?userId={previewRequest.UserId}", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/checkout/preview?userId={previewRequest.UserId}&currency=USD", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }
