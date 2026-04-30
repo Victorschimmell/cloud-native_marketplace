@@ -56,6 +56,13 @@ public sealed class CartService : ICartService
 
     public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
             return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
@@ -115,6 +122,11 @@ public sealed class CartService : ICartService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
+    }
+
+    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
+    {
         var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
         if (!_currencyConversionService.IsSupported(currencyCode))
         {
@@ -122,11 +134,6 @@ public sealed class CartService : ICartService
         }
         var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
 
-        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
-    }
-
-    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
-    {
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
             return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
@@ -166,13 +173,6 @@ public sealed class CartService : ICartService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
-        if (!_currencyConversionService.IsSupported(currencyCode))
-        {
-            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
-        }
-        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
 
         return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
