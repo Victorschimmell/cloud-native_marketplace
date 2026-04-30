@@ -1,13 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Encodings.Web;
-using System.Text.Json;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Domain.Enums;
+using Backend.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Api.Auth;
 
@@ -21,8 +21,8 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
     IHostEnvironment hostEnvironment)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public const string SchemeName = "MarketplaceBearer";
-    private const string LocalTokenSecret = "local-development-token-secret-not-for-production-2026";
+    public const string SchemeName = AuthTokenConfiguration.AuthenticationScheme;
+    private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -45,35 +45,16 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
     {
         try
         {
-            var tokenParts = token.Split('.');
+            var validationParameters = AuthTokenConfiguration.CreateTokenValidationParameters(
+                configuration,
+                hostEnvironment.EnvironmentName);
+            validationParameters.LifetimeValidator = ValidateLifetime;
 
-            if (tokenParts.Length != 3)
-            {
-                return null;
-            }
+            var principal = TokenHandler.ValidateToken(token, validationParameters, out _);
+            var subject = principal.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+                principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var unsignedToken = $"{tokenParts[0]}.{tokenParts[1]}";
-            var expectedSignature = Sign(unsignedToken);
-
-            if (!CryptographicOperations.FixedTimeEquals(
-                    Encoding.ASCII.GetBytes(expectedSignature),
-                    Encoding.ASCII.GetBytes(tokenParts[2])))
-            {
-                return null;
-            }
-
-            using var payload = JsonDocument.Parse(Base64UrlDecode(tokenParts[1]));
-            var root = payload.RootElement;
-
-            if (!root.TryGetProperty("sub", out var subjectProperty) ||
-                !Guid.TryParse(subjectProperty.GetString(), out var userId) ||
-                !root.TryGetProperty("exp", out var expiresProperty))
-            {
-                return null;
-            }
-
-            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresProperty.GetInt64());
-            if (expiresAt <= dateTimeProvider.UtcNow)
+            if (!Guid.TryParse(subject, out var userId))
             {
                 return null;
             }
@@ -104,46 +85,26 @@ internal sealed class MarketplaceBearerAuthenticationHandler(
         {
             return null;
         }
-        catch (JsonException)
+        catch (ArgumentException)
+        {
+            return null;
+        }
+        catch (SecurityTokenException)
         {
             return null;
         }
     }
 
-    private string Sign(string value)
+    private bool ValidateLifetime(
+        DateTime? notBefore,
+        DateTime? expires,
+        SecurityToken securityToken,
+        TokenValidationParameters validationParameters)
     {
-        var secret = GetTokenSecret();
-        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
-        return Base64UrlEncode(hmac.ComputeHash(Encoding.UTF8.GetBytes(value)));
-    }
+        var now = dateTimeProvider.UtcNow.UtcDateTime;
 
-    private string GetTokenSecret()
-    {
-        var secret = configuration["Authentication:TokenSecret"];
-
-        if (!string.IsNullOrWhiteSpace(secret) && secret.Length >= 32)
-        {
-            return secret;
-        }
-
-        if (hostEnvironment.IsDevelopment() || hostEnvironment.IsEnvironment("Testing"))
-        {
-            return LocalTokenSecret;
-        }
-
-        throw new InvalidOperationException("Authentication token secret must be configured and at least 32 characters long.");
-    }
-
-    private static string Base64UrlEncode(byte[] value) =>
-        Convert.ToBase64String(value)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
-
-    private static byte[] Base64UrlDecode(string value)
-    {
-        var base64 = value.Replace('-', '+').Replace('_', '/');
-
-        return Convert.FromBase64String(base64.PadRight(base64.Length + (4 - base64.Length % 4) % 4, '='));
+        return (notBefore is null || notBefore <= now) &&
+            expires is not null &&
+            expires > now;
     }
 }

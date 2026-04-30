@@ -213,10 +213,17 @@ internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
 internal sealed class FakeUnitOfWork : IUnitOfWork
 {
     public int SaveChangesCalls { get; private set; }
+    public Exception? ExceptionToThrow { get; set; }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         SaveChangesCalls += 1;
+
+        if (ExceptionToThrow is not null)
+        {
+            throw ExceptionToThrow;
+        }
+
         return Task.CompletedTask;
     }
 }
