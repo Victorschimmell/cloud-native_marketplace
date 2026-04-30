@@ -114,7 +114,6 @@ export default function CartPage() {
 
   return (
     <PageSkeleton
-      summary={`Cart with ${cart?.items.length ?? 0} item(s)`}
       title="Shopping Cart"
       titleId="cart-page-title"
     >

@@ -36,14 +36,6 @@ export default function CartLine({
 
       <div className="cart-line__quantity">
         <label htmlFor={`qty-${item.id}`}>Quantity:</label>
-        <button
-          onClick={() => onUpdateQuantity(item, item.quantity - 1)}
-          disabled={isUpdating}
-          className="cart-line__qty-btn"
-          aria-label="Decrease quantity"
-        >
-          −
-        </button>
         <input
           id={`qty-${item.id}`}
           type="number"
@@ -53,14 +45,6 @@ export default function CartLine({
           disabled={isUpdating}
           className="cart-line__qty-input"
         />
-        <button
-          onClick={() => onUpdateQuantity(item, item.quantity + 1)}
-          disabled={isUpdating}
-          className="cart-line__qty-btn"
-          aria-label="Increase quantity"
-        >
-          +
-        </button>
       </div>
 
       <div className="cart-line__subtotal">
