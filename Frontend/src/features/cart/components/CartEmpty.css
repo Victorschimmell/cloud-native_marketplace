@@ -1,0 +1,24 @@
+.cart-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.cart-empty h2 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+.cart-empty p {
+  margin: 0 0 1.5rem;
+  color: var(--text-secondary);
+}
+
+.cart-empty__continue-shopping-link {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: #2563eb;
+  font-weight: 600;
+}

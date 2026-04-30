@@ -20,10 +20,10 @@ public class CartController : ApiControllerBase
     }
 
     // TODO: Using get identity after authentication is implemented instead of passing userId in query parameters
-    [HttpGet("{userId:guid}")]
-    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid userId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
+    [HttpGet("{cartId:guid}")]
+    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid cartId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
-        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, userId, null), displayCurrency, cancellationToken);
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, null, null), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
