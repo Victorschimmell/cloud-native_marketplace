@@ -22,7 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Backend.Application\Backend.Application.csproj" />
     <ProjectReference Include="..\Backend.Infrastructure\Backend.Infrastructure.csproj" />
-    <ProjectReference Include="..\Backend.Infrastructure\Backend.Domain.csproj" />
   </ItemGroup>
 
 </Project>
