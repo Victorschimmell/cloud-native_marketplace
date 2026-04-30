@@ -68,13 +68,16 @@ public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);
 
 public sealed record CancelOrderRequest(Guid OrderId, string? Reason);
 
-public sealed record RecordPaymentRequest(
-    Guid OrderId,
+public sealed record RecordPaymentDetails(
     Guid CurrencyId,
     PaymentType PaymentType,
     int PaymentInstallments,
     decimal PaymentValue,
     string? ExternalPaymentReference);
+
+public sealed record RecordPaymentRequest(
+    Guid OrderId,
+    RecordPaymentDetails PaymentDetails);
 
 public sealed record CreateReviewRequest(
     Guid OrderId,
