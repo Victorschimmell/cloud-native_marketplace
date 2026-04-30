@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { currencyOptions } from '../shared/currency/currency';
 import { useCurrency } from '../shared/currency/useCurrency';
@@ -9,11 +9,17 @@ import './Navbar.css';
 export default function Navbar() {
   const { currency, setCurrency } = useCurrency();
   const { isAuthenticated, logout, user } = useAuth();
+  const navigate = useNavigate();
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
 
   function selectCurrency(nextCurrency: typeof currency) {
     setCurrency(nextCurrency);
     setIsCurrencyMenuOpen(false);
+  }
+
+  function handleLogout() {
+    logout();
+    navigate('/');
   }
 
   return (
@@ -67,7 +73,7 @@ export default function Navbar() {
           {isAuthenticated ? (
             <>
               <span className="navbar__user">{user?.email}</span>
-              <button className="navbar__login" onClick={logout} type="button">
+              <button className="navbar__login" onClick={handleLogout} type="button">
                 Log out
               </button>
             </>
