@@ -1,4 +1,4 @@
-using Backend.Application.Enums;
+using Backend.Domain.Enums;
 
 namespace Backend.Application.DTOs;
 
