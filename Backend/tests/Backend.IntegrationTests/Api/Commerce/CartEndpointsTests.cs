@@ -130,7 +130,8 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var removeItemRequest = new RemoveCartItemRequest
         {
             UserId = Guid.NewGuid(),
-            ListingId = Guid.NewGuid()
+            ListingId = Guid.NewGuid(),
+            Quantity = 1
         };
 
         // Act
