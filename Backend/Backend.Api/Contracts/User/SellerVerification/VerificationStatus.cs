@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Backend.Api.Contracts.User.SellerVerification;
 
 public enum VerificationStatus
