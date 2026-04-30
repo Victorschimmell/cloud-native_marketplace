@@ -34,7 +34,7 @@ public sealed class ServiceConstructorTests
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new CartService(new FakeCartRepository(), null!, new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
-        _ = new CheckoutService(new FakeCartRepository(), new FakeOrderRepository(), new FakePaymentRepository(), new FakeDateTimeProvider());
+        _ = new CheckoutService(new FakeCartRepository(), new FakeOrderRepository(), new FakePaymentRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService());
         _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider());
         _ = new RegistrationService(new FakeUserAccountRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakePasswordHasher());
