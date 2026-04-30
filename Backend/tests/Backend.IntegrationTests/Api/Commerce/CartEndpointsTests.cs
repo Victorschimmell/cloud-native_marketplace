@@ -37,7 +37,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(TestContext.Current.CancellationToken);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
         Assert.Null(cart.SessionId);
         Assert.Null(cart.UserId);
@@ -62,7 +64,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             },
             TestContext.Current.CancellationToken);
 
-        var firstCart = await firstResponse.Content.ReadFromJsonAsync<CartResponse>(TestContext.Current.CancellationToken);
+        var firstCart = await firstResponse.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(firstCart);
 
         // Act
@@ -79,7 +83,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
 
-        var cart = await secondResponse.Content.ReadFromJsonAsync<CartResponse>(TestContext.Current.CancellationToken);
+        var cart = await secondResponse.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
         Assert.Equal(firstCart.Id, cart.Id);
         Assert.Equal(2, cart.Items.Count);

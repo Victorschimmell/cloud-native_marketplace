@@ -45,7 +45,9 @@ public class AuthEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var login = await response.Content.ReadFromJsonAsync<LoginResponse>(TestContext.Current.CancellationToken);
+        var login = await response.Content.ReadFromJsonAsync<LoginResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(login);
         Assert.Equal(email, login.User.Email);
         Assert.False(string.IsNullOrWhiteSpace(login.Token.AccessToken));

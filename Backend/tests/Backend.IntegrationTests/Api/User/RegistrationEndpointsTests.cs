@@ -39,7 +39,9 @@ public class RegistrationEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(TestContext.Current.CancellationToken);
+        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(registration);
         Assert.NotNull(registration.Customer);
         Assert.Null(registration.Seller);
@@ -68,7 +70,9 @@ public class RegistrationEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(TestContext.Current.CancellationToken);
+        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(registration);
         Assert.Null(registration.Customer);
         Assert.NotNull(registration.Seller);
