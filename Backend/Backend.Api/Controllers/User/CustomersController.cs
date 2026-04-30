@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.User.Registration;
 using Backend.Api.Mappings.Commerce.Cart;
 using Backend.Api.Mappings.Common;
+using Backend.Api.Mappings.User.Registration;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
@@ -37,21 +38,24 @@ public class CustomersController : ApiControllerBase
         return HandleResult(result, customer => customer.ToResponse());
     }
 
-    [HttpGet("{customerId:guid}")]
-    public async Task<ActionResult<PageResponse<CustomerResponse>>> GetByIdAsync([NotEmptyGuid] Guid customerId, CancellationToken cancellationToken)
+    [HttpGet("{userId:guid}")]
+    public async Task<ActionResult<CustomerResponse>> GetByIdAsync([NotEmptyGuid] Guid userId, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        _logger.LogInformation("Fetching customer with ID {userId}.", userId);
+
+        var result = await _customerService.GetByIdAsync(userId, cancellationToken);
+        return HandleResult(result, customer => customer.ToResponse());
     }
 
-    [HttpGet("{customerId:guid}/cart")]
-    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid customerId, [FromQuery] string currency, CancellationToken cancellationToken)
+    [HttpGet("{userId:guid}/cart")]
+    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid userId, [FromQuery] string currency, CancellationToken cancellationToken)
     {
-        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, customerId, null), currency, cancellationToken);
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, userId, null), currency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
-    [HttpGet("{customerId:guid}/orders")]
-    public async Task<ActionResult<PageResponse<OrderResponse>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid customerId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    [HttpGet("{userId:guid}/orders")]
+    public async Task<ActionResult<PageResponse<OrderResponse>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid userId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
