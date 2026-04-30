@@ -25,6 +25,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderPayment> OrderPayments => Set<OrderPayment>();
     public DbSet<OrderReview> OrderReviews => Set<OrderReview>();
+    public DbSet<NumberSequence> NumberSequences => Set<NumberSequence>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

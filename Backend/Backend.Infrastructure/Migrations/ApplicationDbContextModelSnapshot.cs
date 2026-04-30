@@ -563,6 +563,28 @@ namespace Backend.Infrastructure.Migrations
                     b.ToTable("audit_log", (string)null);
                 });
 
+            modelBuilder.Entity("Backend.Domain.Entities.Operations.NumberSequence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SequenceKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("LastValue")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SequenceKey")
+                        .IsUnique();
+
+                    b.ToTable("number_sequence", (string)null);
+                });
+
             modelBuilder.Entity("Backend.Domain.Entities.Orders.Currency", b =>
                 {
                     b.Property<Guid>("Id")
