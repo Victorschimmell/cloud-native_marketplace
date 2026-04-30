@@ -41,6 +41,18 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
         return Task.CompletedTask;
     }
 
+    public Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default)
+    {
+        dbContext.CartItems.Update(item);
+        return Task.CompletedTask;
+    }
+
+    public Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default)
+    {
+        dbContext.CartItems.Remove(item);
+        return Task.CompletedTask;
+    }
+
     public Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default)
     {
         dbContext.ShoppingCarts.Update(cart);

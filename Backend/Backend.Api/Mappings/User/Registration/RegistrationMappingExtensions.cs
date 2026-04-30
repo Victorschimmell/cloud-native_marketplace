@@ -1,6 +1,6 @@
 using Backend.Api.Contracts.User.Registration;
-using Backend.Api.Mappings.User.Auth;
 using Backend.Api.Contracts.User.SellerVerification;
+using Backend.Api.Mappings.User.Auth;
 using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Mappings.User.Registration;
@@ -20,6 +20,19 @@ public static class RegistrationMappingExtensions
             Customer = response.Customer?.ToModel(),
             Seller = response.Seller?.ToModel(),
             Token = response.Token?.ToModel()
+        };
+
+    public static CustomerResponse ToResponse(this App.CustomerDto customer) =>
+        new()
+        {
+            Id = customer.Id,
+            UserId = customer.UserId,
+            FirstName = customer.FirstName,
+            LastName = customer.LastName,
+            Phone = customer.Phone,
+            DefaultAddressId = customer.DefaultAddressId,
+            OlistCustomerId = customer.OlistCustomerId,
+            OlistCustomerUniqueId = customer.OlistCustomerUniqueId
         };
 
     private static CustomerModel ToModel(this App.CustomerDto customer) =>

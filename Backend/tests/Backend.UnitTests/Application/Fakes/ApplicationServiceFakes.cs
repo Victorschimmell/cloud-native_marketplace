@@ -20,7 +20,7 @@ internal sealed class FakeCustomerRepository : ICustomerRepository
         return Task.CompletedTask;
     }
     public Task DeleteAsync(Customer customer, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<Customer>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Customer>>([]);
+    public Task<PagedResult<Customer>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Customer>([], page, pageSize, 0));
     public Task<Customer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
     public Task<Customer?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
     public Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -86,6 +86,8 @@ internal sealed class FakeCartRepository : ICartRepository
 
     public Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);

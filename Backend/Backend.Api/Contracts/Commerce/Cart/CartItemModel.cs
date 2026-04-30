@@ -7,6 +7,7 @@ public sealed record CartItemModel
     public required Guid ListingId { get; init; }
     public required int Quantity { get; init; }
     public required decimal UnitPriceAtAddition { get; init; }
+    public required string CurrencyCode { get; init; }
     public required DateTimeOffset AddedAtUtc { get; init; }
     public required DateTimeOffset UpdatedAtUtc { get; init; }
 }

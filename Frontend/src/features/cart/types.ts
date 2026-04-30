@@ -4,6 +4,7 @@ export interface CartItem {
   listingId: string;
   quantity: number;
   unitPriceAtAddition: number;
+  currencyCode: string;
   addedAtUtc: string;
   updatedAtUtc: string;
 }

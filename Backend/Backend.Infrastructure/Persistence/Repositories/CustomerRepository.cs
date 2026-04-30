@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Models;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -19,13 +20,15 @@ internal sealed class CustomerRepository(ApplicationDbContext dbContext) : ICust
             .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Customer>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Customer>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        return await dbContext.Customers
+        var customers = await dbContext.Customers
             .OrderBy(c => c.CreatedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+        var totalCount = customers.Count;
+        return new PagedResult<Customer>(customers, page, pageSize, totalCount);
     }
 
     public Task AddAsync(Customer customer, CancellationToken cancellationToken = default)

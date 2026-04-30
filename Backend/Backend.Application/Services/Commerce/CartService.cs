@@ -12,33 +12,63 @@ public sealed class CartService : ICartService
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CartService(
         ICartRepository cartRepository,
         IProductListingRepository productListingRepository,
         IDateTimeProvider dateTimeProvider,
+        ICurrencyConversionService currencyConversionService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
+        ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _cartRepository = cartRepository;
         _productListingRepository = productListingRepository;
         _dateTimeProvider = dateTimeProvider;
+        _currencyConversionService = currencyConversionService;
         _unitOfWork = unitOfWork;
     }
 
-    public Task<Result<CartDto>> GetCartAsync(GetCartRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> GetCartAsync(GetCartRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<CartDto>.NotImplemented());
+        var cart = await GetCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+
+        if (cart is null)
+        {
+            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        if (request.Quantity < 1)
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
+        {
+            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+        }
+
+        if (request.Quantity <= 0)
         {
             return Result<CartDto>.ValidationFailure("Quantity must be greater than zero.");
         }
@@ -60,11 +90,11 @@ public sealed class CartService : ICartService
             return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
         }
 
-        var cart = await GetOrCreateActiveCartAsync(request, cancellationToken);
+        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
         var now = _dateTimeProvider.UtcNow;
-        var existingItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
 
-        if (existingItem is null)
+        if (existingCartItem is null)
         {
             var item = new CartItem
             {
@@ -80,62 +110,139 @@ public sealed class CartService : ICartService
         }
         else
         {
-            var newQuantity = existingItem.Quantity + request.Quantity;
+            var newQuantity = existingCartItem.Quantity + request.Quantity;
             if (newQuantity > listing.InventoryQuantity)
             {
                 return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
             }
 
-            existingItem.Quantity = newQuantity;
-            existingItem.UnitPriceAtAddition = listing.ListingPrice;
-            existingItem.UpdatedAtUtc = now;
+            existingCartItem.Quantity = newQuantity;
+            existingCartItem.UpdatedAtUtc = now;
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(cart.ToCartDto());
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    public Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<CartDto>> UpdateItemAsync(UpdateCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<CartDto>.NotImplemented());
+        var currencyCode = _currencyConversionService.NormalizeOrDefault(displayCurrency);
+        if (!_currencyConversionService.IsSupported(currencyCode))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+        var priceConverter = new Func<decimal, decimal>(price => _currencyConversionService.FromBaseCurrency(price, currencyCode));
+
+        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
+        {
+            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+        }
+
+        var listing = await _productListingRepository.GetByIdAsync(request.ListingId, cancellationToken);
+
+        if (listing is null || listing.IsDeleted || listing.VisibilityStatus != ListingVisibilityStatus.Published)
+        {
+            return Result<CartDto>.NotFound("Product listing was not found.");
+        }
+
+        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
+        var now = _dateTimeProvider.UtcNow;
+
+        if (existingCartItem is null)
+        {
+            return Result<CartDto>.NotFound("Cart item was not found in the cart.");
+        }
+
+        if (request.Quantity > listing.InventoryQuantity)
+        {
+            return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
+        }
+
+        if (request.Quantity <= 0)
+        {
+            await _cartRepository.RemoveItemAsync(existingCartItem, cancellationToken);
+        }
+        else
+        {
+            existingCartItem.Quantity = request.Quantity;
+            existingCartItem.UpdatedAtUtc = now;
+
+            await _cartRepository.UpdateItemAsync(existingCartItem, cancellationToken);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
-    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(AddCartItemRequest request, CancellationToken cancellationToken)
+    private async Task<ShoppingCart?> GetCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = null;
 
-        if (request.CartId.HasValue)
+        if (CartId.HasValue)
         {
-            cart = await _cartRepository.GetByIdAsync(request.CartId.Value, cancellationToken);
+            cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
         }
 
-        if (cart is null && request.UserId.HasValue)
+        if (cart is null && UserId.HasValue)
         {
-            cart = await _cartRepository.GetActiveByUserIdAsync(request.UserId.Value, cancellationToken);
+            cart = await _cartRepository.GetActiveByUserIdAsync(UserId.Value, cancellationToken);
         }
 
-        if (cart is null && request.SessionId.HasValue)
+        if (cart is null && SessionId.HasValue)
         {
-            cart = await _cartRepository.GetActiveBySessionIdAsync(request.SessionId.Value, cancellationToken);
+            cart = await _cartRepository.GetActiveBySessionIdAsync(SessionId.Value, cancellationToken);
         }
+
+        return cart;
+    }
+
+    private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = await GetCartAsync(CartId, UserId, SessionId, cancellationToken);
 
         if (cart is { Status: CartStatus.Active })
+        {
+            // cart expired
+            if (cart.ExpiresAtUtc < _dateTimeProvider.UtcNow)
+            {
+                cart.Status = CartStatus.Expired;
+                await _cartRepository.UpdateAsync(cart, cancellationToken);
+                return null;
+            }
+
+            var now = _dateTimeProvider.UtcNow;
+            cart.ExpiresAtUtc = now.AddDays(14);
+            await _cartRepository.UpdateAsync(cart, cancellationToken);
+            return cart;
+        }
+
+        return null;
+    }
+
+    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = await GetActiveCartAsync(CartId, UserId, SessionId, cancellationToken);
+
+        if (cart is not null)
         {
             return cart;
         }
 
         var now = _dateTimeProvider.UtcNow;
         // Temporary anonymous cart for the checkout flow until real auth/session cart ownership is wired up.
+        // TODO: Remember to validate the userid and sessionid is valid
         cart = new ShoppingCart
         {
-            UserId = request.UserId,
-            SessionId = request.SessionId,
+            UserId = UserId,
+            SessionId = SessionId,
             Status = CartStatus.Active,
             ExpiresAtUtc = now.AddDays(14)
         };
-
         await _cartRepository.AddAsync(cart, cancellationToken);
+
         return cart;
     }
 }

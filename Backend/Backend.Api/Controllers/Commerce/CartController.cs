@@ -1,7 +1,9 @@
+using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Mappings.Commerce.Cart;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.Commerce;
 
@@ -17,8 +19,16 @@ public class CartController : ApiControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
-    public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, CancellationToken cancellationToken)
+    // TODO: Using get identity after authentication is implemented instead of passing userId in query parameters
+    [HttpGet("{cartId:guid}")]
+    public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid cartId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
+    {
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, null, null), displayCurrency, cancellationToken);
+        return HandleResult(result, cart => cart.ToResponse());
+    }
+
+    [HttpPost("items")]
+    public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Add cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
@@ -28,14 +38,22 @@ public class CartController : ApiControllerBase
             request.UserId,
             request.SessionId);
 
-        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), cancellationToken);
-
+        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
-    [HttpDelete]
-    public async Task<ActionResult<CartResponse>> RemoveCartItemAsync([FromBody] RemoveCartItemRequest request, CancellationToken cancellationToken)
+    [HttpPatch("items/{listingId}")]
+    public async Task<ActionResult<CartResponse>> UpdateCartItemAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateCartItemRequest request, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        _logger.LogInformation(
+            "Update cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
+            listingId,
+            request.Quantity,
+            request.CartId,
+            request.UserId,
+            request.SessionId);
+
+        var result = await _cartService.UpdateItemAsync(request.ToApplicationRequest(listingId), displayCurrency, cancellationToken);
+        return HandleResult(result, cart => cart.ToResponse());
     }
 }
