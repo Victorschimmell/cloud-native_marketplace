@@ -1,3 +1,5 @@
+using Backend.Application.Common.Exceptions;
+using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Services;
 using Backend.Domain.Entities.IdentityAccess;
@@ -58,6 +60,35 @@ public sealed class AuthRegistrationCartServiceTests
         Assert.Equal(userRepository.UserAccount.Id, customerRepository.Customer.UserId);
         Assert.Equal("Ada", customerRepository.Customer.FirstName);
         Assert.Equal(1, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task RegisterCustomerAsync_WhenEmailRaceViolatesUniqueConstraint_ReturnsConflict()
+    {
+        var unitOfWork = new FakeUnitOfWork
+        {
+            ExceptionToThrow = new UniqueConstraintViolationException(
+                UniqueConstraintTarget.UserAccountEmail,
+                "IX_user_account_Email",
+                new InvalidOperationException())
+        };
+        var service = new RegistrationService(
+            new FakeUserAccountRepository(),
+            new FakeCustomerRepository(),
+            new FakeSellerRepository(),
+            new FakeSellerVerificationRequestRepository(),
+            new FakePasswordHasher(),
+            new FakeAuthTokenGenerator(),
+            new FakeDateTimeProvider(),
+            unitOfWork);
+
+        var result = await service.RegisterCustomerAsync(
+            new RegisterCustomerRequest("race@example.com", "Password123!", "Ada", "Lovelace", "+4512345678", null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ResultFailureType.Conflict, result.FailureType);
+        Assert.Equal("An account with this email already exists.", result.Error);
     }
 
     [Fact]

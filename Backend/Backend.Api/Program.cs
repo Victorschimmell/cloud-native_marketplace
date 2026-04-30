@@ -5,6 +5,7 @@ using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
 using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
+using Backend.Infrastructure.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
@@ -14,12 +15,10 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var tokenSecret = builder.Configuration["Authentication:TokenSecret"];
 if (!builder.Environment.IsDevelopment() &&
-    !builder.Environment.IsEnvironment("Testing") &&
-    (string.IsNullOrWhiteSpace(tokenSecret) || tokenSecret.Length < 32))
+    !builder.Environment.IsEnvironment("Testing"))
 {
-    throw new InvalidOperationException("Authentication token secret must be configured and at least 32 characters long.");
+    AuthTokenConfiguration.GetTokenSecret(builder.Configuration, builder.Environment.EnvironmentName);
 }
 
 builder.Host.UseSerilog((context, services, configuration) =>

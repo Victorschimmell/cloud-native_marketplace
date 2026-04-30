@@ -1,4 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
+using Backend.Application.Common.Exceptions;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
@@ -69,9 +70,16 @@ public sealed class RegistrationService : IRegistrationService
             DefaultAddressId = request.DefaultAddressId
         };
 
-        await _userAccountRepository.AddAsync(userAccount, cancellationToken);
-        await _customerRepository.AddAsync(customer, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _userAccountRepository.AddAsync(userAccount, cancellationToken);
+            await _customerRepository.AddAsync(customer, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
+        {
+            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+        }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(
             userAccount.ToUserAccountDto(),
@@ -110,10 +118,17 @@ public sealed class RegistrationService : IRegistrationService
             SubmittedDetails = "Created during seller registration."
         };
 
-        await _userAccountRepository.AddAsync(userAccount, cancellationToken);
-        await _sellerRepository.AddAsync(seller, cancellationToken);
-        await _sellerVerificationRequestRepository.AddAsync(verificationRequest, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _userAccountRepository.AddAsync(userAccount, cancellationToken);
+            await _sellerRepository.AddAsync(seller, cancellationToken);
+            await _sellerVerificationRequestRepository.AddAsync(verificationRequest, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
+        {
+            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+        }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(
             userAccount.ToUserAccountDto(),
