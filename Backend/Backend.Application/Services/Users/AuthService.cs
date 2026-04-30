@@ -9,6 +9,8 @@ namespace Backend.Application.Services;
 
 public sealed class AuthService : IAuthService
 {
+    private const string InvalidCredentialsMessage = "Invalid email or password.";
+
     private readonly IUserAccountRepository _userAccountRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuthTokenGenerator _authTokenGenerator;
@@ -42,19 +44,19 @@ public sealed class AuthService : IAuthService
 
         if (userAccount is null)
         {
-            return Result<AuthenticationResponse>.Unauthorized("Invalid email or password.");
+            return Result<AuthenticationResponse>.Unauthorized(InvalidCredentialsMessage);
         }
 
         var now = _dateTimeProvider.UtcNow;
 
         if (userAccount.IsBlocked || userAccount.AccountStatus is AccountStatus.Disabled or AccountStatus.Suspended)
         {
-            return Result<AuthenticationResponse>.Failure("This account cannot sign in.", ResultFailureType.Forbidden);
+            return Result<AuthenticationResponse>.Unauthorized(InvalidCredentialsMessage);
         }
 
         if (userAccount.LockedUntilUtc is not null && userAccount.LockedUntilUtc > now)
         {
-            return Result<AuthenticationResponse>.Unauthorized("This account is temporarily locked.");
+            return Result<AuthenticationResponse>.Unauthorized(InvalidCredentialsMessage);
         }
 
         if (!_passwordHasher.VerifyPassword(userAccount, request.Password))
@@ -70,7 +72,7 @@ public sealed class AuthService : IAuthService
             await _userAccountRepository.UpdateAsync(userAccount, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<AuthenticationResponse>.Unauthorized("Invalid email or password.");
+            return Result<AuthenticationResponse>.Unauthorized(InvalidCredentialsMessage);
         }
 
         userAccount.FailedLoginAttempts = 0;

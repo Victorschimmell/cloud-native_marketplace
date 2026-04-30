@@ -32,6 +32,26 @@ public sealed class AuthRegistrationCartServiceTests
     }
 
     [Fact]
+    public async Task LoginAsync_WithBlockedAccount_ReturnsGenericUnauthorizedFailure()
+    {
+        var user = CreateUser("blocked@example.com", "hashed::Password123!");
+        user.IsBlocked = true;
+        var userRepository = new FakeUserAccountRepository
+        {
+            UserAccount = user
+        };
+        var unitOfWork = new FakeUnitOfWork();
+        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), unitOfWork);
+
+        var result = await service.LoginAsync(new LoginRequest("blocked@example.com", "Password123!"), TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ResultFailureType.Unauthorized, result.FailureType);
+        Assert.Equal("Invalid email or password.", result.Error);
+        Assert.Equal(0, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
     public async Task RegisterCustomerAsync_HashesPasswordAndCreatesCustomerProfile()
     {
         var userRepository = new FakeUserAccountRepository();

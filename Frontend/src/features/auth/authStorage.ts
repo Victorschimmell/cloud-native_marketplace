@@ -9,12 +9,15 @@ export interface StoredAuth {
 }
 
 export function getStoredAuth(): StoredAuth | null {
-  if (!currentAuth?.token.accessToken || !currentAuth.user.id) {
+  currentAuth ??= readStoredAuth();
+
+  if (!isValidStoredAuth(currentAuth)) {
     clearStoredAuth();
     return null;
   }
 
-  if (new Date(currentAuth.token.expiresAtUtc).getTime() <= Date.now()) {
+  const expiresAt = new Date(currentAuth.token.expiresAtUtc).getTime();
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
     clearStoredAuth();
     return null;
   }
@@ -28,10 +31,28 @@ export function getStoredAccessToken(): string | null {
 
 export function setStoredAuth(auth: StoredAuth) {
   currentAuth = auth;
-  window.localStorage.removeItem(authStorageKey);
+  window.localStorage.setItem(authStorageKey, JSON.stringify(auth));
 }
 
 export function clearStoredAuth() {
   currentAuth = null;
   window.localStorage.removeItem(authStorageKey);
+}
+
+function readStoredAuth(): StoredAuth | null {
+  const rawAuth = window.localStorage.getItem(authStorageKey);
+
+  if (!rawAuth) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawAuth) as StoredAuth;
+  } catch {
+    return null;
+  }
+}
+
+function isValidStoredAuth(auth: StoredAuth | null): auth is StoredAuth {
+  return Boolean(auth?.token.accessToken && auth.token.expiresAtUtc && auth.user.id);
 }
