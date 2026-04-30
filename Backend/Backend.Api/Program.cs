@@ -3,10 +3,7 @@ using Backend.Api.Auth;
 using Backend.Api.Middleware;
 using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
-using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
-using Backend.Infrastructure.Auth;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using Serilog;
@@ -14,12 +11,6 @@ using Serilog;
 [assembly: ApiConventionType(typeof(DefaultApiConventions))]
 
 var builder = WebApplication.CreateBuilder(args);
-
-if (!builder.Environment.IsDevelopment() &&
-    !builder.Environment.IsEnvironment("Testing"))
-{
-    AuthTokenConfiguration.GetTokenSecret(builder.Configuration, builder.Environment.EnvironmentName);
-}
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {
@@ -41,16 +32,9 @@ builder.Host.UseSerilog((context, services, configuration) =>
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
 });
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
+builder.Services.AddMarketplaceAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services
-    .AddAuthentication(MarketplaceBearerAuthenticationHandler.SchemeName)
-    .AddScheme<AuthenticationSchemeOptions, MarketplaceBearerAuthenticationHandler>(
-        MarketplaceBearerAuthenticationHandler.SchemeName,
-        options => { });
-builder.Services.AddAuthorization();
 
 // Add services to the container.
 builder.Services.AddInfrastructure(builder.Configuration);
