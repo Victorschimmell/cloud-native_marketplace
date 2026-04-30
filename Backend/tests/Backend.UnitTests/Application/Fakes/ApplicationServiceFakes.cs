@@ -96,6 +96,11 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakeOrderNumberRepository : IOrderNumberGenerator
+{
+    public Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken = default) => Task.FromResult("ORDER-123456");
+}
+
 internal sealed class FakeOrderItemRepository : IOrderItemRepository
 {
     public Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default) => Task.CompletedTask;
