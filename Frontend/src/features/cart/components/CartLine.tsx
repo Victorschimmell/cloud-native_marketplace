@@ -1,7 +1,6 @@
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import type { CurrencyCode } from '../../../shared/currency/currency';
 import type { CartItem as CartItemType } from '../types';
-import { productApi } from '../../products/api/productApi';
 import './CartLine.css';
 
 interface CartLineProps {
