@@ -16,13 +16,20 @@ public sealed class CustomerService : ICustomerService
         _customerRepository = customerRepository;
     }
 
-    public Task<Result<CustomerDto>> GetByIdAsync(Guid customerId, CancellationToken cancellationToken = default)
+    public async Task<Result<CustomerDto>> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<CustomerDto>.NotImplemented());
+        var customer = await _customerRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<CustomerDto>.NotFound($"Customer with ID {userId} was not found.");
+        }
+        return Result<CustomerDto>.Success(customer.ToCustomerDto());
     }
 
-    public Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<PagedResult<CustomerDto>>.NotImplemented());
+        var result = await _customerRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
+        return Result<PagedResult<CustomerDto>>.Success(new PagedResult<CustomerDto>(
+            result.Items.Select(customer => customer.ToCustomerDto()).ToArray(), request.Page, request.PageSize, result.TotalCount));
     }
 }

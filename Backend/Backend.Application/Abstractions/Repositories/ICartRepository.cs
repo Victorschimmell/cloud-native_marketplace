@@ -9,6 +9,8 @@ public interface ICartRepository
     Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default);
     Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default);
     Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default);
+    Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default);
+    Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default);
     Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default);
     Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default);
 }

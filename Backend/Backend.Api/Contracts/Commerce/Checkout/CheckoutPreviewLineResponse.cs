@@ -6,4 +6,5 @@ public sealed record CheckoutPreviewLineResponse
     public required int Quantity { get; init; }
     public required decimal UnitPrice { get; init; }
     public required decimal LineTotal { get; init; }
+    public required string CurrencyCode { get; init; }
 }

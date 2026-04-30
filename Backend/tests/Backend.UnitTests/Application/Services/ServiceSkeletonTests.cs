@@ -31,13 +31,12 @@ public sealed class ServiceSkeletonTests
     }
 
     [Fact]
-    public async Task CustomerService_GetCustomersAsync_Throws_NotImplementedException()
+    public async Task CustomerService_GetCustomersAsync_Throws_Success()
     {
         var service = new CustomerService(new FakeCustomerRepository());
 
         var result = await service.GetCustomersAsync(new PagedRequest(1, 10), TestContext.Current.CancellationToken);
 
-        Assert.True(result.IsFailure);
-        Assert.Equal(ResultFailureType.NotImplemented, result.FailureType);
+        Assert.True(result.IsSuccess);
     }
 }

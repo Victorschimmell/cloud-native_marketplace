@@ -14,37 +14,37 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetCustomers_ReturnsNotImplemented()
+    public async Task GetCustomers_ReturnsOk()
     {
         // Act
         var response = await _client.GetAsync("/api/customers", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetCustomerById_ReturnsNotImplemented()
+    public async Task GetCustomerById_ReturnsNotFound()
     {
         // Act
         var customerId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/customers/{customerId}", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetCartByCustomerId_ReturnsNotImplemented()
+    public async Task GetCartByCustomerId_ReturnsNotFound()
     {
         // Arrange
         var customerId = Guid.NewGuid();
 
         // Act
-        var response = await _client.GetAsync($"/api/customers/{customerId}/cart", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/customers/{customerId}/cart?currency=USD", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
