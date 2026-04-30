@@ -1,5 +1,5 @@
 import { RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './features/auth/AuthContext';
+import { AuthProvider } from './features/auth/AuthProvider';
 import { router } from './routes';
 import { CurrencyProvider } from './shared/currency/CurrencyProvider';
 

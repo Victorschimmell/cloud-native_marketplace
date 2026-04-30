@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import { FormNotice, TextField } from '../../../shared/forms';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../useAuth';
 import { AccountTypeSelector } from '../components/AccountTypeSelector';
 import { AuthPageFrame } from '../components/AuthPageFrame';
 import type { AccountType } from '../types';

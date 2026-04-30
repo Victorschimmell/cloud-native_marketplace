@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import PageSkeleton from '../components/PageSkeleton';
-import { useAuth } from '../features/auth/AuthContext';
+import { useAuth } from '../features/auth/useAuth';
 import './HomePage.css';
 
 export default function HomePage() {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../features/auth/AuthContext';
+import { useAuth } from '../features/auth/useAuth';
 import { currencyOptions } from '../shared/currency/currency';
 import { useCurrency } from '../shared/currency/useCurrency';
 import '../css/variables.css';
