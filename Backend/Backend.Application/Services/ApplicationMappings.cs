@@ -1,4 +1,5 @@
 using Backend.Application.DTOs;
+using AppEnums = Backend.Application.Enums;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
@@ -28,7 +29,7 @@ internal static class ApplicationMappings
             seller.RegistrationNumber,
             seller.PayoutInformation,
             seller.DefaultAddressId,
-            seller.VerificationStatus,
+            (AppEnums.VerificationStatus)seller.VerificationStatus,
             seller.VerifiedAtUtc,
             seller.OlistSellerId);
 
@@ -38,7 +39,7 @@ internal static class ApplicationMappings
             userAccount.Email.Value,
             userAccount.IsAdmin,
             userAccount.IsBlocked,
-            userAccount.AccountStatus,
+            (AppEnums.AccountStatus)userAccount.AccountStatus,
             userAccount.FailedLoginAttempts,
             userAccount.LockedUntilUtc,
             userAccount.LastLoginAtUtc);
@@ -143,10 +144,10 @@ internal static class ApplicationMappings
             payment.OrderId,
             payment.PaymentSequential,
             payment.CurrencyId,
-            payment.PaymentType,
+            (AppEnums.PaymentType)payment.PaymentType,
             payment.PaymentInstallments,
             payment.PaymentValue,
-            payment.PaymentStatus,
+            (AppEnums.PaymentStatus)payment.PaymentStatus,
             payment.ExternalPaymentReference,
             payment.PaidAtUtc);
 
@@ -167,7 +168,7 @@ internal static class ApplicationMappings
             shipment.SellerId,
             shipment.CarrierName,
             shipment.TrackingNumber,
-            shipment.ShipmentStatus,
+            (AppEnums.ShipmentStatus)shipment.ShipmentStatus,
             shipment.ShippedAtUtc,
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
@@ -178,7 +179,7 @@ internal static class ApplicationMappings
             order.CustomerId,
             order.ShippingAddressId,
             order.OrderNumber,
-            order.OrderStatus,
+            (AppEnums.OrderStatus)order.OrderStatus,
             order.OrderPurchaseTimestampUtc,
             order.OrderApprovedAtUtc,
             order.OrderDeliveredCarrierDateUtc,
@@ -198,10 +199,10 @@ internal static class ApplicationMappings
             auditLog.Id,
             auditLog.ActorUserId,
             auditLog.ActorIpAddress,
-            auditLog.ActionType,
+            (AppEnums.AuditActionType)auditLog.ActionType,
             auditLog.TargetEntityType,
             auditLog.TargetEntityId,
-            auditLog.Outcome,
+            (AppEnums.AuditOutcome)auditLog.Outcome,
             auditLog.Details,
             auditLog.CreatedAtUtc);
 
@@ -210,7 +211,7 @@ internal static class ApplicationMappings
             request.Id,
             request.SellerId,
             request.SubmittedAtUtc,
-            request.Status,
+            (AppEnums.SellerVerificationRequestStatus)request.Status,
             request.BusinessNameSnapshot,
             request.RegistrationNumberSnapshot,
             request.SubmittedDetails,
