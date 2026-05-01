@@ -1,29 +1,36 @@
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Mappings.Commerce.Cart;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.Commerce;
 
 [Route("api/cart")]
+[Authorize]
 public class CartController : ApiControllerBase
 {
     private readonly ICartService _cartService;
+    private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<CartController> _logger;
 
-    public CartController(ICartService cartService, ILogger<CartController> logger)
+    public CartController(
+        ICartService cartService,
+        ICurrentUserProvider currentUserProvider,
+        ILogger<CartController> logger)
     {
         _cartService = cartService;
+        _currentUserProvider = currentUserProvider;
         _logger = logger;
     }
 
-    // TODO: Using get identity after authentication is implemented instead of passing userId in query parameters
     [HttpGet("{cartId:guid}")]
     public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid cartId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
-        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, null, null), displayCurrency, cancellationToken);
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, CurrentUserId, null), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
@@ -35,10 +42,10 @@ public class CartController : ApiControllerBase
             request.ListingId,
             request.Quantity,
             request.CartId,
-            request.UserId,
+            CurrentUserId,
             request.SessionId);
 
-        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(), displayCurrency, cancellationToken);
+        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(CurrentUserId), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
@@ -50,10 +57,12 @@ public class CartController : ApiControllerBase
             listingId,
             request.Quantity,
             request.CartId,
-            request.UserId,
+            CurrentUserId,
             request.SessionId);
 
-        var result = await _cartService.UpdateItemAsync(request.ToApplicationRequest(listingId), displayCurrency, cancellationToken);
+        var result = await _cartService.UpdateItemAsync(request.ToApplicationRequest(listingId, CurrentUserId), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
+
+    private Guid? CurrentUserId => _currentUserProvider.IsAuthenticated ? _currentUserProvider.UserId : null;
 }

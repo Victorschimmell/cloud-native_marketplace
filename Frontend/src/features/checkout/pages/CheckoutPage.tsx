@@ -138,7 +138,7 @@ export default function CheckoutPage() {
         currency
       );
 
-      // Navigate to order details page with the order ID
+      checkoutApi.clearCheckoutCart();
       navigate(`/orders/${response.order.id}`);
     } catch (requestError) {
       setError(`Checkout failed: ${getErrorMessage(requestError)}`);

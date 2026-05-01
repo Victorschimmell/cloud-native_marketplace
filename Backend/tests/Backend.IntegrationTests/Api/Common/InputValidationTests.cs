@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
@@ -129,6 +130,7 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
     public async Task AddCartItem_WithEmptyListingId_ReturnsBadRequest()
     {
         // Arrange
+        await AuthenticateAsRegisteredCustomerAsync();
         var addItemRequest = new AddCartItemRequest
         {
             ListingId = Guid.Empty,
@@ -165,5 +167,29 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+    }
+
+    private async Task AuthenticateAsRegisteredCustomerAsync()
+    {
+        var response = await _client.PostAsJsonAsync(
+            "/api/registration/customer",
+            new RegisterCustomerRequest
+            {
+                Email = $"{Guid.NewGuid():N}@validation.example.com",
+                Password = "Password123!",
+                FirstName = "Validation",
+                LastName = "Customer",
+                Phone = "+4512345678"
+            },
+            TestContext.Current.CancellationToken);
+
+        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(registration?.Token);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            registration.Token.AccessToken);
     }
 }

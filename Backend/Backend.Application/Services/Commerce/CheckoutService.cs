@@ -127,9 +127,18 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         // 1. Create Order
-        // TODO: Decide whether to use cart.UserId or userId from the request to identify/varify the correct customer and their cart
-        // TODO: Temporarily use the userId from cart, after authentication is implemented we can have a proper implementation here
-        var customer = await _customerRepository.GetByUserIdAsync(cart.UserId.Value, cancellationToken);
+        var customerUserId = request.UserId ?? cart.UserId;
+        if (!customerUserId.HasValue)
+        {
+            return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
+        if (customer is null)
+        {
+            return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
         var customerId = customer.Id;
         var order = new Order
         {
@@ -192,6 +201,10 @@ public sealed class CheckoutService : ICheckoutService
         if (CartId.HasValue)
         {
             cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CanAccessCart(cart, UserId, SessionId))
+            {
+                return null;
+            }
         }
 
         if (cart is null && UserId.HasValue)
@@ -205,6 +218,21 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         return cart;
+    }
+
+    private static bool CanAccessCart(ShoppingCart cart, Guid? userId, Guid? sessionId)
+    {
+        if (cart.UserId.HasValue)
+        {
+            return userId.HasValue && cart.UserId.Value == userId.Value;
+        }
+
+        if (cart.SessionId.HasValue)
+        {
+            return sessionId.HasValue && cart.SessionId.Value == sessionId.Value;
+        }
+
+        return userId.HasValue || sessionId.HasValue;
     }
 
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)

@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wasRegistered = searchParams.get('registered') === '1';
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +34,7 @@ export default function LoginPage() {
       setIsSubmitting(true);
       setError(null);
       await login({ email: trimmedEmail, password });
-      navigate('/products');
+      navigate(returnTo);
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Could not log in right now.');
     } finally {
@@ -76,6 +77,14 @@ export default function LoginPage() {
       </AuthPageFrame>
     </PageSkeleton>
   );
+}
+
+function getSafeReturnTo(value: string | null): string {
+  if (value?.startsWith('/') && !value.startsWith('//')) {
+    return value;
+  }
+
+  return '/products';
 }
 
 function validateLoginForm(email: string, password: string): string | null {

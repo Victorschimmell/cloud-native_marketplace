@@ -178,6 +178,10 @@ public sealed class CartService : ICartService
         if (CartId.HasValue)
         {
             cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CanAccessCart(cart, UserId, SessionId))
+            {
+                return null;
+            }
         }
 
         if (cart is null && UserId.HasValue)
@@ -191,6 +195,21 @@ public sealed class CartService : ICartService
         }
 
         return cart;
+    }
+
+    private static bool CanAccessCart(ShoppingCart cart, Guid? userId, Guid? sessionId)
+    {
+        if (cart.UserId.HasValue)
+        {
+            return userId.HasValue && cart.UserId.Value == userId.Value;
+        }
+
+        if (cart.SessionId.HasValue)
+        {
+            return sessionId.HasValue && cart.SessionId.Value == sessionId.Value;
+        }
+
+        return userId.HasValue || sessionId.HasValue;
     }
 
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
@@ -222,6 +241,13 @@ public sealed class CartService : ICartService
 
         if (cart is not null)
         {
+            if (!cart.UserId.HasValue && UserId.HasValue)
+            {
+                cart.UserId = UserId;
+                cart.SessionId = null;
+                await _cartRepository.UpdateAsync(cart, cancellationToken);
+            }
+
             return cart;
         }
 

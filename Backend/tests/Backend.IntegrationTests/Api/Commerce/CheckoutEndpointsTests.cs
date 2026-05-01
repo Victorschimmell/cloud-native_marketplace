@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.Api;
 using Backend.Api.Contracts.Commerce.Cart;
@@ -36,18 +37,22 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task PreviewCheckout_WhenIdentifiersAreMissing_ReturnsBadRequest()
+    public async Task PreviewCheckout_WhenUserIsAnonymous_ReturnsUnauthorized()
     {
         // Act
         var response = await _client.GetAsync("/api/checkout/preview?currency=USD", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task PreviewCheckout_WhenCartDoesNotExist_ReturnsNotFound()
     {
+        // Arrange
+        var userId = await SeedCustomerAsync("missing-preview@example.com");
+        AuthenticateAs(userId);
+
         // Act
         var response = await _client.GetAsync($"/api/checkout/preview?cartId={Guid.NewGuid()}&currency=USD", TestContext.Current.CancellationToken);
 
@@ -92,7 +97,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task Checkout_WhenIdentifiersAreMissing_ReturnsBadRequest()
+    public async Task Checkout_WhenUserIsAnonymous_ReturnsUnauthorized()
     {
         // Arrange
         var checkoutRequest = new CheckoutRequest
@@ -105,13 +110,15 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PostAsJsonAsync("/api/checkout?currency=BRL", checkoutRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task Checkout_WhenCartDoesNotExist_ReturnsNotFound()
     {
         // Arrange
+        var userId = await SeedCustomerAsync("missing-checkout@example.com");
+        AuthenticateAs(userId);
         var addressId = await SeedAddressAsync();
         var currencyId = await SeedCurrencyAsync("BRL", "Brazilian Real");
         var checkoutRequest = new CheckoutRequest
@@ -141,6 +148,8 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task Checkout_WhenCurrencyIsUnsupported_ReturnsBadRequest()
     {
         // Arrange
+        var userId = await SeedCustomerAsync("unsupported-currency@example.com");
+        AuthenticateAs(userId);
         var checkoutRequest = new CheckoutRequest
         {
             CartId = Guid.NewGuid(),
@@ -312,6 +321,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         var listingId = await SeedProductListingAsync(productName, sku, price);
         var userId = await SeedCustomerAsync(email);
+        AuthenticateAs(userId);
 
         var addItemRequest = new AddCartItemRequest
         {
@@ -364,5 +374,12 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return currency.Id;
+    }
+
+    private void AuthenticateAs(Guid userId)
+    {
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            IntegrationTestAuth.CreateBearerToken(userId));
     }
 }

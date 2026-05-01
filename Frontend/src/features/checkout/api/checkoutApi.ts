@@ -6,14 +6,13 @@ const checkoutCartIdStorageKey = 'marketplace.checkout.cartId';
 function buildCheckoutPreviewQuery(currency: string) {
   const cartId = window.localStorage.getItem(checkoutCartIdStorageKey);
 
-  if (!cartId) {
-    return null;
-  }
-
   const searchParams = new URLSearchParams({
-    cartId,
     currency,
   });
+
+  if (cartId) {
+    searchParams.set('cartId', cartId);
+  }
 
   return searchParams.toString();
 }
@@ -74,5 +73,9 @@ export const checkoutApi = {
       body: JSON.stringify(checkoutRequest),
       signal,
     });
+  },
+
+  clearCheckoutCart: () => {
+    window.localStorage.removeItem(checkoutCartIdStorageKey);
   },
 };

@@ -1,19 +1,27 @@
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Mappings.Commerce.Checkout;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Api.Controllers.Commerce;
 
 [Route("api/checkout")]
+[Authorize]
 public class CheckoutController : ApiControllerBase
 {
     private readonly ICheckoutService _checkoutService;
+    private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<CheckoutController> _logger;
 
-    public CheckoutController(ICheckoutService checkoutService, ILogger<CheckoutController> logger)
+    public CheckoutController(
+        ICheckoutService checkoutService,
+        ICurrentUserProvider currentUserProvider,
+        ILogger<CheckoutController> logger)
     {
         _checkoutService = checkoutService;
+        _currentUserProvider = currentUserProvider;
         _logger = logger;
     }
 
@@ -23,11 +31,11 @@ public class CheckoutController : ApiControllerBase
         _logger.LogInformation(
             "Checkout preview requested for cart {CartId}, user {UserId}, session {SessionId}, display currency {Currency}.",
             request.CartId,
-            request.UserId,
+            CurrentUserId,
             request.SessionId,
             currency);
 
-        var result = await _checkoutService.GetCheckoutPreviewAsync(request.ToApplicationRequest(), currency, cancellationToken);
+        var result = await _checkoutService.GetCheckoutPreviewAsync(request.ToApplicationRequest(CurrentUserId), currency, cancellationToken);
         return HandleResult(result, lines => lines.Select(line => line.ToResponse()).ToArray());
     }
 
@@ -37,11 +45,13 @@ public class CheckoutController : ApiControllerBase
         _logger.LogInformation(
             "Checkout requested for cart {CartId}, user {UserId}, session {SessionId}, display currency {Currency}.",
             request.CartId,
-            request.UserId,
+            CurrentUserId,
             request.SessionId,
             currency);
 
-        var result = await _checkoutService.CheckoutAsync(request.ToApplicationRequest(), currency, cancellationToken);
+        var result = await _checkoutService.CheckoutAsync(request.ToApplicationRequest(CurrentUserId), currency, cancellationToken);
         return HandleResult(result, response => response.ToResponse());
     }
+
+    private Guid? CurrentUserId => _currentUserProvider.IsAuthenticated ? _currentUserProvider.UserId : null;
 }
