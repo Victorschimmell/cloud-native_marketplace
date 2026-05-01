@@ -130,6 +130,16 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakeCurrencyRepository : ICurrencyRepository
+{
+    public Task<Currency?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
+    public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
+    public Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Currency>>([]);
+    public Task AddAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
 internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
 {
     public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;

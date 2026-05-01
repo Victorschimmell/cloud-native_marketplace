@@ -25,6 +25,12 @@ public sealed record PaymentDto(
     string? ExternalPaymentReference,
     DateTimeOffset? PaidAtUtc);
 
+public sealed record CurrencyDto(
+    Guid Id,
+    string Code,
+    string Name,
+    string? Symbol);
+
 public sealed record ReviewDto(
     Guid Id,
     Guid OrderId,
