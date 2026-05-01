@@ -22,6 +22,17 @@ public static class CartMappingExtensions
             Items = cart.Items.Select(item => item.ToModel()).ToArray()
         };
 
+    public static CartModel ToModel(this App.CartDto cart) =>
+        new()
+        {
+            Id = cart.Id,
+            UserId = cart.UserId,
+            SessionId = cart.SessionId,
+            Status = cart.Status,
+            ExpiresAtUtc = cart.ExpiresAtUtc,
+            Items = cart.Items.Select(item => item.ToModel()).ToArray()
+        };
+
     private static CartItemModel ToModel(this App.CartItemDto item) =>
         new()
         {

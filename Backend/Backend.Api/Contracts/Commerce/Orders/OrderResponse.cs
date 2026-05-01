@@ -19,6 +19,7 @@ public sealed record OrderResponse
     public required decimal SubtotalAmount { get; init; }
     public required decimal FreightAmount { get; init; }
     public required decimal TotalAmount { get; init; }
+    public required string CurrencyCode { get; init; }
     public Guid? PlacedFromCartId { get; init; }
     public required IReadOnlyList<OrderItemModel> Items { get; init; }
     public required IReadOnlyList<PaymentModel> Payments { get; init; }
