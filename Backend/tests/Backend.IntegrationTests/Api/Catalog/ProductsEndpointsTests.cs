@@ -30,7 +30,9 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var products = await response.Content.ReadFromJsonAsync<PageResponse<BrowseProductResponse>>(TestContext.Current.CancellationToken);
+        var products = await response.Content.ReadFromJsonAsync<PageResponse<BrowseProductResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(products);
         Assert.Equal(1, products.Page);
         Assert.Equal(20, products.PageSize);
@@ -48,7 +50,9 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var product = await response.Content.ReadFromJsonAsync<ProductDetailsResponse>(TestContext.Current.CancellationToken);
+        var product = await response.Content.ReadFromJsonAsync<ProductDetailsResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(product);
         Assert.Equal(productId, product.ProductId);
         Assert.Equal(listingId, product.ListingId);
@@ -71,7 +75,9 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var product = await response.Content.ReadFromJsonAsync<ProductDetailsResponse>(TestContext.Current.CancellationToken);
+        var product = await response.Content.ReadFromJsonAsync<ProductDetailsResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(product);
         Assert.Equal("USD", product.CurrencyCode);
         Assert.Equal(18m, product.Price);

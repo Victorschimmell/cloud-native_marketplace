@@ -24,7 +24,9 @@ public class CategoriesEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var categories = await response.Content.ReadFromJsonAsync<IReadOnlyList<CategoryResponse>>(TestContext.Current.CancellationToken);
+        var categories = await response.Content.ReadFromJsonAsync<IReadOnlyList<CategoryResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
         Assert.NotNull(categories);
     }
 
