@@ -123,7 +123,7 @@ internal static class ApplicationMappings
             cart.Id,
             cart.UserId,
             cart.SessionId,
-            cart.Status.ToString(),
+            cart.Status,
             cart.ExpiresAtUtc,
             cart.Items.Select(item => item.ToCartItemDto(currencyCode, priceConverter)).ToArray());
 

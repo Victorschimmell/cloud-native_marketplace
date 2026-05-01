@@ -1,3 +1,5 @@
+using Backend.Domain.Enums;
+
 namespace Backend.Application.DTOs;
 
 public sealed record CartItemDto(
@@ -14,7 +16,7 @@ public sealed record CartDto(
     Guid Id,
     Guid? UserId,
     Guid? SessionId,
-    string Status,
+    CartStatus Status,
     DateTimeOffset ExpiresAtUtc,
     IReadOnlyList<CartItemDto> Items);
 
