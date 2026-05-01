@@ -11,6 +11,7 @@ namespace Backend.Application.Services;
 public sealed class CheckoutService : ICheckoutService
 {
     private readonly ICartRepository _cartRepository;
+    private readonly IProductListingRepository _productListingRepository;
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
     private readonly ICustomerRepository _customerRepository;
@@ -21,6 +22,7 @@ public sealed class CheckoutService : ICheckoutService
 
     public CheckoutService(
         ICartRepository cartRepository,
+        IProductListingRepository productListingRepository,
         IOrderRepository orderRepository,
         IOrderNumberGenerator orderNumberGenerator,
         ICustomerRepository customerRepository,
@@ -30,6 +32,7 @@ public sealed class CheckoutService : ICheckoutService
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
+        ArgumentNullException.ThrowIfNull(productListingRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(orderNumberGenerator);
         ArgumentNullException.ThrowIfNull(customerRepository);
@@ -39,6 +42,7 @@ public sealed class CheckoutService : ICheckoutService
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _cartRepository = cartRepository;
+        _productListingRepository = productListingRepository;
         _orderRepository = orderRepository;
         _orderNumberGenerator = orderNumberGenerator;
         _customerRepository = customerRepository;
@@ -97,13 +101,36 @@ public sealed class CheckoutService : ICheckoutService
         var now = _dateTimeProvider.UtcNow;
         var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
 
+        // check stock availability for each cart item, if any of the items is not available in the requested quantity, return failure result
+        foreach (var item in cart.Items)
+        {
+            var listing = await _productListingRepository.GetByIdAsync(item.ListingId, cancellationToken);
+            if (listing is null || listing.IsDeleted || listing.VisibilityStatus != ListingVisibilityStatus.Published)
+            {
+                return Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found.");
+            }
+
+            if (listing.InventoryQuantity < item.Quantity)
+            {
+                return Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}.");
+            }
+        }
+
+        // check payment amount is consistent with the order total amount calculated from cart items, if not, return failure result
+        // TODO: Currently using BRL as the only valid currency for checkout
+        var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
+        var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
+        var totalAmount = subtotalAmount + freightAmount;
+        if (request.Payments.Sum(p => p.PaymentValue) != totalAmount)
+        {
+            return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated total amount from cart items.");
+        }
+
         // 1. Create Order
         // TODO: Decide whether to use cart.UserId or userId from the request to identify/varify the correct customer and their cart
         // TODO: Temporarily use the userId from cart, after authentication is implemented we can have a proper implementation here
         var customer = await _customerRepository.GetByUserIdAsync(cart.UserId.Value, cancellationToken);
         var customerId = customer.Id;
-        var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
-        var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
         var order = new Order
         {
             CustomerId = customerId,
@@ -112,7 +139,7 @@ public sealed class CheckoutService : ICheckoutService
             OrderPurchaseTimestampUtc = now,
             SubtotalAmount = subtotalAmount,
             FreightAmount = freightAmount,
-            TotalAmount = subtotalAmount + freightAmount,
+            TotalAmount = totalAmount,
             PlacedFromCartId = cart.Id,
             OrderNumber = orderNumber
         };
