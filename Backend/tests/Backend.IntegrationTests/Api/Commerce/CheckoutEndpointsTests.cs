@@ -17,25 +17,6 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task Checkout_ReturnsNotImplemented()
-    {
-        // Arrange
-        var checkoutRequest = new CheckoutRequest
-        {
-            UserId = Guid.NewGuid(),
-            ShippingAddressId = Guid.NewGuid(),
-            OrderNumber = "ORD-001",
-            Payments = new List<RecordPaymentRequest>()
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/checkout", checkoutRequest, TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
     public async Task PreviewCheckout_ReturnsNotFound()
     {
         // Arrange
