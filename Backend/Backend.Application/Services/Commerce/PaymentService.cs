@@ -4,7 +4,7 @@ using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.Orders;
-using DomainEnums = Backend.Domain.Enums;
+using Backend.Domain.Enums;
 namespace Backend.Application.Services;
 
 public sealed class PaymentService : IPaymentService
@@ -45,10 +45,10 @@ public sealed class PaymentService : IPaymentService
             OrderId = orderId,
             PaymentSequential = 0, // Will be set in repository
             CurrencyId = paymentDetails.CurrencyId,
-            PaymentType = (DomainEnums.PaymentType)paymentDetails.PaymentType,
+            PaymentType = paymentDetails.PaymentType,
             PaymentInstallments = paymentDetails.PaymentInstallments,
             PaymentValue = paymentDetails.PaymentValue,
-            PaymentStatus = DomainEnums.PaymentStatus.Pending,
+            PaymentStatus = PaymentStatus.Pending,
             ExternalPaymentReference = paymentDetails.ExternalPaymentReference,
         };
 
