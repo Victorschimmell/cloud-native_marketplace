@@ -215,6 +215,12 @@ internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
     public string NormalizeOrDefault(string? currency) => string.IsNullOrWhiteSpace(currency) ? BaseCurrency : currency.Trim().ToUpperInvariant();
     public bool IsSupported(string currencyCode) => currencyCode is "BRL" or "USD" or "DKK";
     public decimal FromBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount * 0.5m, 2, MidpointRounding.AwayFromZero);
+    public bool TryGetPriceConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    {
+        currencyCode = displayCurrency ?? BaseCurrency;
+        priceConverter = amount => FromBaseCurrency(amount, BaseCurrency);
+        return true;
+    }
 }
 
 internal sealed class FakeUnitOfWork : IUnitOfWork

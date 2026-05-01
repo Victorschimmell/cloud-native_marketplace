@@ -31,4 +31,30 @@ public sealed class FixedRateCurrencyConversionService : ICurrencyConversionServ
         var converted = amount * RatesFromBaseCurrency[currencyCode];
         return decimal.Round(converted, 2, MidpointRounding.AwayFromZero);
     }
+
+    public bool TryGetPriceConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    {
+        var normalizedCurrency = NormalizeOrDefault(displayCurrency);
+        if (!IsSupported(normalizedCurrency))
+        {
+            currencyCode = BaseCurrency;
+            priceConverter = static amount => amount;
+            return false;
+        }
+
+        currencyCode = normalizedCurrency;
+        priceConverter = amount => FromBaseCurrency(amount, normalizedCurrency);
+        return true;
+    }
+
+    public Func<decimal, decimal> GetPriceConverter(string displayCurrency)
+    {
+        var normalizedCurrency = NormalizeOrDefault(displayCurrency);
+        if (!IsSupported(normalizedCurrency))
+        {
+            throw new ArgumentException($"Unsupported currency code: {displayCurrency}", nameof(displayCurrency));
+        }
+
+        return amount => FromBaseCurrency(amount, normalizedCurrency);
+    }
 }
