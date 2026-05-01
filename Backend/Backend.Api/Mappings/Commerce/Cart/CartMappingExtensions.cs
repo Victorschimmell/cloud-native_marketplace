@@ -17,7 +17,7 @@ public static class CartMappingExtensions
             Id = cart.Id,
             UserId = cart.UserId,
             SessionId = cart.SessionId,
-            Status = cart.Status,
+            Status = (CartStatus)cart.Status,
             ExpiresAtUtc = cart.ExpiresAtUtc,
             Items = cart.Items.Select(item => item.ToModel()).ToArray()
         };
@@ -28,7 +28,7 @@ public static class CartMappingExtensions
             Id = cart.Id,
             UserId = cart.UserId,
             SessionId = cart.SessionId,
-            Status = cart.Status,
+            Status = (CartStatus)cart.Status,
             ExpiresAtUtc = cart.ExpiresAtUtc,
             Items = cart.Items.Select(item => item.ToModel()).ToArray()
         };
