@@ -1,7 +1,9 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Models;
+using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
+using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
@@ -119,6 +121,13 @@ internal sealed class FakeOrderItemRepository : IOrderItemRepository
     public Task<IReadOnlyList<OrderItem>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderItem>>([]);
     public Task<IReadOnlyList<OrderItem>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderItem>>([]);
     public Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class FakePaymentService : IPaymentService
+{
+    public Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string currencyCode, CancellationToken cancellationToken = default) => Task.FromResult(Result<CurrencyDto>.NotImplemented());
+    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
+    public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
 }
 
 internal sealed class FakePaymentRepository : IPaymentRepository

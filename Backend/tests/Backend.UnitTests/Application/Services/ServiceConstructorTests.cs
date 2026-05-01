@@ -31,10 +31,10 @@ public sealed class ServiceConstructorTests
         _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
         _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository());
-        var paymentService = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
+        _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
-        _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), paymentService, new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
+        _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
         _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeUnitOfWork());
         _ = new RegistrationService(
