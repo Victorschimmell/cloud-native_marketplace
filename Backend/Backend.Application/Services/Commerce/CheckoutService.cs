@@ -201,7 +201,7 @@ public sealed class CheckoutService : ICheckoutService
         if (CartId.HasValue)
         {
             cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
-            if (cart is not null && !CanAccessCart(cart, UserId, SessionId))
+            if (cart is not null && !CartAccessPolicy.CanAccess(cart, UserId, SessionId))
             {
                 return null;
             }
@@ -218,21 +218,6 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         return cart;
-    }
-
-    private static bool CanAccessCart(ShoppingCart cart, Guid? userId, Guid? sessionId)
-    {
-        if (cart.UserId.HasValue)
-        {
-            return userId.HasValue && cart.UserId.Value == userId.Value;
-        }
-
-        if (cart.SessionId.HasValue)
-        {
-            return sessionId.HasValue && cart.SessionId.Value == sessionId.Value;
-        }
-
-        return userId.HasValue || sessionId.HasValue;
     }
 
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)

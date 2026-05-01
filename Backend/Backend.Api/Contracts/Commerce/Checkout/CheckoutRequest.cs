@@ -9,12 +9,6 @@ public sealed record CheckoutRequest
     public Guid? CartId { get; init; }
 
     [NotEmptyGuid]
-    public Guid? UserId { get; init; }
-
-    [NotEmptyGuid]
-    public Guid? SessionId { get; init; }
-
-    [NotEmptyGuid]
     public required Guid ShippingAddressId { get; init; }
     public required IReadOnlyList<RecordPaymentRequest> Payments { get; init; }
 }

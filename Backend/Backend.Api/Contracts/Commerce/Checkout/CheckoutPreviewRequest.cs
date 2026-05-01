@@ -6,10 +6,4 @@ public sealed record CheckoutPreviewRequest
 {
     [NotEmptyGuid]
     public Guid? CartId { get; init; }
-
-    [NotEmptyGuid]
-    public Guid? UserId { get; init; }
-
-    [NotEmptyGuid]
-    public Guid? SessionId { get; init; }
 }

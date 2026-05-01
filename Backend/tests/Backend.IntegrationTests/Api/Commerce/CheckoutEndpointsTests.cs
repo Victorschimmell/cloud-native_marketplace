@@ -67,7 +67,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var (_, userId, cartId) = await SeedCartWithItemAsync("preview-currency@example.com", "Preview currency product", "PREVIEW-CURRENCY-001", 100m, 2);
 
         // Act
-        var response = await _client.GetAsync($"/api/checkout/preview?cartId={cartId}&userId={userId}&currency=EUR", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/checkout/preview?cartId={cartId}&currency=EUR", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -77,10 +77,10 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task PreviewCheckout_WhenCartExists_ReturnsConvertedPreviewLines()
     {
         // Arrange
-        var (listingId, userId, cartId) = await SeedCartWithItemAsync("preview-success@example.com", "Preview product", "PREVIEW-001", 100m, 2);
+        var (listingId, _, cartId) = await SeedCartWithItemAsync("preview-success@example.com", "Preview product", "PREVIEW-001", 100m, 2);
 
         // Act
-        var response = await _client.GetAsync($"/api/checkout/preview?cartId={cartId}&userId={userId}&currency=USD", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/checkout/preview?cartId={cartId}&currency=USD", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -240,6 +240,39 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task Checkout_WhenCartIdIsOmitted_UsesAuthenticatedUsersActiveCart()
+    {
+        // Arrange
+        var (_, _, cartId) = await SeedCartWithItemAsync("checkout-current@example.com", "Checkout current product", "CHECKOUT-CURRENT-001", 100m, 1);
+        var addressId = await SeedAddressAsync();
+        var currencyId = await SeedCurrencyAsync("BRL", "Brazilian Real");
+        var checkoutRequest = new CheckoutRequest
+        {
+            ShippingAddressId = addressId,
+            Payments = new[]
+            {
+                new RecordPaymentRequest
+                {
+                    CurrencyId = currencyId,
+                    PaymentType = PaymentType.CreditCard,
+                    PaymentInstallments = 1,
+                    PaymentValue = 200m
+                }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/checkout?currency=BRL", checkoutRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        Assert.NotNull(checkout);
+        Assert.Equal(cartId, checkout.Cart.Id);
+        Assert.Equal(CartStatus.Converted, checkout.Cart.Status);
+    }
+
+    [Fact]
     public async Task Checkout_WhenPaymentAmountIsInsufficient_ReturnsBadRequest()
     {
         // Arrange
@@ -325,7 +358,6 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = quantity
         };

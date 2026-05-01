@@ -30,39 +30,76 @@ public class CartController : ApiControllerBase
     [HttpGet("{cartId:guid}")]
     public async Task<ActionResult<CartResponse>> GetCartAsync([NotEmptyGuid] Guid cartId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
-        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, CurrentUserId, null), displayCurrency, cancellationToken);
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, userId, null), displayCurrency, cancellationToken);
+        return HandleResult(result, cart => cart.ToResponse());
+    }
+
+    [HttpGet("current")]
+    public async Task<ActionResult<CartResponse>> GetCurrentCartAsync([FromQuery] string displayCurrency, CancellationToken cancellationToken)
+    {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, userId, null), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
     [HttpPost("items")]
     public async Task<ActionResult<CartResponse>> AddCartItemAsync([FromBody] AddCartItemRequest request, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
         _logger.LogInformation(
             "Add cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
             request.ListingId,
             request.Quantity,
             request.CartId,
-            CurrentUserId,
-            request.SessionId);
+            userId,
+            null);
 
-        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(CurrentUserId), displayCurrency, cancellationToken);
+        var result = await _cartService.AddItemAsync(request.ToApplicationRequest(userId), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
     [HttpPatch("items/{listingId}")]
     public async Task<ActionResult<CartResponse>> UpdateCartItemAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateCartItemRequest request, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
     {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
         _logger.LogInformation(
             "Update cart item requested for listing {ListingId}, quantity {Quantity}, cart {CartId}, user {UserId}, session {SessionId}.",
             listingId,
             request.Quantity,
             request.CartId,
-            CurrentUserId,
-            request.SessionId);
+            userId,
+            null);
 
-        var result = await _cartService.UpdateItemAsync(request.ToApplicationRequest(listingId, CurrentUserId), displayCurrency, cancellationToken);
+        var result = await _cartService.UpdateItemAsync(request.ToApplicationRequest(listingId, userId), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
 
-    private Guid? CurrentUserId => _currentUserProvider.IsAuthenticated ? _currentUserProvider.UserId : null;
+    private bool TryGetCurrentUserId(out Guid userId)
+    {
+        if (_currentUserProvider.UserId is { } currentUserId)
+        {
+            userId = currentUserId;
+            return true;
+        }
+
+        userId = Guid.Empty;
+        return false;
+    }
 }

@@ -8,8 +8,8 @@ namespace Backend.Api.Mappings.Commerce.Checkout;
 
 public static class CheckoutMappingExtensions
 {
-    public static App.GetCheckoutPreviewRequest ToApplicationRequest(this CheckoutPreviewRequest request, Guid? authenticatedUserId = null) =>
-        new(request.CartId, authenticatedUserId ?? request.UserId, request.SessionId);
+    public static App.GetCheckoutPreviewRequest ToApplicationRequest(this CheckoutPreviewRequest request, Guid authenticatedUserId) =>
+        new(request.CartId, authenticatedUserId, null);
 
     public static CheckoutPreviewLineResponse ToResponse(this App.CheckoutLineDto line) =>
         new()
@@ -21,11 +21,11 @@ public static class CheckoutMappingExtensions
             CurrencyCode = line.CurrencyCode
         };
 
-    public static App.CheckoutRequest ToApplicationRequest(this CheckoutRequest request, Guid? authenticatedUserId = null) =>
+    public static App.CheckoutRequest ToApplicationRequest(this CheckoutRequest request, Guid authenticatedUserId) =>
         new(
             request.CartId,
-            authenticatedUserId ?? request.UserId,
-            request.SessionId,
+            authenticatedUserId,
+            null,
             request.ShippingAddressId,
             request.Payments.Select(p => p.ToApplicationRequest()).ToArray());
 

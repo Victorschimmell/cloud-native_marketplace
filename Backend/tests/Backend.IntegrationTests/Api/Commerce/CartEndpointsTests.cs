@@ -40,7 +40,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 2
         };
@@ -64,6 +63,37 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task GetCurrentCart_WhenAuthenticatedUserHasActiveCart_ReturnsCart()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Current cart product", "CURRENT-CART-001", 42.95m);
+        var userId = await SeedCustomerAsync("current_cart@example.com");
+        AuthenticateAs(userId);
+
+        var addResponse = await _client.PostAsJsonAsync(
+            "/api/cart/items?displayCurrency=BRL",
+            new AddCartItemRequest
+            {
+                ListingId = listingId,
+                Quantity = 1
+            },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        // Act
+        var response = await _client.GetAsync("/api/cart/current?displayCurrency=BRL", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(cart);
+        Assert.Equal(userId, cart.UserId);
+        Assert.Single(cart.Items);
+    }
+
+    [Fact]
     public async Task AddCartItem_WithExistingCartAndDifferentListing_ReturnsCartWithBothItems()
     {
         // Arrange
@@ -76,7 +106,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             "/api/cart/items?displayCurrency=BRL",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = firstListingId,
                 Quantity = 1
             },
@@ -120,7 +149,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -161,7 +189,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         AuthenticateAs(userId);
         var patchItemRequest = new UpdateCartItemRequest
         {
-            UserId = userId,
             Quantity = 1
         };
 
@@ -184,7 +211,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             "/api/cart/items?displayCurrency=BRL",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = listingId,
                 Quantity = 2
             },
@@ -221,7 +247,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             "/api/cart/items?displayCurrency=USD",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = listingId,
                 Quantity = 5
             },
@@ -257,7 +282,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Act & Assert
         var addRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -291,7 +315,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -315,7 +338,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     //         "/api/cart/items?displayCurrency=BRL",
     //         new AddCartItemRequest
     //         {
-    //             UserId = userId,
     //             ListingId = listingId,
     //             Quantity = 1
     //         },

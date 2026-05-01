@@ -6,18 +6,15 @@ const cartIdStorageKey = 'marketplace.checkout.cartId';
 export const cartApi = {
   getCart: async (displayCurrency: string = 'USD') => {
     const cartId = window.localStorage.getItem(cartIdStorageKey);
-    if (!cartId) {
-      return {
-        id: '',
-        userId: null,
-        sessionId: null,
-        status: 'empty',
-        expiresAtUtc: '',
-        items: [],
-      } as Cart;
-    }
+
+    const path = cartId
+      ? `/api/cart/${cartId}?displayCurrency=${displayCurrency}`
+      : `/api/cart/current?displayCurrency=${displayCurrency}`;
+
     try {
-      return await request<Cart>(`/api/cart/${cartId}?displayCurrency=${displayCurrency}`);
+      const cart = await request<Cart>(path);
+      window.localStorage.setItem(cartIdStorageKey, cart.id);
+      return cart;
     } catch {
       return {
         id: '',

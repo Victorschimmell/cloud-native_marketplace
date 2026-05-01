@@ -112,16 +112,11 @@ export default function CheckoutPage() {
       return;
     }
 
-    const cartId = window.localStorage.getItem('marketplace.checkout.cartId');
-    if (!cartId) {
-      setError('Cart information is missing. Please try again.');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setError(null);
 
+      const cartId = window.localStorage.getItem('marketplace.checkout.cartId') ?? undefined;
       const response = await checkoutApi.checkout(
         {
           cartId,

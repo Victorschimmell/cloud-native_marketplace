@@ -7,11 +7,5 @@ public sealed record UpdateCartItemRequest
     [NotEmptyGuid]
     public Guid? CartId { get; init; }
 
-    [NotEmptyGuid]
-    public Guid? UserId { get; init; }
-
-    [NotEmptyGuid]
-    public Guid? SessionId { get; init; }
-
     public required int Quantity { get; init; }
 }

@@ -28,30 +28,50 @@ public class CheckoutController : ApiControllerBase
     [HttpGet("preview")]
     public async Task<ActionResult<IReadOnlyList<CheckoutPreviewLineResponse>>> GetCheckoutPreviewAsync([FromQuery] CheckoutPreviewRequest request, [FromQuery] string currency, CancellationToken cancellationToken)
     {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
         _logger.LogInformation(
             "Checkout preview requested for cart {CartId}, user {UserId}, session {SessionId}, display currency {Currency}.",
             request.CartId,
-            CurrentUserId,
-            request.SessionId,
+            userId,
+            null,
             currency);
 
-        var result = await _checkoutService.GetCheckoutPreviewAsync(request.ToApplicationRequest(CurrentUserId), currency, cancellationToken);
+        var result = await _checkoutService.GetCheckoutPreviewAsync(request.ToApplicationRequest(userId), currency, cancellationToken);
         return HandleResult(result, lines => lines.Select(line => line.ToResponse()).ToArray());
     }
 
     [HttpPost]
     public async Task<ActionResult<CheckoutResponse>> CheckoutAsync([FromBody] CheckoutRequest request, string currency, CancellationToken cancellationToken)
     {
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
         _logger.LogInformation(
             "Checkout requested for cart {CartId}, user {UserId}, session {SessionId}, display currency {Currency}.",
             request.CartId,
-            CurrentUserId,
-            request.SessionId,
+            userId,
+            null,
             currency);
 
-        var result = await _checkoutService.CheckoutAsync(request.ToApplicationRequest(CurrentUserId), currency, cancellationToken);
+        var result = await _checkoutService.CheckoutAsync(request.ToApplicationRequest(userId), currency, cancellationToken);
         return HandleResult(result, response => response.ToResponse());
     }
 
-    private Guid? CurrentUserId => _currentUserProvider.IsAuthenticated ? _currentUserProvider.UserId : null;
+    private bool TryGetCurrentUserId(out Guid userId)
+    {
+        if (_currentUserProvider.UserId is { } currentUserId)
+        {
+            userId = currentUserId;
+            return true;
+        }
+
+        userId = Guid.Empty;
+        return false;
+    }
 }

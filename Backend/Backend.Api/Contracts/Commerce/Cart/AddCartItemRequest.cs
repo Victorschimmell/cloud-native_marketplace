@@ -9,12 +9,6 @@ public sealed record AddCartItemRequest
     public Guid? CartId { get; init; }
 
     [NotEmptyGuid]
-    public Guid? UserId { get; init; }
-
-    [NotEmptyGuid]
-    public Guid? SessionId { get; init; }
-
-    [NotEmptyGuid]
     public required Guid ListingId { get; init; }
 
     [Range(1, int.MaxValue)]
