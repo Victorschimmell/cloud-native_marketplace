@@ -17,7 +17,6 @@ public sealed record CheckoutRequest : IValidatableObject
 
     [NotEmptyGuid]
     public required Guid ShippingAddressId { get; init; }
-    public required string OrderNumber { get; init; }
     public required IReadOnlyList<RecordPaymentRequest> Payments { get; init; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

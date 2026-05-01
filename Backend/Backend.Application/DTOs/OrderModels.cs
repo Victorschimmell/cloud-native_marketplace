@@ -11,6 +11,7 @@ public sealed record OrderItemDto(
     int Quantity,
     decimal UnitPrice,
     decimal FreightValue,
+    string CurrencyCode,
     DateTimeOffset? ShippingLimitDateUtc);
 
 public sealed record PaymentDto(
@@ -23,6 +24,12 @@ public sealed record PaymentDto(
     PaymentStatus PaymentStatus,
     string? ExternalPaymentReference,
     DateTimeOffset? PaidAtUtc);
+
+public sealed record CurrencyDto(
+    Guid Id,
+    string Code,
+    string Name,
+    string? Symbol);
 
 public sealed record ReviewDto(
     Guid Id,
@@ -58,6 +65,7 @@ public sealed record OrderDto(
     decimal SubtotalAmount,
     decimal FreightAmount,
     decimal TotalAmount,
+    string CurrencyCode,
     Guid? PlacedFromCartId,
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<PaymentDto> Payments,
@@ -68,13 +76,16 @@ public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);
 
 public sealed record CancelOrderRequest(Guid OrderId, string? Reason);
 
-public sealed record RecordPaymentRequest(
-    Guid OrderId,
+public sealed record RecordPaymentDetails(
     Guid CurrencyId,
     PaymentType PaymentType,
     int PaymentInstallments,
     decimal PaymentValue,
     string? ExternalPaymentReference);
+
+public sealed record RecordPaymentRequest(
+    Guid OrderId,
+    RecordPaymentDetails PaymentDetails);
 
 public sealed record CreateReviewRequest(
     Guid OrderId,

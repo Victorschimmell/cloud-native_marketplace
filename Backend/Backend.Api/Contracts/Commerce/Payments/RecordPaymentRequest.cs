@@ -5,9 +5,6 @@ namespace Backend.Api.Contracts.Commerce.Payments;
 public sealed record RecordPaymentRequest
 {
     [NotEmptyGuid]
-    public required Guid OrderId { get; init; }
-
-    [NotEmptyGuid]
     public required Guid CurrencyId { get; init; }
 
     public required PaymentType PaymentType { get; init; }

@@ -1,3 +1,5 @@
+using Backend.Domain.Enums;
+
 namespace Backend.Application.DTOs;
 
 public sealed record CartItemDto(
@@ -14,7 +16,7 @@ public sealed record CartDto(
     Guid Id,
     Guid? UserId,
     Guid? SessionId,
-    string Status,
+    CartStatus Status,
     DateTimeOffset ExpiresAtUtc,
     IReadOnlyList<CartItemDto> Items);
 
@@ -33,11 +35,11 @@ public sealed record CheckoutRequest(
     Guid? UserId,
     Guid? SessionId,
     Guid ShippingAddressId,
-    string OrderNumber,
-    IReadOnlyList<RecordPaymentRequest> Payments);
+    IReadOnlyList<RecordPaymentDetails> Payments);
 
 public sealed record CheckoutResponse(
     OrderDto Order,
     CartDto Cart,
     IReadOnlyList<PaymentDto> Payments,
-    decimal TotalAmount);
+    decimal TotalAmount,
+    string CurrencyCode);

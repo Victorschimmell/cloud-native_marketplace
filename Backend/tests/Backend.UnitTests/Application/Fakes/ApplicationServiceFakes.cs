@@ -1,7 +1,9 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Models;
+using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
+using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
@@ -106,6 +108,11 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakeOrderNumberRepository : IOrderNumberGenerator
+{
+    public Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken = default) => Task.FromResult("ORDER-123456");
+}
+
 internal sealed class FakeOrderItemRepository : IOrderItemRepository
 {
     public Task AddAsync(OrderItem orderItem, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -116,6 +123,13 @@ internal sealed class FakeOrderItemRepository : IOrderItemRepository
     public Task UpdateAsync(OrderItem orderItem, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakePaymentService : IPaymentService
+{
+    public Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string currencyCode, CancellationToken cancellationToken = default) => Task.FromResult(Result<CurrencyDto>.NotImplemented());
+    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
+    public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
+}
+
 internal sealed class FakePaymentRepository : IPaymentRepository
 {
     public Task AddAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -123,6 +137,16 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
     public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>([]);
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class FakeCurrencyRepository : ICurrencyRepository
+{
+    public Task<Currency?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
+    public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
+    public Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Currency>>([]);
+    public Task AddAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
@@ -210,6 +234,12 @@ internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
     public string NormalizeOrDefault(string? currency) => string.IsNullOrWhiteSpace(currency) ? BaseCurrency : currency.Trim().ToUpperInvariant();
     public bool IsSupported(string currencyCode) => currencyCode is "BRL" or "USD" or "DKK";
     public decimal FromBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount * 0.5m, 2, MidpointRounding.AwayFromZero);
+    public bool TryGetPriceConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    {
+        currencyCode = displayCurrency ?? BaseCurrency;
+        priceConverter = amount => FromBaseCurrency(amount, BaseCurrency);
+        return true;
+    }
 }
 
 internal sealed class FakeUnitOfWork : IUnitOfWork
