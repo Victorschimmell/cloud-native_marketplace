@@ -22,12 +22,12 @@ public sealed class ServiceSkeletonTests
     [Fact]
     public async Task AuthService_LoginAsync_Throws_NotImplementedException()
     {
-        var service = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider());
+        var service = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeUnitOfWork());
 
         var result = await service.LoginAsync(new LoginRequest("user@example.com", "password"), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(ResultFailureType.NotImplemented, result.FailureType);
+        Assert.Equal(ResultFailureType.Unauthorized, result.FailureType);
     }
 
     [Fact]

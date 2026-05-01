@@ -3,7 +3,6 @@ using Backend.Api.Auth;
 using Backend.Api.Middleware;
 using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
-using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
@@ -33,8 +32,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
 });
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserProvider, HttpContextCurrentUserProvider>();
+builder.Services.AddMarketplaceAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 

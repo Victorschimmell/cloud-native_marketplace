@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 
 namespace Backend.Api.Middleware;
 
-public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
+public sealed class GlobalExceptionHandler(
+    ILogger<GlobalExceptionHandler> logger,
+    IHostEnvironment hostEnvironment) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
@@ -18,13 +19,14 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         {
             Status = StatusCodes.Status500InternalServerError,
             Title = "Internal Server Error",
-            // For development purposes, includes the exception message
-            Detail = exception.Message
-            // Avoid exposing internal exception details in production environments
-            // Detail = "An unexpected error occurred. Please try again later."
+            Detail = hostEnvironment.IsDevelopment()
+                ? exception.Message
+                : "An unexpected error occurred. Please try again later.",
+            Instance = httpContext.Request.Path
         };
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;
+        httpContext.Response.ContentType = "application/problem+json";
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
 
         return true;

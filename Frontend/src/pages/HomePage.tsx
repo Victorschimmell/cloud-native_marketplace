@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import PageSkeleton from '../components/PageSkeleton';
+import { useAuth } from '../features/auth/useAuth';
 import './HomePage.css';
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuth();
+
   const featureCards = [
     {
       accent: 'customer',
@@ -61,9 +64,11 @@ export default function HomePage() {
               <Link className="home-page__button home-page__button--primary" to="/products">
                 Browse Products
               </Link>
-              <Link className="home-page__button home-page__button--secondary" to="/register">
-                Create Account
-              </Link>
+              {!isAuthenticated ? (
+                <Link className="home-page__button home-page__button--secondary" to="/register">
+                  Create Account
+                </Link>
+              ) : null}
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.User.Auth;
+using Backend.Api.Mappings.User.Auth;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,8 +18,8 @@ public class AuthController : ApiControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        // var result = await _authService.LoginAsync(request);
-        // return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _authService.LoginAsync(request.ToDto(), cancellationToken);
+
+        return HandleResult(result, response => response.ToResponse());
     }
 }

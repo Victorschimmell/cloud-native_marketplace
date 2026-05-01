@@ -1,5 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.IdentityAccess;
+using Backend.Domain.ValueObjects;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,8 +16,10 @@ internal sealed class UserAccountRepository(ApplicationDbContext dbContext) : IU
 
     public async Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
+        var emailAddress = new EmailAddress(email);
+
         return await dbContext.UserAccounts
-            .FirstOrDefaultAsync(u => u.Email.Value == email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == emailAddress, cancellationToken);
     }
 
     public async Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)

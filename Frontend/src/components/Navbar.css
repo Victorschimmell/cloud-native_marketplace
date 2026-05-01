@@ -134,13 +134,26 @@
 }
 
 .navbar__login {
+  background: #ffffff;
   border: 1px solid #d1d5db;
   color: var(--text-dark);
+  cursor: pointer;
 }
 
 .navbar__register {
   background: var(--primary-color);
   color: var(--text-light);
+}
+
+.navbar__user {
+  display: inline-block;
+  max-width: 190px;
+  overflow: hidden;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 960px) {
