@@ -152,6 +152,13 @@ internal static class ApplicationMappings
             payment.ExternalPaymentReference,
             payment.PaidAtUtc);
 
+    public static CurrencyDto ToCurrencyDto(this Currency currency) =>
+        new(
+            currency.Id,
+            currency.Code,
+            currency.Name,
+            currency.Symbol);
+
     public static ReviewDto ToReviewDto(this OrderReview review) =>
         new(
             review.Id,
@@ -174,7 +181,7 @@ internal static class ApplicationMappings
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
 
-    public static OrderDto ToOrderDto(this Order order,string currencyCode, Func<decimal, decimal> priceConverter) =>
+    public static OrderDto ToOrderDto(this Order order, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             order.Id,
             order.CustomerId,

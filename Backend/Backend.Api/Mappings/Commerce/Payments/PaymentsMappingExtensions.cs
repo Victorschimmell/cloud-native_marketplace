@@ -28,6 +28,15 @@ public static class PaymentsMappingExtensions
             PaidAtUtc = payment.PaidAtUtc
         };
 
+    public static CurrencyResponse ToResponse(this App.CurrencyDto currency) =>
+        new()
+        {
+            Id = currency.Id,
+            Code = currency.Code,
+            Name = currency.Name,
+            Symbol = currency.Symbol
+        };
+
     private static DomainEums.PaymentType ToDomain(this PaymentType paymentType) =>
         paymentType switch
         {

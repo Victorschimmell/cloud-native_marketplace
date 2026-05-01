@@ -11,22 +11,26 @@ public sealed class PaymentService : IPaymentService
 {
     private readonly IPaymentRepository _paymentRepository;
     private readonly IOrderRepository _orderRepository;
+    private readonly ICurrencyRepository _currencyRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly IUnitOfWork _unitOfWork;
 
     public PaymentService(
         IPaymentRepository paymentRepository,
         IOrderRepository orderRepository,
+        ICurrencyRepository currencyRepository,
         IDateTimeProvider dateTimeProvider,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(paymentRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
+        ArgumentNullException.ThrowIfNull(currencyRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _paymentRepository = paymentRepository;
         _orderRepository = orderRepository;
+        _currencyRepository = currencyRepository;
         _dateTimeProvider = dateTimeProvider;
         _unitOfWork = unitOfWork;
     }
@@ -61,6 +65,18 @@ public sealed class PaymentService : IPaymentService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<PaymentDto>.Success(orderPayment.ToPaymentDto());
+    }
+
+    public async Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string code, CancellationToken cancellationToken = default)
+    {
+        var currency = await _currencyRepository.GetByCodeAsync(code, cancellationToken);
+        if (currency == null)
+        {
+            return Result<CurrencyDto>.NotFound("Currency not found");
+        }
+
+        var currencyDto = currency.ToCurrencyDto();
+        return Result<CurrencyDto>.Success(currencyDto);
     }
 }
 
