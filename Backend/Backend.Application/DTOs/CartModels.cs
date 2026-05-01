@@ -39,4 +39,5 @@ public sealed record CheckoutResponse(
     OrderDto Order,
     CartDto Cart,
     IReadOnlyList<PaymentDto> Payments,
-    decimal TotalAmount);
+    decimal TotalAmount,
+    string CurrencyCode);

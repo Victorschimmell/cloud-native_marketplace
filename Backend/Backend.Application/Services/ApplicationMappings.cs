@@ -127,7 +127,7 @@ internal static class ApplicationMappings
             cart.ExpiresAtUtc,
             cart.Items.Select(item => item.ToCartItemDto(currencyCode, priceConverter)).ToArray());
 
-    public static OrderItemDto ToOrderItemDto(this OrderItem item) =>
+    public static OrderItemDto ToOrderItemDto(this OrderItem item, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             item.OrderId,
             item.OrderItemId,
@@ -135,8 +135,9 @@ internal static class ApplicationMappings
             item.ProductId,
             item.SellerId,
             item.Quantity,
-            item.UnitPrice,
-            item.FreightValue,
+            priceConverter(item.UnitPrice),
+            priceConverter(item.FreightValue),
+            currencyCode,
             item.ShippingLimitDateUtc);
 
     public static PaymentDto ToPaymentDto(this OrderPayment payment) =>
@@ -173,7 +174,7 @@ internal static class ApplicationMappings
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
 
-    public static OrderDto ToOrderDto(this Order order) =>
+    public static OrderDto ToOrderDto(this Order order,string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             order.Id,
             order.CustomerId,
@@ -185,11 +186,12 @@ internal static class ApplicationMappings
             order.OrderDeliveredCarrierDateUtc,
             order.OrderDeliveredCustomerDateUtc,
             order.OrderEstimatedDeliveryDateUtc,
-            order.SubtotalAmount,
-            order.FreightAmount,
-            order.TotalAmount,
+            priceConverter(order.SubtotalAmount),
+            priceConverter(order.FreightAmount),
+            priceConverter(order.TotalAmount),
+            currencyCode,
             order.PlacedFromCartId,
-            order.Items.Select(ToOrderItemDto).ToArray(),
+            order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             order.Payments.Select(ToPaymentDto).ToArray(),
             order.Reviews.Select(ToReviewDto).ToArray(),
             order.Shipments.Select(ToShipmentDto).ToArray());
