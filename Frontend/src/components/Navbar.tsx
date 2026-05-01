@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
+import { cartApi } from '../features/cart/api/cartApi';
 import { currencyOptions } from '../shared/currency/currency';
 import { useCurrency } from '../shared/currency/useCurrency';
 import '../css/variables.css';
@@ -19,6 +20,7 @@ export default function Navbar() {
 
   function handleLogout() {
     logout();
+    cartApi.clearStoredCart();
     navigate('/');
   }
 

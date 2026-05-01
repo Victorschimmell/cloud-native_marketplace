@@ -269,6 +269,34 @@
     font-weight: 700;
 }
 
+.checkout-page__shipping-field {
+    display: grid;
+    gap: 8px;
+    margin: 0 0 16px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.checkout-page__shipping-field input {
+    min-height: 44px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0 12px;
+    color: #111827;
+    font: inherit;
+    font-weight: 500;
+}
+
+.checkout-page__shipping-field input:focus {
+    border-color: #93c5fd;
+    outline: 3px solid #dbeafe;
+}
+
+.checkout-page__shipping-field input[aria-invalid="true"] {
+    border-color: #dc2626;
+}
+
 .checkout-page__payment-options {
     display: grid;
     gap: 10px;

@@ -19,8 +19,6 @@ function buildCheckoutPreviewQuery(currency: string) {
 
 export interface CheckoutRequest {
   cartId?: string;
-  userId?: string;
-  sessionId?: string;
   shippingAddressId: string;
   payments: Array<{
     currencyId: string;

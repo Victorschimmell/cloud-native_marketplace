@@ -9,6 +9,10 @@ import { CheckoutPaymentPanel, CheckoutPreviewList } from '../components';
 import type { CheckoutPreviewLine, PaymentType, Currency } from '../types';
 import './CheckoutPage.css';
 
+const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const emptyGuid = '00000000-0000-0000-0000-000000000000';
+const paymentCurrencyCode = 'BRL';
+
 function getErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     const payload = err.payload as Record<string, unknown>;
@@ -33,8 +37,10 @@ export default function CheckoutPage() {
   const [isLoadingCurrency, setIsLoadingCurrency] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewLines, setPreviewLines] = useState<CheckoutPreviewLine[]>([]);
+  const [paymentPreviewLines, setPaymentPreviewLines] = useState<CheckoutPreviewLine[]>([]);
   const [currencyInfo, setCurrencyInfo] = useState<Currency | null>(null);
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType | null>(null);
+  const [shippingAddressId, setShippingAddressId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { currency } = useCurrency();
 
@@ -47,7 +53,11 @@ export default function CheckoutPage() {
         setError(null);
 
         const lines = await checkoutApi.getCheckoutPreview(currency, abortController.signal);
+        const paymentLines = currency === paymentCurrencyCode
+          ? lines
+          : await checkoutApi.getCheckoutPreview(paymentCurrencyCode, abortController.signal);
         setPreviewLines(lines);
+        setPaymentPreviewLines(paymentLines);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return;
@@ -76,7 +86,7 @@ export default function CheckoutPage() {
         setIsLoadingCurrency(true);
         setError(null);
 
-        const info = await checkoutApi.getCurrency('BRL', abortController.signal);
+        const info = await checkoutApi.getCurrency(paymentCurrencyCode, abortController.signal);
         setCurrencyInfo(info);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
@@ -102,13 +112,24 @@ export default function CheckoutPage() {
     return previewLines.reduce((sum, line) => sum + line.lineTotal, 0);
   }, [previewLines]);
 
+  const paymentTotal = useMemo(() => {
+    return paymentPreviewLines.reduce((sum, line) => sum + line.lineTotal, 0);
+  }, [paymentPreviewLines]);
+
   const hasPreview = previewLines.length > 0;
+  const trimmedShippingAddressId = shippingAddressId.trim();
+  const isShippingAddressValid = guidPattern.test(trimmedShippingAddressId) && trimmedShippingAddressId !== emptyGuid;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!currencyInfo || !selectedPaymentType || !hasPreview) {
+    if (!currencyInfo || !selectedPaymentType || !hasPreview || paymentTotal <= 0) {
       setError('Please select a payment method and ensure items are in your cart.');
+      return;
+    }
+
+    if (!isShippingAddressValid) {
+      setError('Enter a valid shipping address ID.');
       return;
     }
 
@@ -120,17 +141,17 @@ export default function CheckoutPage() {
       const response = await checkoutApi.checkout(
         {
           cartId,
-          shippingAddressId: '', // TODO: Get from user input or state
+          shippingAddressId: trimmedShippingAddressId,
           payments: [
             {
               currencyId: currencyInfo.id,
               paymentType: selectedPaymentType,
               paymentInstallments: 1,
-              paymentValue: previewTotal,
+              paymentValue: paymentTotal,
             },
           ],
         },
-        currency
+        paymentCurrencyCode
       );
 
       checkoutApi.clearCheckoutCart();
@@ -178,12 +199,16 @@ export default function CheckoutPage() {
           <CheckoutPaymentPanel
             currency={currency}
             total={previewTotal}
+            paymentTotal={paymentTotal}
             currencyInfo={currencyInfo}
             selectedPaymentType={selectedPaymentType}
+            shippingAddressId={shippingAddressId}
             onPaymentTypeChange={setSelectedPaymentType}
+            onShippingAddressIdChange={setShippingAddressId}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isLoadingCurrency={isLoadingCurrency}
+            isShippingAddressValid={isShippingAddressValid}
           />
 
         </div>

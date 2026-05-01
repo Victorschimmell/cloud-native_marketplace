@@ -6,12 +6,16 @@ import { PaymentType as PaymentTypeValues } from '../types';
 interface CheckoutPaymentPanelProps {
   currency: CurrencyCode;
   total: number;
+  paymentTotal: number;
   currencyInfo: Currency | null;
   selectedPaymentType: PaymentType | null;
+  shippingAddressId: string;
   onPaymentTypeChange: (type: PaymentType) => void;
+  onShippingAddressIdChange: (shippingAddressId: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   isSubmitting: boolean;
   isLoadingCurrency: boolean;
+  isShippingAddressValid: boolean;
 }
 
 const paymentTypeOptions = [
@@ -24,15 +28,19 @@ const paymentTypeOptions = [
 export default function CheckoutPaymentPanel({
   currency,
   total,
+  paymentTotal,
   currencyInfo,
   selectedPaymentType,
+  shippingAddressId,
   onPaymentTypeChange,
+  onShippingAddressIdChange,
   onSubmit,
   isSubmitting,
   isLoadingCurrency,
+  isShippingAddressValid,
 }: CheckoutPaymentPanelProps) {
   const locale = getCurrencyLocale(currency);
-  const isFormValid = currencyInfo && selectedPaymentType && total > 0;
+  const isFormValid = currencyInfo && selectedPaymentType && total > 0 && paymentTotal > 0 && isShippingAddressValid;
   const isDisabled = isSubmitting || isLoadingCurrency || !isFormValid;
 
   return (
@@ -69,14 +77,30 @@ export default function CheckoutPaymentPanel({
               </dd>
             </div>
             <div className="checkout-page__payment-meta-item">
-              <dt>Payment currency</dt>
-              <dd>{currencyInfo.code}</dd>
+              <dt>Payment total</dt>
+              <dd>
+                {paymentTotal.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: currencyInfo.code,
+                })}
+              </dd>
             </div>
           </dl>
 
           <form className="checkout-page__payment-form" onSubmit={onSubmit}>
             <fieldset className="checkout-page__payment-fieldset" disabled={isSubmitting || isLoadingCurrency}>
               <legend className="checkout-page__payment-legend">Payment method</legend>
+
+              <label className="checkout-page__shipping-field">
+                Shipping address ID
+                <input
+                  aria-invalid={shippingAddressId.length > 0 && !isShippingAddressValid}
+                  onChange={(e) => onShippingAddressIdChange(e.target.value)}
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                  type="text"
+                  value={shippingAddressId}
+                />
+              </label>
 
               <div className="checkout-page__payment-options">
                 {paymentTypeOptions.map((option) => (
