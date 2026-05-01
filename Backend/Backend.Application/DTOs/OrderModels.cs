@@ -11,6 +11,7 @@ public sealed record OrderItemDto(
     int Quantity,
     decimal UnitPrice,
     decimal FreightValue,
+    string CurrencyCode,
     DateTimeOffset? ShippingLimitDateUtc);
 
 public sealed record PaymentDto(
@@ -58,6 +59,7 @@ public sealed record OrderDto(
     decimal SubtotalAmount,
     decimal FreightAmount,
     decimal TotalAmount,
+    string CurrencyCode,
     Guid? PlacedFromCartId,
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<PaymentDto> Payments,
