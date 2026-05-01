@@ -34,8 +34,7 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, string? currency, CancellationToken cancellationToken = default)
     {
-        var currencyCode = _currencyConversionService.NormalizeOrDefault(currency);
-        if (!_currencyConversionService.IsSupported(currencyCode))
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<ProductDetailsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -48,7 +47,7 @@ public sealed class ProductService : IProductService
         }
 
         return Result<ProductDetailsDto>.Success(
-            listing.ToProductDetailsDto(currencyCode, _currencyConversionService.FromBaseCurrency(listing.ListingPrice, currencyCode)));
+            listing.ToProductDetailsDto(currencyCode, priceConverter(listing.ListingPrice)));
     }
 
     public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
@@ -63,15 +62,14 @@ public sealed class ProductService : IProductService
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Sort must be one of newest, price-asc, price-desc, or name-asc.");
         }
 
-        var currencyCode = _currencyConversionService.NormalizeOrDefault(request.Currency);
-        if (!_currencyConversionService.IsSupported(currencyCode))
+        if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var priceConverter))
         {
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
 
         var listings = await _productListingRepository.GetAvailableForBrowseAsync(request, cancellationToken);
         var products = listings.Items
-            .Select(listing => listing.ToBrowseDto(currencyCode, _currencyConversionService.FromBaseCurrency(listing.ListingPrice, currencyCode)))
+            .Select(listing => listing.ToBrowseDto(currencyCode, priceConverter(listing.ListingPrice)))
             .ToArray();
 
         return Result<PagedResult<BrowseProductDto>>.Success(
