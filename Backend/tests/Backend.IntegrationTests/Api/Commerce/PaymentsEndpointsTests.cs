@@ -32,7 +32,6 @@ public class PaymentsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var recordRequest = new RecordPaymentRequest
         {
-            OrderId = Guid.NewGuid(),
             CurrencyId = Guid.NewGuid(),
             PaymentType = PaymentType.CreditCard,
             PaymentInstallments = 1,

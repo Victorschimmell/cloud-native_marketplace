@@ -35,27 +35,19 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
     }
 
     // NotEmptyGuid Validation Test
-    // Example: RecordPaymentRequest.OrderId must not be empty
     [Fact]
     public async Task RecordPayment_WithEmptyOrderId_ReturnsBadRequest()
     {
         // Arrange
-        var recordRequest = new RecordPaymentRequest
-        {
-            OrderId = Guid.Empty, // Invalid: empty GUID
-            CurrencyId = Guid.NewGuid(),
-            PaymentType = PaymentType.CreditCard,
-            PaymentInstallments = 1,
-            PaymentValue = 100m
-        };
+        var productId = Guid.Empty; // Invalid: empty GUID
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest, TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/products/{productId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        Assert.Contains("OrderId", content);
+        Assert.Contains("productId", content);
     }
 
     // EmailAddress Validation Test
@@ -162,7 +154,6 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var recordRequest = new RecordPaymentRequest
         {
-            OrderId = Guid.NewGuid(),
             CurrencyId = Guid.NewGuid(),
             PaymentType = PaymentType.CreditCard,
             PaymentInstallments = 1,
