@@ -33,7 +33,9 @@ public sealed class PaymentService : IPaymentService
 
     public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
+        var result = _paymentRepository.GetByOrderIdAsync(orderId, cancellationToken)
+            .ContinueWith(task => task.Result.Select(payment => payment.ToPaymentDto()).ToList(), cancellationToken);
+        return Task.FromResult(Result<IReadOnlyList<PaymentDto>>.Success(result.Result));
     }
 
     public async Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
