@@ -37,7 +37,7 @@ export default function CheckoutPaymentPanel({
           <div className="checkout-page__payment-card-header">
             <div>
               <div className="checkout-page__payment-card-title">Credit card</div>
-              <div className="checkout-page__payment-card-subtitle">Payment currency: {currencyInfo.code}</div>
+              <div className="checkout-page__payment-card-subtitle">Charged in {currencyInfo.code}</div>
             </div>
             <span className="checkout-page__payment-card-badge">Selected</span>
           </div>
@@ -53,7 +53,7 @@ export default function CheckoutPaymentPanel({
               </dd>
             </div>
             <div className="checkout-page__payment-meta-item">
-              <dt>Payment total</dt>
+              <dt>Charged total</dt>
               <dd>
                 {paymentTotal.toLocaleString('pt-BR', {
                   style: 'currency',

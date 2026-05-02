@@ -26,7 +26,7 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
             Review totals before placing the order.
           </p>
         </div>
-        <div className="checkout-page__section-badge">
+        <div className="checkout-page__summary-count">
           {lines.length} item{lines.length === 1 ? '' : 's'}
         </div>
       </div>
@@ -35,34 +35,25 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
         {lines.map((line) => (
           <article className="checkout-page__preview-line" key={line.listingId}>
             <div className="checkout-page__preview-line-main">
-              <div className="checkout-page__preview-line-label">Listing ID</div>
-              <div className="checkout-page__preview-line-value">{line.listingId}</div>
+              <div className="checkout-page__preview-line-title" title={line.listingId}>
+                Listing {formatListingId(line.listingId)}
+              </div>
+              <div className="checkout-page__preview-line-detail">
+                {line.quantity}x
+                <span aria-hidden="true"> - </span>
+                {line.unitPrice.toLocaleString(locale, {
+                  style: 'currency',
+                  currency: line.currencyCode,
+                })} each
+              </div>
             </div>
 
-            <dl className="checkout-page__preview-line-meta">
-              <div className="checkout-page__preview-line-meta-item">
-                <dt>Quantity</dt>
-                <dd>{line.quantity}</dd>
-              </div>
-              <div className="checkout-page__preview-line-meta-item">
-                <dt>Unit price</dt>
-                <dd>
-                  {line.unitPrice.toLocaleString(locale, {
-                    style: 'currency',
-                    currency: line.currencyCode,
-                  })}
-                </dd>
-              </div>
-              <div className="checkout-page__preview-line-meta-item checkout-page__preview-line-meta-item--total">
-                <dt>Line total</dt>
-                <dd>
-                  {line.lineTotal.toLocaleString(locale, {
-                    style: 'currency',
-                    currency: line.currencyCode,
-                  })}
-                </dd>
-              </div>
-            </dl>
+            <div className="checkout-page__preview-line-total">
+              {line.lineTotal.toLocaleString(locale, {
+                style: 'currency',
+                currency: line.currencyCode,
+              })}
+            </div>
           </article>
         ))}
       </div>
@@ -112,4 +103,12 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
       </div>
     </aside>
   );
+}
+
+function formatListingId(listingId: string) {
+  if (listingId.length <= 12) {
+    return listingId;
+  }
+
+  return `${listingId.slice(0, 8)}...${listingId.slice(-4)}`;
 }

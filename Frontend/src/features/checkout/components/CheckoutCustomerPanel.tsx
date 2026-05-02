@@ -15,10 +15,9 @@ export default function CheckoutCustomerPanel({ customer, email, isLoading }: Ch
             Customer information
           </h2>
           <p className="checkout-page__section-description">
-            These details come from your account.
+            Used from your account.
           </p>
         </div>
-        <span className="checkout-page__section-badge">Locked</span>
       </div>
 
       <div className="checkout-page__readonly-grid" aria-busy={isLoading}>
@@ -32,10 +31,12 @@ export default function CheckoutCustomerPanel({ customer, email, isLoading }: Ch
 }
 
 function ReadOnlyField({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) {
+  const fieldValue = value || 'Loading...';
+
   return (
-    <div className={wide ? 'checkout-page__readonly-field checkout-page__readonly-field--wide' : 'checkout-page__readonly-field'}>
+    <label className={wide ? 'checkout-page__readonly-field checkout-page__readonly-field--wide' : 'checkout-page__readonly-field'}>
       <span>{label}</span>
-      <strong>{value || 'Loading...'}</strong>
-    </div>
+      <input readOnly value={fieldValue} />
+    </label>
   );
 }
