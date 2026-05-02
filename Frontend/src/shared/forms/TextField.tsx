@@ -4,10 +4,11 @@ import './forms.css';
 interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string | null;
   hint?: string;
+  invalid?: boolean;
   label: string;
 }
 
-export function TextField({ className, error, hint, id, label, ...inputProps }: TextFieldProps) {
+export function TextField({ className, error, hint, id, invalid = false, label, ...inputProps }: TextFieldProps) {
   const generatedId = useId();
   const inputId = id ?? `${generatedId}-input`;
   const hintId = hint ? `${inputId}-hint` : undefined;
@@ -20,7 +21,7 @@ export function TextField({ className, error, hint, id, label, ...inputProps }: 
       <input
         {...inputProps}
         aria-describedby={describedBy}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={error || invalid ? true : undefined}
         className={['form-field__control', className].filter(Boolean).join(' ')}
         id={inputId}
       />
