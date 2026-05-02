@@ -98,6 +98,23 @@ public sealed class CheckoutService : ICheckoutService
             return Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers.");
         }
 
+        var customerUserId = request.UserId ?? cart.UserId;
+        if (!customerUserId.HasValue)
+        {
+            return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
+        if (customer is null)
+        {
+            return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
+        if (customer.DefaultAddressId != request.ShippingAddressId)
+        {
+            return Result<CheckoutResponse>.ValidationFailure("Shipping address is not available for the authenticated customer.");
+        }
+
         var now = _dateTimeProvider.UtcNow;
         var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
 
@@ -116,29 +133,17 @@ public sealed class CheckoutService : ICheckoutService
             }
         }
 
-        // check payment amount is consistent with the order total amount calculated from cart items, if not, return failure result
-        // TODO: Currently using BRL as the only valid currency for checkout
+        // check payment amount is consistent with the checkout total, if not, return failure result
         var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
         var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
         var totalAmount = subtotalAmount + freightAmount;
-        if (request.Payments.Sum(p => p.PaymentValue) != totalAmount)
+        var expectedPaymentAmount = priceConverter(totalAmount);
+        if (request.Payments.Sum(p => p.PaymentValue) != expectedPaymentAmount)
         {
-            return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated total amount from cart items.");
+            return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount.");
         }
 
         // 1. Create Order
-        var customerUserId = request.UserId ?? cart.UserId;
-        if (!customerUserId.HasValue)
-        {
-            return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
-        }
-
-        var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
-        if (customer is null)
-        {
-            return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
-        }
-
         var customerId = customer.Id;
         var order = new Order
         {
