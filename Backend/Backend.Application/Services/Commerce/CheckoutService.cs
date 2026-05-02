@@ -4,6 +4,7 @@ using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.Carts;
+using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
@@ -14,6 +15,7 @@ public sealed class CheckoutService : ICheckoutService
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderItemRepository _orderItemRepository;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
     private readonly ICustomerRepository _customerRepository;
     private readonly IAddressRepository _addressRepository;
@@ -26,6 +28,7 @@ public sealed class CheckoutService : ICheckoutService
         ICartRepository cartRepository,
         IProductListingRepository productListingRepository,
         IOrderRepository orderRepository,
+        IOrderItemRepository orderItemRepository,
         IOrderNumberGenerator orderNumberGenerator,
         ICustomerRepository customerRepository,
         IAddressRepository addressRepository,
@@ -37,6 +40,7 @@ public sealed class CheckoutService : ICheckoutService
         ArgumentNullException.ThrowIfNull(cartRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
+        ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(orderNumberGenerator);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(addressRepository);
@@ -48,6 +52,7 @@ public sealed class CheckoutService : ICheckoutService
         _cartRepository = cartRepository;
         _productListingRepository = productListingRepository;
         _orderRepository = orderRepository;
+        _orderItemRepository = orderItemRepository;
         _orderNumberGenerator = orderNumberGenerator;
         _customerRepository = customerRepository;
         _addressRepository = addressRepository;
@@ -143,6 +148,13 @@ public sealed class CheckoutService : ICheckoutService
         var now = _dateTimeProvider.UtcNow;
         var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
 
+        if (cart.Items.Count == 0)
+        {
+            return Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item.");
+        }
+
+        var listingsById = new Dictionary<Guid, ProductListing>();
+
         // check stock availability for each cart item, if any of the items is not available in the requested quantity, return failure result
         foreach (var item in cart.Items)
         {
@@ -156,6 +168,8 @@ public sealed class CheckoutService : ICheckoutService
             {
                 return Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}.");
             }
+
+            listingsById[item.ListingId] = listing;
         }
 
         // check payment amount is consistent with the checkout total, if not, return failure result
@@ -209,7 +223,8 @@ public sealed class CheckoutService : ICheckoutService
             payments.Add(paymentResult.Value);
         }
 
-        // 3. Update cart and order status
+        // 3. Create order items, decrement stock, and update cart/order status
+        await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
         cart.Status = CartStatus.Converted;
         await _cartRepository.UpdateAsync(cart, cancellationToken);
         order.OrderStatus = OrderStatus.Approved;
@@ -226,6 +241,59 @@ public sealed class CheckoutService : ICheckoutService
             priceConverter(order.TotalAmount),
             currencyCode);
         return Result<CheckoutResponse>.Success(response);
+    }
+
+    private async Task CreateOrderItemsAndDeductStockAsync(
+        Order order,
+        ShoppingCart cart,
+        IReadOnlyDictionary<Guid, ProductListing> listingsById,
+        decimal freightAmount,
+        CancellationToken cancellationToken)
+    {
+        var freightAllocations = AllocateFreightAcrossCartItems(cart.Items.Count, freightAmount);
+        var orderItemId = 1;
+
+        foreach (var item in cart.Items)
+        {
+            var listing = listingsById[item.ListingId];
+            var orderItem = new OrderItem
+            {
+                OrderId = order.Id,
+                OrderItemId = orderItemId,
+                ListingId = listing.Id,
+                ProductId = listing.ProductId,
+                SellerId = listing.SellerId,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPriceAtAddition,
+                FreightValue = freightAllocations[orderItemId - 1]
+            };
+
+            listing.InventoryQuantity -= item.Quantity;
+            order.Items.Add(orderItem);
+
+            await _orderItemRepository.AddAsync(orderItem, cancellationToken);
+            await _productListingRepository.UpdateAsync(listing, cancellationToken);
+            orderItemId += 1;
+        }
+    }
+
+    private static decimal[] AllocateFreightAcrossCartItems(int itemCount, decimal freightAmount)
+    {
+        if (itemCount <= 0)
+        {
+            return [];
+        }
+
+        var allocations = new decimal[itemCount];
+        var baseAllocation = decimal.Round(freightAmount / itemCount, 4, MidpointRounding.AwayFromZero);
+
+        for (var i = 0; i < allocations.Length; i += 1)
+        {
+            allocations[i] = baseAllocation;
+        }
+
+        allocations[^1] += freightAmount - allocations.Sum();
+        return allocations;
     }
 
     private static bool TryCreateShippingAddress(

@@ -180,7 +180,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task Checkout_WhenCartExists_ReturnsApprovedOrderAndRecordsPayment()
     {
         // Arrange
-        var (_, userId, cartId) = await SeedCartWithItemAsync("checkout-fail@example.com", "Checkout product", "CHECKOUT-002", 100m, 1);
+        var (listingId, userId, cartId) = await SeedCartWithItemAsync("checkout-fail@example.com", "Checkout product", "CHECKOUT-002", 100m, 1);
         var currencyId = await SeedCurrencyAsync("BRL", "Brazilian Real");
         var shippingAddress = CreateShippingAddressRequest(
             addressLine1: "Norrebrogade 12",
@@ -227,6 +227,14 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(100.00m, order.FreightAmount);
         Assert.Equal(200.00m, order.TotalAmount);
         Assert.Equal("BRL", order.CurrencyCode);
+        var orderItem = Assert.Single(order.Items);
+        Assert.Equal(order.Id, orderItem.OrderId);
+        Assert.Equal(1, orderItem.OrderItemId);
+        Assert.Equal(listingId, orderItem.ListingId);
+        Assert.Equal(1, orderItem.Quantity);
+        Assert.Equal(100.00m, orderItem.UnitPrice);
+        Assert.Equal(100.00m, orderItem.FreightValue);
+        Assert.Equal("BRL", orderItem.CurrencyCode);
 
         var cart = checkout.Cart;
         Assert.Equal(cartId, cart.Id);
@@ -250,12 +258,19 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var customer = await dbContext.Customers.SingleAsync(c => c.UserId == userId, TestContext.Current.CancellationToken);
         var persistedAddress = await dbContext.Addresses.SingleAsync(a => a.Id == order.ShippingAddressId, TestContext.Current.CancellationToken);
+        var persistedOrderItem = await dbContext.OrderItems.SingleAsync(i => i.OrderId == order.Id, TestContext.Current.CancellationToken);
+        var persistedListing = await dbContext.ProductListings.SingleAsync(l => l.Id == listingId, TestContext.Current.CancellationToken);
         Assert.Equal(order.ShippingAddressId, customer.DefaultAddressId);
         Assert.Equal("Norrebrogade 12", persistedAddress.AddressLine1);
         Assert.Equal("2200", persistedAddress.PostalCode);
         Assert.Equal("Copenhagen", persistedAddress.City);
         Assert.Equal("Capital Region", persistedAddress.State);
         Assert.Equal("DK", persistedAddress.CountryCode);
+        Assert.Equal(listingId, persistedOrderItem.ListingId);
+        Assert.Equal(1, persistedOrderItem.Quantity);
+        Assert.Equal(100.00m, persistedOrderItem.UnitPrice);
+        Assert.Equal(100.00m, persistedOrderItem.FreightValue);
+        Assert.Equal(9, persistedListing.InventoryQuantity);
     }
 
     [Fact]
