@@ -60,6 +60,7 @@ export default function CheckoutPage() {
   const [customerProfile, setCustomerProfile] = useState<CheckoutCustomerProfile | null>(null);
   const [currencyInfo, setCurrencyInfo] = useState<Currency | null>(null);
   const [shippingAddress, setShippingAddress] = useState<CheckoutShippingAddress>(emptyShippingAddress);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currency } = useCurrency();
   const { user } = useAuth();
@@ -176,6 +177,7 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
 
     if (!currencyInfo || !customerProfile || !hasPreview || paymentTotal <= 0) {
       setError('Please ensure your cart, customer profile, and payment information are ready.');
@@ -241,7 +243,7 @@ export default function CheckoutPage() {
         </StatusMessage>
       )}
 
-      <form id={checkoutFormId} className="checkout-page__layout" aria-busy={isLoading || isLoadingCustomer} onSubmit={handleSubmit}>
+      <form id={checkoutFormId} className="checkout-page__layout" aria-busy={isLoading || isLoadingCustomer} noValidate onSubmit={handleSubmit}>
         <div className="checkout-page__main">
           <CheckoutCustomerPanel
             customer={customerProfile}
@@ -253,6 +255,7 @@ export default function CheckoutPage() {
             address={shippingAddress}
             disabled={isSubmitting}
             onAddressChange={setShippingAddress}
+            showValidation={hasAttemptedSubmit}
           />
 
           <CheckoutPaymentPanel

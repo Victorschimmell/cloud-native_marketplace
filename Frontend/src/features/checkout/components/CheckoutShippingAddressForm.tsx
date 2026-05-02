@@ -4,9 +4,10 @@ interface CheckoutShippingAddressFormProps {
   address: CheckoutShippingAddress;
   onAddressChange: (address: CheckoutShippingAddress) => void;
   disabled: boolean;
+  showValidation: boolean;
 }
 
-export default function CheckoutShippingAddressForm({ address, disabled, onAddressChange }: CheckoutShippingAddressFormProps) {
+export default function CheckoutShippingAddressForm({ address, disabled, onAddressChange, showValidation }: CheckoutShippingAddressFormProps) {
   function update<K extends keyof CheckoutShippingAddress>(key: K, value: CheckoutShippingAddress[K]) {
     onAddressChange({
       ...address,
@@ -31,9 +32,9 @@ export default function CheckoutShippingAddressForm({ address, disabled, onAddre
         <TextInput
           autoComplete="address-line1"
           disabled={disabled}
+          invalid={showValidation && !address.addressLine1.trim()}
           label="Address"
           onChange={(value) => update('addressLine1', value)}
-          required
           value={address.addressLine1}
           wide
         />
@@ -48,34 +49,34 @@ export default function CheckoutShippingAddressForm({ address, disabled, onAddre
         <TextInput
           autoComplete="address-level2"
           disabled={disabled}
+          invalid={showValidation && !address.city.trim()}
           label="City"
           onChange={(value) => update('city', value)}
-          required
           value={address.city}
         />
         <TextInput
           autoComplete="postal-code"
           disabled={disabled}
+          invalid={showValidation && !address.postalCode.trim()}
           label="ZIP code"
           onChange={(value) => update('postalCode', value)}
-          required
           value={address.postalCode}
         />
         <TextInput
           autoComplete="address-level1"
           disabled={disabled}
+          invalid={showValidation && !address.state.trim()}
           label="State / region"
           onChange={(value) => update('state', value)}
-          required
           value={address.state}
         />
         <TextInput
           autoComplete="country"
           disabled={disabled}
+          invalid={showValidation && !address.countryCode.trim()}
           label="Country code"
           maxLength={3}
           onChange={(value) => update('countryCode', value.toUpperCase())}
-          required
           value={address.countryCode}
         />
       </div>
@@ -86,24 +87,24 @@ export default function CheckoutShippingAddressForm({ address, disabled, onAddre
 interface TextInputProps {
   autoComplete: string;
   disabled: boolean;
+  invalid?: boolean;
   label: string;
   maxLength?: number;
   onChange: (value: string) => void;
-  required?: boolean;
   value: string;
   wide?: boolean;
 }
 
-function TextInput({ autoComplete, disabled, label, maxLength, onChange, required = false, value, wide = false }: TextInputProps) {
+function TextInput({ autoComplete, disabled, invalid = false, label, maxLength, onChange, value, wide = false }: TextInputProps) {
   return (
     <label className={wide ? 'checkout-page__field checkout-page__field--wide' : 'checkout-page__field'}>
       {label}
       <input
+        aria-invalid={invalid}
         autoComplete={autoComplete}
         disabled={disabled}
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
-        required={required}
         type="text"
         value={value}
       />

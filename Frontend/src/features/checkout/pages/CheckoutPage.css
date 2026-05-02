@@ -125,6 +125,15 @@
     outline: 3px solid #dbeafe;
 }
 
+.checkout-page__field input[aria-invalid="true"] {
+    border-color: #dc2626;
+}
+
+.checkout-page__field input[aria-invalid="true"]:focus {
+    border-color: #dc2626;
+    outline-color: #fee2e2;
+}
+
 .checkout-page__field input:disabled {
     background: #f3f4f6;
     color: #6b7280;
