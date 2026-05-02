@@ -26,7 +26,7 @@ public class CheckoutController : ApiControllerBase
     }
 
     [HttpGet("preview")]
-    public async Task<ActionResult<IReadOnlyList<CheckoutPreviewLineResponse>>> GetCheckoutPreviewAsync([FromQuery] CheckoutPreviewRequest request, [FromQuery] string currency, CancellationToken cancellationToken)
+    public async Task<ActionResult<CheckoutPreviewResponse>> GetCheckoutPreviewAsync([FromQuery] CheckoutPreviewRequest request, [FromQuery] string currency, CancellationToken cancellationToken)
     {
         if (!TryGetCurrentUserId(out var userId))
         {
@@ -41,7 +41,7 @@ public class CheckoutController : ApiControllerBase
             currency);
 
         var result = await _checkoutService.GetCheckoutPreviewAsync(request.ToApplicationRequest(userId), currency, cancellationToken);
-        return HandleResult(result, lines => lines.Select(line => line.ToResponse()).ToArray());
+        return HandleResult(result, preview => preview.ToResponse());
     }
 
     [HttpPost]

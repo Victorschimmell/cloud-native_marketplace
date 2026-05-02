@@ -21,13 +21,32 @@ public static class CheckoutMappingExtensions
             CurrencyCode = line.CurrencyCode
         };
 
+    public static CheckoutPreviewResponse ToResponse(this App.CheckoutPreviewDto preview) =>
+        new()
+        {
+            Lines = preview.Lines.Select(line => line.ToResponse()).ToArray(),
+            SubtotalAmount = preview.SubtotalAmount,
+            FreightAmount = preview.FreightAmount,
+            TotalAmount = preview.TotalAmount,
+            CurrencyCode = preview.CurrencyCode
+        };
+
     public static App.CheckoutRequest ToApplicationRequest(this CheckoutRequest request, Guid authenticatedUserId) =>
         new(
             request.CartId,
             authenticatedUserId,
             null,
-            request.ShippingAddressId,
+            request.ShippingAddress.ToApplicationRequest(),
             request.Payments.Select(p => p.ToApplicationRequest()).ToArray());
+
+    private static App.CheckoutShippingAddressDto ToApplicationRequest(this CheckoutShippingAddressRequest request) =>
+        new(
+            request.PostalCode,
+            request.City,
+            request.State,
+            request.AddressLine1,
+            request.AddressLine2,
+            request.CountryCode);
 
     public static CheckoutResponse ToResponse(this App.CheckoutResponse response) =>
         new()

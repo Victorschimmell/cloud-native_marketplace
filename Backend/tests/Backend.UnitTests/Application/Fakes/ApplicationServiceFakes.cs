@@ -7,6 +7,7 @@ using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
+using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
 
@@ -26,6 +27,17 @@ internal sealed class FakeCustomerRepository : ICustomerRepository
     public Task<Customer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
     public Task<Customer?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
     public Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class FakeAddressRepository : IAddressRepository
+{
+    public Address? Address { get; private set; }
+
+    public Task AddAsync(Address address, CancellationToken cancellationToken = default)
+    {
+        Address = address;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeSellerRepository : ISellerRepository

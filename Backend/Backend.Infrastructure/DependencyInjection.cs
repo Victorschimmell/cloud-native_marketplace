@@ -41,6 +41,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthTokenGenerator, InfrastructureAuthTokenGenerator>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+        services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<ISellerRepository, SellerRepository>();
         services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
