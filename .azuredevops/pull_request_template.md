@@ -14,6 +14,10 @@
 - [ ] I have self-reviewed all the files. *(Use the checkboxes in the 'Files' tab.)*
 - [ ] I have created/updated relevant test data.
 - [ ] I have manually tested the content of the PR.
+- [ ] I have added proper logging to the new features created.
+- [ ] Have I made any UI changes?
+ - [ ] No UI changes.
+ - [ ] Yes, I have made UI changes. The changes can be seen in the image below:
 
 ## Quality Assurance - Reviewer Checklist:
 *(Here you should address each point on the checklist to ensure we keep a high quality codebase.*
