@@ -94,6 +94,8 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         var line = Assert.Single(preview.Lines);
         Assert.Equal(listingId, line.ListingId);
+        Assert.NotEqual(Guid.Empty, line.ProductId);
+        Assert.Equal("Preview product", line.ProductName);
         Assert.Equal(2, line.Quantity);
         Assert.Equal(18.00m, line.UnitPrice);
         Assert.Equal(36.00m, line.LineTotal);
@@ -216,10 +218,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(200.00m, checkout.TotalAmount);
 
         var order = checkout.Order;
-        // TODO: Currently the order using customerId as return value, however, the other endpoints are using userId
-        //          We should decide on a consistent approach for this, either add a new field userId in Order and return userId rather than customerId
-        //          or modify the other endpoints to use customerId instead of userId
-        // Assert.Equal(userId, order.CustomerId);
+        Assert.Equal(userId, order.UserId);
         Assert.NotEqual(Guid.Empty, order.ShippingAddressId);
         Assert.Equal(cartId, order.PlacedFromCartId);
         Assert.Equal(OrderStatus.Approved, order.OrderStatus);

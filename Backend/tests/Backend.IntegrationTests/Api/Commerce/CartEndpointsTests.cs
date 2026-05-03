@@ -58,6 +58,8 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(cart.UserId, userId);
         var item = Assert.Single(cart.Items);
         Assert.Equal(listingId, item.ListingId);
+        Assert.NotEqual(Guid.Empty, item.ProductId);
+        Assert.Equal("Cart product", item.ProductName);
         Assert.Equal(2, item.Quantity);
         Assert.Equal(39.95m, item.UnitPriceAtAddition);
     }
@@ -90,7 +92,8 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
         Assert.Equal(userId, cart.UserId);
-        Assert.Single(cart.Items);
+        var item = Assert.Single(cart.Items);
+        Assert.Equal("Current cart product", item.ProductName);
     }
 
     [Fact]

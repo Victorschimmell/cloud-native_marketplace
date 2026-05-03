@@ -109,7 +109,8 @@ public sealed class CartService : ICartService
                 Quantity = request.Quantity,
                 UnitPriceAtAddition = listing.ListingPrice,
                 AddedAtUtc = now,
-                UpdatedAtUtc = now
+                UpdatedAtUtc = now,
+                Listing = listing
             };
 
             await _cartRepository.AddItemAsync(item, cancellationToken);

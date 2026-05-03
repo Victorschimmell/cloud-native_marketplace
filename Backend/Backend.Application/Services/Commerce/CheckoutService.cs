@@ -82,6 +82,8 @@ public sealed class CheckoutService : ICheckoutService
 
         var checkoutLines = cart.Items.Select(item => new CheckoutLineDto(
             item.ListingId,
+            item.Listing?.ProductId ?? throw new InvalidOperationException("Cart item must include listing details."),
+            item.Listing?.Product?.ProductName ?? throw new InvalidOperationException("Cart item must include listing product details."),
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             priceConverter(item.UnitPriceAtAddition * item.Quantity),
@@ -194,6 +196,7 @@ public sealed class CheckoutService : ICheckoutService
         var order = new Order
         {
             CustomerId = customerId,
+            Customer = customer,
             ShippingAddressId = shippingAddress.Id,
             OrderStatus = OrderStatus.Pending,
             OrderPurchaseTimestampUtc = now,

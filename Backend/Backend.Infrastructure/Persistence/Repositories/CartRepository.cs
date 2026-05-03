@@ -12,6 +12,8 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
+                .ThenInclude(i => i.Listing)
+                    .ThenInclude(l => l!.Product)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -19,6 +21,8 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
+                .ThenInclude(i => i.Listing)
+                    .ThenInclude(l => l!.Product)
             .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == CartStatus.Active, cancellationToken);
     }
 
@@ -26,6 +30,8 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
+                .ThenInclude(i => i.Listing)
+                    .ThenInclude(l => l!.Product)
             .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.Status == CartStatus.Active, cancellationToken);
     }
 

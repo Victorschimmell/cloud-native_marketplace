@@ -2,6 +2,8 @@ export interface CartItem {
   id: string;
   cartId: string;
   listingId: string;
+  productId: string;
+  productName: string;
   quantity: number;
   unitPriceAtAddition: number;
   currencyCode: string;

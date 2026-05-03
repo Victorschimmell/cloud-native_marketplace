@@ -54,6 +54,7 @@ public sealed record ShipmentDto(
 public sealed record OrderDto(
     Guid Id,
     Guid CustomerId,
+    Guid UserId,
     Guid ShippingAddressId,
     string OrderNumber,
     OrderStatus OrderStatus,

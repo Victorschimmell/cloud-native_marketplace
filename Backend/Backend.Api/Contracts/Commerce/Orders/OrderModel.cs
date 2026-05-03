@@ -8,6 +8,7 @@ public sealed record OrderModel
 {
     public required Guid Id { get; init; }
     public required Guid CustomerId { get; init; }
+    public required Guid UserId { get; init; }
     public required Guid ShippingAddressId { get; init; }
     public required string OrderNumber { get; init; }
     public required OrderStatus OrderStatus { get; init; }

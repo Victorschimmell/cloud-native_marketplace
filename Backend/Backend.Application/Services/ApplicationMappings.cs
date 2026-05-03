@@ -118,16 +118,22 @@ internal static class ApplicationMappings
     public static CategoryDto ToCategoryDto(this ProductCategory category) =>
         new(category.Id, category.CategoryNamePt, category.CategoryNameEn);
 
-    public static CartItemDto ToCartItemDto(this CartItem item, string currencyCode, Func<decimal, decimal> priceConverter) =>
-        new(
+    public static CartItemDto ToCartItemDto(this CartItem item, string currencyCode, Func<decimal, decimal> priceConverter)
+    {
+        var product = item.Listing?.Product ?? throw new InvalidOperationException("Cart item must include listing product details.");
+
+        return new CartItemDto(
             item.Id,
             item.CartId,
             item.ListingId,
+            product.Id,
+            product.ProductName,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             currencyCode,
             item.AddedAtUtc,
             item.UpdatedAtUtc);
+    }
 
     public static CartDto ToCartDto(this ShoppingCart cart, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
@@ -196,6 +202,7 @@ internal static class ApplicationMappings
         new(
             order.Id,
             order.CustomerId,
+            order.Customer?.UserId ?? throw new InvalidOperationException("Order must include customer details."),
             order.ShippingAddressId,
             order.OrderNumber,
             order.OrderStatus,
