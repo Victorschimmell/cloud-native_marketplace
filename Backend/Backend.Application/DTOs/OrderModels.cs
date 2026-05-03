@@ -7,6 +7,7 @@ public sealed record OrderItemDto(
     int OrderItemId,
     Guid ListingId,
     Guid ProductId,
+    string ProductName,
     Guid SellerId,
     int Quantity,
     decimal UnitPrice,

@@ -150,6 +150,7 @@ internal static class ApplicationMappings
             item.OrderItemId,
             item.ListingId,
             item.ProductId,
+            item.Product?.ProductName ?? $"Product {item.ProductId:N}"[..20],
             item.SellerId,
             item.Quantity,
             priceConverter(item.UnitPrice),

@@ -30,7 +30,7 @@ public sealed class ServiceConstructorTests
         _ = new SellerService(new FakeSellerRepository());
         _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
-        _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository());
+        _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeCustomerRepository(), new FakeCurrencyConversionService());
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());

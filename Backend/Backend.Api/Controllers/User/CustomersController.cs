@@ -1,14 +1,14 @@
 using Backend.Api.Attributes;
-using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.User.Registration;
-using Backend.Api.Mappings.Commerce.Cart;
+using Backend.Api.Mappings.Commerce.Orders;
 using Backend.Api.Mappings.Common;
 using Backend.Api.Mappings.User.Registration;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.User;
 
@@ -16,13 +16,19 @@ namespace Backend.Api.Controllers.User;
 public class CustomersController : ApiControllerBase
 {
     private readonly ICustomerService _customerService;
-    private readonly ICartService _cartService;
+    private readonly IOrderService _orderService;
+    private readonly ICurrentUserProvider _currentUserProvider;
     private readonly ILogger<CustomersController> _logger;
 
-    public CustomersController(ICustomerService customerService, ICartService cartService,ILogger<CustomersController> logger)
+    public CustomersController(
+        ICustomerService customerService,
+        IOrderService orderService,
+        ICurrentUserProvider currentUserProvider,
+        ILogger<CustomersController> logger)
     {
         _customerService = customerService;
-        _cartService = cartService;
+        _orderService = orderService;
+        _currentUserProvider = currentUserProvider;
         _logger = logger;
     }
 
@@ -48,8 +54,44 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet("{userId:guid}/orders")]
-    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid userId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    [Authorize]
+    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersByCustomerAsync(
+        [NotEmptyGuid] Guid userId,
+        [FromQuery] PageRequest pageRequest,
+        [FromQuery] string? currency,
+        CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        if (authenticatedUserId != userId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access orders for another customer." });
+        }
+
+        var result = await _orderService.GetByCustomerUserAsync(userId, pageRequest.ToAppRequest(), currency, cancellationToken);
+        return HandleResult(
+            result,
+            page => new PageResponse<OrderModel>
+            {
+                Items = page.Items.Select(order => order.ToModel()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
+    }
+
+    private bool TryGetCurrentUserId(out Guid userId)
+    {
+        if (_currentUserProvider.UserId is { } currentUserId)
+        {
+            userId = currentUserId;
+            return true;
+        }
+
+        userId = Guid.Empty;
+        return false;
     }
 }

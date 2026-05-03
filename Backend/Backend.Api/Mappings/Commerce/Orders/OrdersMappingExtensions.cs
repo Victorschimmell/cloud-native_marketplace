@@ -40,6 +40,7 @@ public static class OrdersMappingExtensions
             OrderItemId = item.OrderItemId,
             ListingId = item.ListingId,
             ProductId = item.ProductId,
+            ProductName = item.ProductName,
             SellerId = item.SellerId,
             Quantity = item.Quantity,
             UnitPrice = item.UnitPrice,
