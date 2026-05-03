@@ -50,6 +50,7 @@ public sealed record CheckoutRequest(
     Guid? UserId,
     Guid? SessionId,
     CheckoutShippingAddressDto ShippingAddress,
+    bool SaveShippingAddressAsDefault,
     IReadOnlyList<RecordPaymentDetails> Payments);
 
 public sealed record CheckoutResponse(

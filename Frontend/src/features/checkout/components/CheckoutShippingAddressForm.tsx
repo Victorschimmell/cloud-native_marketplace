@@ -4,10 +4,19 @@ interface CheckoutShippingAddressFormProps {
   address: CheckoutShippingAddress;
   onAddressChange: (address: CheckoutShippingAddress) => void;
   disabled: boolean;
+  saveAsDefault: boolean;
+  onSaveAsDefaultChange: (saveAsDefault: boolean) => void;
   showValidation: boolean;
 }
 
-export default function CheckoutShippingAddressForm({ address, disabled, onAddressChange, showValidation }: CheckoutShippingAddressFormProps) {
+export default function CheckoutShippingAddressForm({
+  address,
+  disabled,
+  onAddressChange,
+  onSaveAsDefaultChange,
+  saveAsDefault,
+  showValidation,
+}: CheckoutShippingAddressFormProps) {
   function update<K extends keyof CheckoutShippingAddress>(key: K, value: CheckoutShippingAddress[K]) {
     onAddressChange({
       ...address,
@@ -80,6 +89,16 @@ export default function CheckoutShippingAddressForm({ address, disabled, onAddre
           value={address.countryCode}
         />
       </div>
+
+      <label className="checkout-page__checkbox-field">
+        <input
+          checked={saveAsDefault}
+          disabled={disabled}
+          onChange={(event) => onSaveAsDefaultChange(event.target.checked)}
+          type="checkbox"
+        />
+        Save this as my default shipping address
+      </label>
     </section>
   );
 }

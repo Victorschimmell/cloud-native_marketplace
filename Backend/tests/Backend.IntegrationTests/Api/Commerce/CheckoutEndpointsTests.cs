@@ -260,7 +260,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var persistedAddress = await dbContext.Addresses.SingleAsync(a => a.Id == order.ShippingAddressId, TestContext.Current.CancellationToken);
         var persistedOrderItem = await dbContext.OrderItems.SingleAsync(i => i.OrderId == order.Id, TestContext.Current.CancellationToken);
         var persistedListing = await dbContext.ProductListings.SingleAsync(l => l.Id == listingId, TestContext.Current.CancellationToken);
-        Assert.Equal(order.ShippingAddressId, customer.DefaultAddressId);
+        Assert.Null(customer.DefaultAddressId);
         Assert.Equal("Norrebrogade 12", persistedAddress.AddressLine1);
         Assert.Equal("2200", persistedAddress.PostalCode);
         Assert.Equal("Copenhagen", persistedAddress.City);
@@ -271,6 +271,43 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(100.00m, persistedOrderItem.UnitPrice);
         Assert.Equal(100.00m, persistedOrderItem.FreightValue);
         Assert.Equal(9, persistedListing.InventoryQuantity);
+    }
+
+    [Fact]
+    public async Task Checkout_WhenSaveShippingAddressAsDefaultIsTrue_UpdatesCustomerDefaultAddress()
+    {
+        // Arrange
+        var (_, userId, cartId) = await SeedCartWithItemAsync("checkout-save-default@example.com", "Checkout save default product", "CHECKOUT-SAVE-DEFAULT-001", 100m, 1);
+        var currencyId = await SeedCurrencyAsync("BRL", "Brazilian Real");
+        var checkoutRequest = new CheckoutRequest
+        {
+            CartId = cartId,
+            ShippingAddress = CreateShippingAddressRequest(),
+            SaveShippingAddressAsDefault = true,
+            Payments = new[]
+            {
+                new RecordPaymentRequest
+                {
+                    CurrencyId = currencyId,
+                    PaymentType = PaymentType.CreditCard,
+                    PaymentInstallments = 1,
+                    PaymentValue = 200m
+                }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/checkout?currency=BRL", checkoutRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        Assert.NotNull(checkout);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var customer = await dbContext.Customers.SingleAsync(c => c.UserId == userId, TestContext.Current.CancellationToken);
+        Assert.Equal(checkout.Order.ShippingAddressId, customer.DefaultAddressId);
     }
 
     [Fact]

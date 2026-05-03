@@ -39,6 +39,10 @@ export interface CheckoutShippingAddress {
   countryCode: string;
 }
 
+export interface Address extends CheckoutShippingAddress {
+  id: string;
+}
+
 export interface CheckoutCustomerProfile {
   id: string;
   userId: string;

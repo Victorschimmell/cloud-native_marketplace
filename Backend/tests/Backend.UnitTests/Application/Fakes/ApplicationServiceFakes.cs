@@ -33,6 +33,8 @@ internal sealed class FakeAddressRepository : IAddressRepository
 {
     public Address? Address { get; private set; }
 
+    public Task<Address?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Address is not null && Address.Id == id ? Address : null);
+
     public Task AddAsync(Address address, CancellationToken cancellationToken = default)
     {
         Address = address;

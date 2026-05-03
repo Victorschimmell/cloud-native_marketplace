@@ -37,6 +37,7 @@ public static class CheckoutMappingExtensions
             authenticatedUserId,
             null,
             request.ShippingAddress.ToApplicationRequest(),
+            request.SaveShippingAddressAsDefault,
             request.Payments.Select(p => p.ToApplicationRequest()).ToArray());
 
     private static App.CheckoutShippingAddressDto ToApplicationRequest(this CheckoutShippingAddressRequest request) =>

@@ -1,5 +1,5 @@
 import { request } from '../../../shared/api/request';
-import type { CheckoutCustomerProfile, CheckoutPreview, CheckoutShippingAddress, Currency, PaymentType } from '../types';
+import type { Address, CheckoutCustomerProfile, CheckoutPreview, CheckoutShippingAddress, Currency, PaymentType } from '../types';
 
 const checkoutCartIdStorageKey = 'marketplace.checkout.cartId';
 
@@ -20,6 +20,7 @@ function buildCheckoutPreviewQuery(currency: string) {
 export interface CheckoutRequest {
   cartId?: string;
   shippingAddress: CheckoutShippingAddress;
+  saveShippingAddressAsDefault: boolean;
   payments: Array<{
     currencyId: string;
     paymentType: PaymentType;
@@ -64,6 +65,26 @@ export const checkoutApi = {
 
   getCustomerProfile: async (userId: string, signal?: AbortSignal) => {
     return await request<CheckoutCustomerProfile>(`/api/customers/${userId}`, {
+      signal,
+    });
+  },
+
+  getAddress: async (addressId: string, signal?: AbortSignal) => {
+    return await request<Address>(`/api/addresses/${addressId}`, {
+      signal,
+    });
+  },
+
+  createAddress: async (address: CheckoutShippingAddress, makeDefault: boolean, signal?: AbortSignal) => {
+    return await request<Address>('/api/addresses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...address,
+        makeDefault,
+      }),
       signal,
     });
   },

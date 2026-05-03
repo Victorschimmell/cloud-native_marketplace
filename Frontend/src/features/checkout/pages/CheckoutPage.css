@@ -140,6 +140,26 @@
     cursor: not-allowed;
 }
 
+.checkout-page__checkbox-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.checkout-page__checkbox-field input {
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
+}
+
+.checkout-page__checkbox-field input:disabled {
+    cursor: not-allowed;
+}
+
 .checkout-page__payment-card {
     display: grid;
     gap: 14px;

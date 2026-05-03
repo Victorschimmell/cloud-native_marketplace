@@ -32,5 +32,7 @@ public sealed record CheckoutRequest
     [Required]
     public required CheckoutShippingAddressRequest ShippingAddress { get; init; }
 
+    public bool SaveShippingAddressAsDefault { get; init; }
+
     public required IReadOnlyList<RecordPaymentRequest> Payments { get; init; }
 }

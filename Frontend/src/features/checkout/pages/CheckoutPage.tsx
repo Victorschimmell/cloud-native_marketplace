@@ -60,6 +60,8 @@ export default function CheckoutPage() {
   const [customerProfile, setCustomerProfile] = useState<CheckoutCustomerProfile | null>(null);
   const [currencyInfo, setCurrencyInfo] = useState<Currency | null>(null);
   const [shippingAddress, setShippingAddress] = useState<CheckoutShippingAddress>(emptyShippingAddress);
+  const [hasEditedShippingAddress, setHasEditedShippingAddress] = useState(false);
+  const [saveShippingAddressAsDefault, setSaveShippingAddressAsDefault] = useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currency } = useCurrency();
@@ -135,6 +137,40 @@ export default function CheckoutPage() {
   }, [user]);
 
   useEffect(() => {
+    if (!customerProfile?.defaultAddressId || hasEditedShippingAddress) {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    async function loadDefaultAddress() {
+      try {
+        const defaultAddress = await checkoutApi.getAddress(customerProfile!.defaultAddressId!, abortController.signal);
+        setShippingAddress({
+          addressLine1: defaultAddress.addressLine1,
+          addressLine2: defaultAddress.addressLine2,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          postalCode: defaultAddress.postalCode,
+          countryCode: defaultAddress.countryCode,
+        });
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+          return;
+        }
+
+        setError(`Failed to load default address: ${getErrorMessage(requestError)}`);
+      }
+    }
+
+    void loadDefaultAddress();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [customerProfile, hasEditedShippingAddress]);
+
+  useEffect(() => {
     const abortController = new AbortController();
 
     async function loadCurrency() {
@@ -200,6 +236,7 @@ export default function CheckoutPage() {
         {
           cartId,
           shippingAddress: normalizedShippingAddress,
+          saveShippingAddressAsDefault,
           payments: [
             {
               currencyId: currencyInfo.id,
@@ -254,7 +291,12 @@ export default function CheckoutPage() {
           <CheckoutShippingAddressForm
             address={shippingAddress}
             disabled={isSubmitting}
-            onAddressChange={setShippingAddress}
+            onAddressChange={(nextAddress) => {
+              setHasEditedShippingAddress(true);
+              setShippingAddress(nextAddress);
+            }}
+            onSaveAsDefaultChange={setSaveShippingAddressAsDefault}
+            saveAsDefault={saveShippingAddressAsDefault}
             showValidation={hasAttemptedSubmit}
           />
 

@@ -184,8 +184,11 @@ public sealed class CheckoutService : ICheckoutService
 
         // 1. Create Order
         await _addressRepository.AddAsync(shippingAddress, cancellationToken);
-        customer.DefaultAddressId = shippingAddress.Id;
-        await _customerRepository.UpdateAsync(customer, cancellationToken);
+        if (request.SaveShippingAddressAsDefault)
+        {
+            customer.DefaultAddressId = shippingAddress.Id;
+            await _customerRepository.UpdateAsync(customer, cancellationToken);
+        }
 
         var customerId = customer.Id;
         var order = new Order
