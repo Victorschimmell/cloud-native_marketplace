@@ -19,7 +19,9 @@ export interface OrderItem {
   listingId: string;
   productId: string;
   productName: string;
+  productPhotosQty: number;
   sellerId: string;
+  sellerName: string;
   quantity: number;
   unitPrice: number;
   freightValue: number;

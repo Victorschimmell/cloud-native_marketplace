@@ -238,15 +238,16 @@ public sealed class CheckoutService : ICheckoutService
         await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
         cart.Status = CartStatus.Converted;
         await _cartRepository.UpdateAsync(cart, cancellationToken);
-        order.OrderStatus = OrderStatus.Approved;
-        await _orderRepository.UpdateAsync(order, cancellationToken);
 
         // 4. Save all changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 5. Return response
+        var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
+            throw new InvalidOperationException("Order must exist after checkout.");
+
         var response = new CheckoutResponse(
-            order.ToOrderDto(customer.UserId, currencyCode, priceConverter),
+            savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
             await GetCartForResponseAsync(cart.Id, currencyCode, priceConverter, cancellationToken),
             payments,
             priceConverter(order.TotalAmount),

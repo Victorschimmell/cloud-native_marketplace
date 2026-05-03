@@ -29,7 +29,7 @@ export function getPaymentStatus(order: Order): PaymentStatus | 'Unpaid' {
     return 'Paid';
   }
 
-    return order.payments[0]?.paymentStatus ?? 'Unpaid';
+  return order.payments[0]?.paymentStatus ?? 'Unpaid';
 }
 
 export function getStatusTone(status: OrderStatus | PaymentStatus | 'Unpaid') {

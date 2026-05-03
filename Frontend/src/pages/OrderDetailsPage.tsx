@@ -47,11 +47,13 @@ export default function OrderDetailsPage() {
   }, [currency, id]);
 
   const paymentStatus = useMemo(() => (order ? getPaymentStatus(order) : 'Unpaid'), [order]);
+  const itemCount = useMemo(() => (order ? getOrderItemCount(order) : 0), [order]);
+  const sellerSummary = useMemo(() => (order ? getSellerSummary(order) : ''), [order]);
+  const approvalState = useMemo(() => (order ? getApprovalState(order) : 'Pending'), [order]);
 
   return (
     <PageSkeleton
-      title={isConfirmed ? 'Thank you' : 'Order Details'}
-      summary={isConfirmed ? 'Thank you for your purchase. Your order details are below.' : 'Review order items, totals, payment, and status.'}
+      title={isConfirmed ? 'Thank you for your purchase' : 'Order Details'}
       titleId="order-details-title"
     >
       <div className="order-details">
@@ -61,37 +63,47 @@ export default function OrderDetailsPage() {
         {order ? (
           <>
             <section className="order-details__confirmation" aria-label="Order status">
-              <div>
-                <div className="order-details__eyebrow">Order {order.orderNumber}</div>
-                <h2>{isConfirmed ? 'Purchase complete' : 'Purchase summary'}</h2>
-                <p>{formatDateTime(order.orderPurchaseTimestampUtc)}</p>
+              <div className="order-details__confirmation-copy">
+                <h2>{isConfirmed ? 'Order placed' : 'Order summary'}</h2>
+                <div className="order-details__meta">
+                  <span>Order {order.orderNumber}</span>
+                  <span>{formatDateTime(order.orderPurchaseTimestampUtc)}</span>
+                </div>
+                <p className="order-details__seller-note">
+                  {approvalState === 'Approved'
+                    ? `Approved by ${sellerSummary}`
+                    : `Waiting for approval from ${sellerSummary}`}
+                </p>
               </div>
               <div className="order-details__badges">
                 <StatusBadge label={paymentStatus} />
-                <StatusBadge label={order.orderStatus} />
+                <StatusBadge label={approvalState} />
               </div>
             </section>
 
             <section className="order-details__section" aria-labelledby="order-items-title">
               <div className="order-details__section-heading">
-                <div>
-                  <h2 id="order-items-title">Items</h2>
-                  <p>
-                    {getOrderItemCount(order)} item{getOrderItemCount(order) === 1 ? '' : 's'} in this order.
-                  </p>
-                </div>
+                <h2 id="order-items-title">Items</h2>
+                <span className="order-details__item-count">
+                  {itemCount} item{itemCount === 1 ? '' : 's'}
+                </span>
               </div>
 
               <div className="order-details__line-list">
                 {order.items.map((item) => (
                   <article className="order-details__line" key={`${item.orderId}-${item.orderItemId}`}>
-                    <div>
-                      <h3>{item.productName}</h3>
-                      <p>
-                        Quantity {item.quantity}
-                        <span aria-hidden="true"> - </span>
-                        Listing {item.listingId.slice(0, 8)}
-                      </p>
+                    <div className="order-details__line-product">
+                      <span className="order-details__product-media" aria-hidden="true">
+                        {item.productPhotosQty > 0 ? `${item.productPhotosQty} photos` : 'No image'}
+                      </span>
+                      <div>
+                        <h3>{item.productName}</h3>
+                        <p>
+                          Quantity {item.quantity}
+                          <span aria-hidden="true"> - </span>
+                          Sold by {item.sellerName}
+                        </p>
+                      </div>
                     </div>
                     <strong>{formatMoney(item.unitPrice * item.quantity, item.currencyCode)}</strong>
                   </article>
@@ -116,16 +128,12 @@ export default function OrderDetailsPage() {
 
             <section className="order-details__section" aria-labelledby="order-followup-title">
               <div className="order-details__section-heading">
-                <div>
-                  <h2 id="order-followup-title">Follow-up</h2>
-                  <p>Payment, shipment, and delivery progress for this order.</p>
-                </div>
+                <h2 id="order-followup-title">Status</h2>
               </div>
-              <dl className="order-details__info-grid">
-                <InfoBlock label="Payment" value={paymentStatus} />
-                <InfoBlock label="Approved" value={formatDateTime(order.orderApprovedAtUtc)} />
-                <InfoBlock label="Carrier handoff" value={formatDateTime(order.orderDeliveredCarrierDateUtc)} />
-                <InfoBlock label="Delivered" value={formatDateTime(order.orderDeliveredCustomerDateUtc)} />
+              <dl className="order-details__status-list">
+                <StatusItem label="Payment" value={paymentStatus} />
+                <StatusItem label="Seller approval" value={approvalState} detail={sellerSummary} />
+                <StatusItem label="Delivery" value={getDeliveryState(order)} />
               </dl>
             </section>
 
@@ -141,11 +149,12 @@ export default function OrderDetailsPage() {
   );
 }
 
-function InfoBlock({ label, value }: { label: string; value: string }) {
+function StatusItem({ detail, label, value }: { detail?: string; label: string; value: string }) {
   return (
-    <div className="order-details__info-block">
+    <div className="order-details__status-item">
       <dt>{label}</dt>
       <dd>{value}</dd>
+      {detail ? <span>{detail}</span> : null}
     </div>
   );
 }
@@ -156,4 +165,35 @@ function StatusBadge({ label }: { label: string }) {
       {label}
     </span>
   );
+}
+
+function getSellerSummary(order: Order) {
+  const sellerNames = Array.from(new Set(order.items.map((item) => item.sellerName).filter(Boolean)));
+  const firstSeller = sellerNames[0] ?? 'the seller';
+
+  if (sellerNames.length <= 1) {
+    return firstSeller;
+  }
+
+  return `${firstSeller} and ${sellerNames.length - 1} more`;
+}
+
+function getApprovalState(order: Order) {
+  if (order.orderApprovedAtUtc || ['Approved', 'Processing', 'Shipped', 'Delivered'].includes(order.orderStatus)) {
+    return 'Approved';
+  }
+
+  return 'Pending';
+}
+
+function getDeliveryState(order: Order) {
+  if (order.orderDeliveredCustomerDateUtc) {
+    return formatDateTime(order.orderDeliveredCustomerDateUtc);
+  }
+
+  if (order.orderDeliveredCarrierDateUtc || order.orderStatus === 'Shipped') {
+    return 'In transit';
+  }
+
+  return 'Not started';
 }

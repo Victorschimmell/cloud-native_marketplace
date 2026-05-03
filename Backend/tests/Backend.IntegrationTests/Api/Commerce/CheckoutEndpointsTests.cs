@@ -179,7 +179,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task Checkout_WhenCartExists_ReturnsApprovedOrderAndRecordsPayment()
+    public async Task Checkout_WhenCartExists_ReturnsPendingOrderAndRecordsPayment()
     {
         // Arrange
         var (listingId, userId, cartId) = await SeedCartWithItemAsync("checkout-fail@example.com", "Checkout product", "CHECKOUT-002", 100m, 1);
@@ -221,7 +221,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(userId, order.UserId);
         Assert.NotEqual(Guid.Empty, order.ShippingAddressId);
         Assert.Equal(cartId, order.PlacedFromCartId);
-        Assert.Equal(OrderStatus.Approved, order.OrderStatus);
+        Assert.Equal(OrderStatus.Pending, order.OrderStatus);
         Assert.Equal(100.00m, order.SubtotalAmount);
         Assert.Equal(100.00m, order.FreightAmount);
         Assert.Equal(200.00m, order.TotalAmount);
@@ -230,6 +230,8 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(order.Id, orderItem.OrderId);
         Assert.Equal(1, orderItem.OrderItemId);
         Assert.Equal(listingId, orderItem.ListingId);
+        Assert.Equal("Checkout product", orderItem.ProductName);
+        Assert.Equal("MarketplaceTraders", orderItem.SellerName);
         Assert.Equal(1, orderItem.Quantity);
         Assert.Equal(100.00m, orderItem.UnitPrice);
         Assert.Equal(100.00m, orderItem.FreightValue);
