@@ -69,7 +69,13 @@ public sealed class CheckoutService : ICheckoutService
             return Result<CheckoutPreviewDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
         }
 
-        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var activeCart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        if (activeCart is null)
+        {
+            return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        var cart = await GetCartWithProductDetailsAsync(activeCart.Id, request.UserId, request.SessionId, cancellationToken);
         if (cart is null)
         {
             return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
@@ -196,7 +202,6 @@ public sealed class CheckoutService : ICheckoutService
         var order = new Order
         {
             CustomerId = customerId,
-            Customer = customer,
             ShippingAddressId = shippingAddress.Id,
             OrderStatus = OrderStatus.Pending,
             OrderPurchaseTimestampUtc = now,
@@ -241,8 +246,8 @@ public sealed class CheckoutService : ICheckoutService
 
         // 5. Return response
         var response = new CheckoutResponse(
-            order.ToOrderDto(currencyCode, priceConverter),
-            cart.ToCartDto(currencyCode, priceConverter),
+            order.ToOrderDto(customer.UserId, currencyCode, priceConverter),
+            await GetCartForResponseAsync(cart.Id, currencyCode, priceConverter, cancellationToken),
             payments,
             priceConverter(order.TotalAmount),
             currencyCode);
@@ -397,6 +402,32 @@ public sealed class CheckoutService : ICheckoutService
         return cart;
     }
 
+    private async Task<ShoppingCart?> GetCartWithProductDetailsAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = null;
+
+        if (CartId.HasValue)
+        {
+            cart = await _cartRepository.GetByIdWithProductDetailsAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CartAccessPolicy.CanAccess(cart, UserId, SessionId))
+            {
+                return null;
+            }
+        }
+
+        if (cart is null && UserId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveByUserIdWithProductDetailsAsync(UserId.Value, cancellationToken);
+        }
+
+        if (cart is null && SessionId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveBySessionIdWithProductDetailsAsync(SessionId.Value, cancellationToken);
+        }
+
+        return cart;
+    }
+
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = await GetCartAsync(CartId, UserId, SessionId, cancellationToken);
@@ -418,5 +449,13 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         return null;
+    }
+
+    private async Task<CartDto> GetCartForResponseAsync(Guid cartId, string currencyCode, Func<decimal, decimal> priceConverter, CancellationToken cancellationToken)
+    {
+        var cart = await _cartRepository.GetByIdWithProductDetailsAsync(cartId, cancellationToken) ??
+            throw new InvalidOperationException("Cart must exist after checkout.");
+
+        return cart.ToCartDto(currencyCode, priceConverter);
     }
 }

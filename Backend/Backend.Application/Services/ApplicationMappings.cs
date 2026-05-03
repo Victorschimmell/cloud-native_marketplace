@@ -198,11 +198,11 @@ internal static class ApplicationMappings
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
 
-    public static OrderDto ToOrderDto(this Order order, string currencyCode, Func<decimal, decimal> priceConverter) =>
+    public static OrderDto ToOrderDto(this Order order, Guid userId, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             order.Id,
             order.CustomerId,
-            order.Customer?.UserId ?? throw new InvalidOperationException("Order must include customer details."),
+            userId,
             order.ShippingAddressId,
             order.OrderNumber,
             order.OrderStatus,

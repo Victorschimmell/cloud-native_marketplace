@@ -5,8 +5,11 @@ namespace Backend.Application.Abstractions.Repositories;
 public interface ICartRepository
 {
     Task<ShoppingCart?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<ShoppingCart?> GetByIdWithProductDetailsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<ShoppingCart?> GetActiveByUserIdWithProductDetailsAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default);
+    Task<ShoppingCart?> GetActiveBySessionIdWithProductDetailsAsync(Guid sessionId, CancellationToken cancellationToken = default);
     Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default);
     Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default);
     Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default);

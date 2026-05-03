@@ -23,7 +23,7 @@ public class OrdersController : ApiControllerBase
     }
 
     [HttpGet("{orderId:guid}")]
-    public async Task<ActionResult<OrderResponse>> GetByIdAsync([NotEmptyGuid] Guid orderId, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderModel>> GetByIdAsync([NotEmptyGuid] Guid orderId, CancellationToken cancellationToken)
     {
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
@@ -35,13 +35,13 @@ public class OrdersController : ApiControllerBase
     }
 
     [HttpPatch("{orderId:guid}")]
-    public async Task<ActionResult<OrderResponse>> UpdateStatusAsync([NotEmptyGuid] Guid orderId, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderModel>> UpdateStatusAsync([NotEmptyGuid] Guid orderId, [FromBody] UpdateOrderStatusRequest request, CancellationToken cancellationToken)
     {
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 
     [HttpPost("{orderId:guid}/cancel")]
-    public async Task<ActionResult<OrderResponse>> CancelAsync([NotEmptyGuid] Guid orderId, [FromBody] CancelOrderRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderModel>> CancelAsync([NotEmptyGuid] Guid orderId, [FromBody] CancelOrderRequest request, CancellationToken cancellationToken)
     {
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }

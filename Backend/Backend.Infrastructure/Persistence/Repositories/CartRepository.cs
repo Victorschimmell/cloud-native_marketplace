@@ -12,8 +12,12 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
-                .ThenInclude(i => i.Listing)
-                    .ThenInclude(l => l!.Product)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+    }
+
+    public async Task<ShoppingCart?> GetByIdWithProductDetailsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await CartWithProductDetails()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -21,8 +25,12 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
-                .ThenInclude(i => i.Listing)
-                    .ThenInclude(l => l!.Product)
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == CartStatus.Active, cancellationToken);
+    }
+
+    public async Task<ShoppingCart?> GetActiveByUserIdWithProductDetailsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await CartWithProductDetails()
             .FirstOrDefaultAsync(c => c.UserId == userId && c.Status == CartStatus.Active, cancellationToken);
     }
 
@@ -30,8 +38,12 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
     {
         return await dbContext.ShoppingCarts
             .Include(c => c.Items)
-                .ThenInclude(i => i.Listing)
-                    .ThenInclude(l => l!.Product)
+            .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.Status == CartStatus.Active, cancellationToken);
+    }
+
+    public async Task<ShoppingCart?> GetActiveBySessionIdWithProductDetailsAsync(Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        return await CartWithProductDetails()
             .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.Status == CartStatus.Active, cancellationToken);
     }
 
@@ -70,4 +82,10 @@ internal sealed class CartRepository(ApplicationDbContext dbContext) : ICartRepo
         dbContext.ShoppingCarts.Remove(cart);
         return Task.CompletedTask;
     }
+
+    private IQueryable<ShoppingCart> CartWithProductDetails() =>
+        dbContext.ShoppingCarts
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Listing)
+                    .ThenInclude(l => l!.Product);
 }

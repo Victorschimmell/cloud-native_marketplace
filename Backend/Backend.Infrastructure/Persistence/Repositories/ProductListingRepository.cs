@@ -13,7 +13,6 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
-            .Include(l => l.Product)
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 

@@ -37,7 +37,7 @@ public sealed class CartService : ICartService
 
     public async Task<Result<CartDto>> GetCartAsync(GetCartRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        var cart = await GetCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var cart = await GetCartWithProductDetailsAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
 
         if (cart is null)
         {
@@ -109,8 +109,7 @@ public sealed class CartService : ICartService
                 Quantity = request.Quantity,
                 UnitPriceAtAddition = listing.ListingPrice,
                 AddedAtUtc = now,
-                UpdatedAtUtc = now,
-                Listing = listing
+                UpdatedAtUtc = now
             };
 
             await _cartRepository.AddItemAsync(item, cancellationToken);
@@ -129,7 +128,7 @@ public sealed class CartService : ICartService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
+        return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
     }
 
     public async Task<Result<CartDto>> UpdateItemAsync(UpdateCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
@@ -184,7 +183,7 @@ public sealed class CartService : ICartService
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
+        return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
     }
 
     private async Task<ShoppingCart?> GetCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
@@ -213,6 +212,32 @@ public sealed class CartService : ICartService
         return cart;
     }
 
+    private async Task<ShoppingCart?> GetCartWithProductDetailsAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = null;
+
+        if (CartId.HasValue)
+        {
+            cart = await _cartRepository.GetByIdWithProductDetailsAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CartAccessPolicy.CanAccess(cart, UserId, SessionId))
+            {
+                return null;
+            }
+        }
+
+        if (cart is null && UserId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveByUserIdWithProductDetailsAsync(UserId.Value, cancellationToken);
+        }
+
+        if (cart is null && SessionId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveBySessionIdWithProductDetailsAsync(SessionId.Value, cancellationToken);
+        }
+
+        return cart;
+    }
+
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = await GetCartAsync(CartId, UserId, SessionId, cancellationToken);
@@ -234,6 +259,17 @@ public sealed class CartService : ICartService
         }
 
         return null;
+    }
+
+    private async Task<Result<CartDto>> ReloadCartResultAsync(Guid cartId, string currencyCode, Func<decimal, decimal> priceConverter, CancellationToken cancellationToken)
+    {
+        var cart = await _cartRepository.GetByIdWithProductDetailsAsync(cartId, cancellationToken);
+        if (cart is null)
+        {
+            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        return Result<CartDto>.Success(cart.ToCartDto(currencyCode, priceConverter));
     }
 
     private async Task<ShoppingCart> CreateActiveCartAsync(Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)

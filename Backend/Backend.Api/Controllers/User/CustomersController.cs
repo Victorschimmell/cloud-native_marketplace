@@ -48,7 +48,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet("{userId:guid}/orders")]
-    public async Task<ActionResult<PageResponse<OrderResponse>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid userId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersByCustomerAsync([NotEmptyGuid] Guid userId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }

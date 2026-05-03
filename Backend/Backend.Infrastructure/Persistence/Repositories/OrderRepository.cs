@@ -10,21 +10,18 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
     public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.Orders
-            .Include(o => o.Customer)
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
     public async Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
     {
         return await dbContext.Orders
-            .Include(o => o.Customer)
             .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.Orders
-            .Include(o => o.Customer)
             .OrderByDescending(o => o.OrderPurchaseTimestampUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -34,7 +31,6 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
     public async Task<IReadOnlyList<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.Orders
-            .Include(o => o.Customer)
             .Where(o => o.CustomerId == customerId)
             .OrderByDescending(o => o.OrderPurchaseTimestampUtc)
             .Skip((page - 1) * pageSize)
