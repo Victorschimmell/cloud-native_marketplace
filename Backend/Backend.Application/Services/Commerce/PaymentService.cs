@@ -31,11 +31,12 @@ public sealed class PaymentService : IPaymentService
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        var result = _paymentRepository.GetByOrderIdAsync(orderId, cancellationToken)
-            .ContinueWith(task => task.Result.Select(payment => payment.ToPaymentDto()).ToList(), cancellationToken);
-        return Task.FromResult(Result<IReadOnlyList<PaymentDto>>.Success(result.Result));
+        var payments = await _paymentRepository.GetByOrderIdAsync(orderId, cancellationToken);
+        var paymentDtos = payments.Select(payment => payment.ToPaymentDto()).ToArray();
+
+        return Result<IReadOnlyList<PaymentDto>>.Success(paymentDtos);
     }
 
     public async Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
