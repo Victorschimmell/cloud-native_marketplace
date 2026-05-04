@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Backend.Api.Controllers.User;
 
 [Route("api/customers")]
+[Authorize]
 public class CustomersController : ApiControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -35,6 +36,11 @@ public class CustomersController : ApiControllerBase
     [HttpGet]
     public async Task<ActionResult<CustomerResponse>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
+        if (!_currentUserProvider.IsAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can access customers." });
+        }
+
         _logger.LogInformation(
             "Fetching customers with page {Page} and page size {PageSize}.",
             pageRequest.Page,
@@ -47,6 +53,16 @@ public class CustomersController : ApiControllerBase
     [HttpGet("{userId:guid}")]
     public async Task<ActionResult<CustomerResponse>> GetByIdAsync([NotEmptyGuid] Guid userId, CancellationToken cancellationToken)
     {
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        if (!_currentUserProvider.IsAdmin && authenticatedUserId != userId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access another customer." });
+        }
+
         _logger.LogInformation("Fetching customer with ID {userId}.", userId);
 
         var result = await _customerService.GetByIdAsync(userId, cancellationToken);
@@ -54,7 +70,6 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet("{userId:guid}/orders")]
-    [Authorize]
     public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersByCustomerAsync(
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,

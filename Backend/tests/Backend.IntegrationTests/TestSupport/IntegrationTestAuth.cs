@@ -9,15 +9,22 @@ internal static class IntegrationTestAuth
 {
     private const string LocalTokenSecret = "local-development-token-secret-not-for-production-2026";
 
-    public static string CreateBearerToken(Guid userId)
+    public static string CreateBearerToken(Guid userId, bool isAdmin = false)
     {
         var now = DateTime.UtcNow;
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId.ToString())
+        };
+
+        if (isAdmin)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
+        }
+
         var descriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString())
-            ]),
+            Subject = new ClaimsIdentity(claims),
             IssuedAt = now,
             NotBefore = now,
             Expires = now.AddMinutes(30),

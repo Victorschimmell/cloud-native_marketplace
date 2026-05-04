@@ -24,8 +24,22 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetCustomers_ReturnsOk()
+    public async Task GetCustomers_WhenUnauthenticated_ReturnsUnauthorized()
     {
+        // Act
+        var response = await _client.GetAsync("/api/customers", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCustomers_WhenAdmin_ReturnsOk()
+    {
+        // Arrange
+        var adminUserId = await SeedAdminAsync("customers-admin@example.com");
+        AuthenticateAs(adminUserId, isAdmin: true);
+
         // Act
         var response = await _client.GetAsync("/api/customers", TestContext.Current.CancellationToken);
 
@@ -34,14 +48,42 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetCustomerById_ReturnsNotFound()
+    public async Task GetCustomerById_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Act
         var customerId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/customers/{customerId}", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCustomerById_WhenAuthenticatedCustomerRequestsAnotherCustomer_ReturnsForbidden()
+    {
+        // Arrange
+        var userId = await SeedCustomerAsync("customer-access@example.com");
+        AuthenticateAs(userId);
+
+        // Act
+        var response = await _client.GetAsync($"/api/customers/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCustomerById_WhenAuthenticatedCustomerRequestsSelf_ReturnsOk()
+    {
+        // Arrange
+        var userId = await SeedCustomerAsync("customer-self@example.com");
+        AuthenticateAs(userId);
+
+        // Act
+        var response = await _client.GetAsync($"/api/customers/{userId}", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
@@ -162,10 +204,39 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         return (customerUser.Id, order.Id);
     }
 
-    private void AuthenticateAs(Guid userId)
+    private async Task<Guid> SeedCustomerAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var customerUser = TestEntityFactory.CreateUserAccount(email);
+        var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
+
+        dbContext.UserAccounts.Add(customerUser);
+        dbContext.Customers.Add(customer);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return customerUser.Id;
+    }
+
+    private async Task<Guid> SeedAdminAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var adminUser = TestEntityFactory.CreateUserAccount(email);
+        adminUser.IsAdmin = true;
+
+        dbContext.UserAccounts.Add(adminUser);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return adminUser.Id;
+    }
+
+    private void AuthenticateAs(Guid userId, bool isAdmin = false)
     {
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer",
-            IntegrationTestAuth.CreateBearerToken(userId));
+            IntegrationTestAuth.CreateBearerToken(userId, isAdmin));
     }
 }

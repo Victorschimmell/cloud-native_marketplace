@@ -13,26 +13,22 @@ public sealed class PaymentService : IPaymentService
     private readonly IOrderRepository _orderRepository;
     private readonly ICurrencyRepository _currencyRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IUnitOfWork _unitOfWork;
 
     public PaymentService(
         IPaymentRepository paymentRepository,
         IOrderRepository orderRepository,
         ICurrencyRepository currencyRepository,
-        IDateTimeProvider dateTimeProvider,
-        IUnitOfWork unitOfWork)
+        IDateTimeProvider dateTimeProvider)
     {
         ArgumentNullException.ThrowIfNull(paymentRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(currencyRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
-        ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _paymentRepository = paymentRepository;
         _orderRepository = orderRepository;
         _currencyRepository = currencyRepository;
         _dateTimeProvider = dateTimeProvider;
-        _unitOfWork = unitOfWork;
     }
 
     public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -60,9 +56,6 @@ public sealed class PaymentService : IPaymentService
 
         // NOTE: Currently never fails
         await _paymentRepository.AddAsync(orderPayment, cancellationToken);
-
-        // NOTE: CheckoutService will also save changes again
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<PaymentDto>.Success(orderPayment.ToPaymentDto());
     }
