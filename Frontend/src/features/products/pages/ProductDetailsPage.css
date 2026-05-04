@@ -196,12 +196,17 @@
 .product-details-page__purchase button {
   border: 0;
   border-radius: 8px;
-  background: #2563eb;
+  background: var(--primary-color);
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
   min-width: 112px;
   padding: 11px 18px;
+}
+
+.product-details-page__purchase button:hover:not(:disabled),
+.product-details-page__purchase button:focus-visible:not(:disabled) {
+  background: var(--primary-hover-color);
 }
 
 .product-details-page__purchase button:disabled {

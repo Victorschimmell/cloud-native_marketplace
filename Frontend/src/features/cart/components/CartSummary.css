@@ -29,7 +29,7 @@
   font-weight: 700;
   border-bottom: none;
   padding: 1rem 0;
-  color: var(--primary);
+  color: var(--primary-color);
 }
 
 .cart-summary__checkout-link,
@@ -40,9 +40,16 @@
   margin: 0 auto 18px;
   min-height: 42px;
   border-radius: 8px;
-  background: #2446b8;
+  background: var(--primary-color);
   color: #ffffff;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
+}
+
+.cart-summary__checkout-link:hover,
+.cart-summary__checkout-link:focus-visible,
+.cart-summary__continue-shopping-link:hover,
+.cart-summary__continue-shopping-link:focus-visible {
+  background: var(--primary-hover-color);
 }

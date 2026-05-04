@@ -145,6 +145,11 @@
   color: var(--text-light);
 }
 
+.navbar__register:hover,
+.navbar__register:focus-visible {
+  background: var(--primary-hover-color);
+}
+
 .navbar__user {
   display: inline-block;
   max-width: 190px;

@@ -23,9 +23,14 @@
   margin-bottom: 18px;
   min-height: 42px;
   border-radius: 8px;
-  background: #2446b8;
+  background: var(--primary-color);
   color: #ffffff;
   font-weight: 600;
   padding: 0 18px;
   text-decoration: none;
+}
+
+.cart-empty__continue-shopping-link:hover,
+.cart-empty__continue-shopping-link:focus-visible {
+  background: var(--primary-hover-color);
 }

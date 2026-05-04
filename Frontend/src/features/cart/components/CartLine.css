@@ -62,7 +62,7 @@
 }
 .cart-line__qty-btn:hover:not(:disabled) {
   background-color: var(--bg-hover);
-  border-color: var(--primary);
+  border-color: var(--primary-color);
 }
 
 .cart-line__qty-input {

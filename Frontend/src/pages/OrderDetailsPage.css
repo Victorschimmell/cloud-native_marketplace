@@ -234,11 +234,16 @@
   justify-content: center;
   min-height: 42px;
   border-radius: 8px;
-  background: #2446b8;
+  background: var(--primary-color);
   color: #ffffff;
   font-weight: 700;
   padding: 0 18px;
   text-decoration: none;
+}
+
+.order-details__primary-action:hover,
+.order-details__primary-action:focus-visible {
+  background: var(--primary-hover-color);
 }
 
 .order-details__notice,

@@ -361,15 +361,15 @@
 }
 
 .checkout-page__primary-action {
-    border: 1px solid #1d4ed8;
-    background: #2563eb;
+    border: 1px solid var(--primary-color);
+    background: var(--primary-color);
     color: #ffffff;
     cursor: pointer;
 }
 
 .checkout-page__primary-action:hover:not(:disabled),
 .checkout-page__primary-action:focus-visible:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--primary-hover-color);
 }
 
 .checkout-page__primary-action:disabled {
