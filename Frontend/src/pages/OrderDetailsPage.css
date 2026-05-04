@@ -217,6 +217,10 @@
   padding-left: 12px;
 }
 
+.order-details__status-item[data-complete='true'] {
+  border-left-color: #2563eb;
+}
+
 .order-details__status-item dd {
   margin: 3px 0 0;
   min-width: 0;

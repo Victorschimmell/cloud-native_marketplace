@@ -131,9 +131,18 @@ export default function OrderDetailsPage() {
                 <h2 id="order-followup-title">Status</h2>
               </div>
               <dl className="order-details__status-list">
-                <StatusItem label="Payment" value={paymentStatus} />
-                <StatusItem label="Seller approval" value={approvalState} detail={sellerSummary} />
-                <StatusItem label="Delivery" value={getDeliveryState(order)} />
+                <StatusItem isComplete={paymentStatus === 'Paid'} label="Payment" value={paymentStatus} />
+                <StatusItem
+                  detail={sellerSummary}
+                  isComplete={approvalState === 'Approved'}
+                  label="Seller approval"
+                  value={approvalState}
+                />
+                <StatusItem
+                  isComplete={Boolean(order.orderDeliveredCustomerDateUtc)}
+                  label="Delivery"
+                  value={getDeliveryState(order)}
+                />
               </dl>
             </section>
 
@@ -149,9 +158,19 @@ export default function OrderDetailsPage() {
   );
 }
 
-function StatusItem({ detail, label, value }: { detail?: string; label: string; value: string }) {
+function StatusItem({
+  detail,
+  isComplete,
+  label,
+  value,
+}: {
+  detail?: string;
+  isComplete: boolean;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="order-details__status-item">
+    <div className="order-details__status-item" data-complete={isComplete}>
       <dt>{label}</dt>
       <dd>{value}</dd>
       {detail ? <span>{detail}</span> : null}
