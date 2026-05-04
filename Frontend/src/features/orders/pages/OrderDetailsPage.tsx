@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import PageSkeleton from '../components/PageSkeleton';
-import { useCurrency } from '../shared/currency/useCurrency';
-import { orderApi } from '../features/orders/api/orderApi';
-import type { Order } from '../features/orders/types';
-import { formatDateTime, formatMoney, getOrderItemCount, getPaymentStatus, getStatusTone } from '../features/orders/utils';
+import PageSkeleton from '../../../components/PageSkeleton';
+import { useCurrency } from '../../../shared/currency/useCurrency';
+import { orderApi } from '../api/orderApi';
+import type { Order } from '../types';
+import { formatDateTime, formatMoney, getOrderItemCount, getPaymentStatus, getStatusTone } from '../utils';
 import './OrderDetailsPage.css';
 
 export default function OrderDetailsPage() {
