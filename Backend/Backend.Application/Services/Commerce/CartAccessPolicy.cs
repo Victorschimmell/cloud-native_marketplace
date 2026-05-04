@@ -16,6 +16,6 @@ internal static class CartAccessPolicy
             return sessionId.HasValue && cart.SessionId.Value == sessionId.Value;
         }
 
-        return userId.HasValue || sessionId.HasValue;
+        return false;
     }
 }
