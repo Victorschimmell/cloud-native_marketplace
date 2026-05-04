@@ -86,7 +86,17 @@ public sealed class CartService : ICartService
             return Result<CartDto>.ValidationFailure("Requested quantity exceeds available stock.");
         }
 
-        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        if (cart is null)
+        {
+            if (request.CartId.HasValue)
+            {
+                return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+            }
+
+            cart = await CreateActiveCartAsync(request.UserId, request.SessionId, cancellationToken);
+        }
+
         var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
         var now = _dateTimeProvider.UtcNow;
 
@@ -140,7 +150,12 @@ public sealed class CartService : ICartService
             return Result<CartDto>.NotFound("Product listing was not found.");
         }
 
-        var cart = await GetOrCreateActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        if (cart is null)
+        {
+            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
         var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
         var now = _dateTimeProvider.UtcNow;
 
@@ -178,6 +193,10 @@ public sealed class CartService : ICartService
         if (CartId.HasValue)
         {
             cart = await _cartRepository.GetByIdAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CartAccessPolicy.CanAccess(cart, UserId, SessionId))
+            {
+                return null;
+            }
         }
 
         if (cart is null && UserId.HasValue)
@@ -216,19 +235,10 @@ public sealed class CartService : ICartService
         return null;
     }
 
-    private async Task<ShoppingCart> GetOrCreateActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    private async Task<ShoppingCart> CreateActiveCartAsync(Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
-        ShoppingCart? cart = await GetActiveCartAsync(CartId, UserId, SessionId, cancellationToken);
-
-        if (cart is not null)
-        {
-            return cart;
-        }
-
         var now = _dateTimeProvider.UtcNow;
-        // Temporary anonymous cart for the checkout flow until real auth/session cart ownership is wired up.
-        // TODO: Remember to validate the userid and sessionid is valid
-        cart = new ShoppingCart
+        var cart = new ShoppingCart
         {
             UserId = UserId,
             SessionId = SessionId,

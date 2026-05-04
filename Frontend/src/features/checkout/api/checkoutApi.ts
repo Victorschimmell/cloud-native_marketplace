@@ -1,28 +1,26 @@
 import { request } from '../../../shared/api/request';
-import type { CheckoutPreviewLine, Currency, PaymentType } from '../types';
+import type { Address, CheckoutCustomerProfile, CheckoutPreview, CheckoutShippingAddress, Currency, PaymentType } from '../types';
 
 const checkoutCartIdStorageKey = 'marketplace.checkout.cartId';
 
 function buildCheckoutPreviewQuery(currency: string) {
   const cartId = window.localStorage.getItem(checkoutCartIdStorageKey);
 
-  if (!cartId) {
-    return null;
-  }
-
   const searchParams = new URLSearchParams({
-    cartId,
     currency,
   });
+
+  if (cartId) {
+    searchParams.set('cartId', cartId);
+  }
 
   return searchParams.toString();
 }
 
 export interface CheckoutRequest {
   cartId?: string;
-  userId?: string;
-  sessionId?: string;
-  shippingAddressId: string;
+  shippingAddress: CheckoutShippingAddress;
+  saveShippingAddressAsDefault: boolean;
   payments: Array<{
     currencyId: string;
     paymentType: PaymentType;
@@ -51,10 +49,42 @@ export const checkoutApi = {
     const queryString = buildCheckoutPreviewQuery(currency);
 
     if (!queryString) {
-      return [] as CheckoutPreviewLine[];
+      return {
+        lines: [],
+        subtotalAmount: 0,
+        freightAmount: 0,
+        totalAmount: 0,
+        currencyCode: currency,
+      } as CheckoutPreview;
     }
 
-    return await request<CheckoutPreviewLine[]>(`/api/checkout/preview?${queryString}`, {
+    return await request<CheckoutPreview>(`/api/checkout/preview?${queryString}`, {
+      signal,
+    });
+  },
+
+  getCustomerProfile: async (userId: string, signal?: AbortSignal) => {
+    return await request<CheckoutCustomerProfile>(`/api/customers/${userId}`, {
+      signal,
+    });
+  },
+
+  getAddress: async (addressId: string, signal?: AbortSignal) => {
+    return await request<Address>(`/api/addresses/${addressId}`, {
+      signal,
+    });
+  },
+
+  createAddress: async (address: CheckoutShippingAddress, makeDefault: boolean, signal?: AbortSignal) => {
+    return await request<Address>('/api/addresses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...address,
+        makeDefault,
+      }),
       signal,
     });
   },
@@ -74,5 +104,9 @@ export const checkoutApi = {
       body: JSON.stringify(checkoutRequest),
       signal,
     });
+  },
+
+  clearCheckoutCart: () => {
+    window.localStorage.removeItem(checkoutCartIdStorageKey);
   },
 };

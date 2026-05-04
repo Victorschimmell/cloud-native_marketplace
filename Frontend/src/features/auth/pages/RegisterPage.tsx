@@ -26,11 +26,13 @@ export default function RegisterPage() {
   const [businessName, setBusinessName] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [payoutInformation, setPayoutInformation] = useState('');
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setHasAttemptedSubmit(true);
 
     const formValues = {
       accountType,
@@ -94,40 +96,72 @@ export default function RegisterPage() {
 
           <AccountTypeSelector onChange={setAccountType} value={accountType} />
 
-          <TextField autoComplete="email" label="Email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          <TextField
+            autoComplete="email"
+            invalid={hasAttemptedSubmit && (!email.trim() || !emailPattern.test(email.trim()))}
+            label="Email"
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            value={email}
+          />
 
           <TextField
             autoComplete="new-password"
+            invalid={hasAttemptedSubmit && (!password || password.length < 8)}
             label="Password"
-            minLength={8}
             onChange={(event) => setPassword(event.target.value)}
-            required
             type="password"
             value={password}
           />
 
           {accountType === 'customer' ? (
             <>
-              <TextField autoComplete="given-name" label="First name" onChange={(event) => setFirstName(event.target.value)} required value={firstName} />
-              <TextField autoComplete="family-name" label="Last name" onChange={(event) => setLastName(event.target.value)} required value={lastName} />
+              <TextField
+                autoComplete="given-name"
+                invalid={hasAttemptedSubmit && !firstName.trim()}
+                label="First name"
+                onChange={(event) => setFirstName(event.target.value)}
+                value={firstName}
+              />
+              <TextField
+                autoComplete="family-name"
+                invalid={hasAttemptedSubmit && !lastName.trim()}
+                label="Last name"
+                onChange={(event) => setLastName(event.target.value)}
+                value={lastName}
+              />
               <TextField
                 autoComplete="tel"
                 inputMode="tel"
+                invalid={hasAttemptedSubmit && (!phone.trim() || !phoneRegex.test(phone.trim()))}
                 label="Phone"
                 onChange={(event) => setPhone(event.target.value)}
-                pattern={phonePattern}
                 placeholder="+4512345678"
-                required
-                title={phoneValidationMessage}
                 type="tel"
                 value={phone}
               />
             </>
           ) : (
             <>
-              <TextField autoComplete="organization" label="Business name" onChange={(event) => setBusinessName(event.target.value)} required value={businessName} />
-              <TextField label="Registration number" onChange={(event) => setRegistrationNumber(event.target.value)} required value={registrationNumber} />
-              <TextField label="Payout information" onChange={(event) => setPayoutInformation(event.target.value)} required value={payoutInformation} />
+              <TextField
+                autoComplete="organization"
+                invalid={hasAttemptedSubmit && !businessName.trim()}
+                label="Business name"
+                onChange={(event) => setBusinessName(event.target.value)}
+                value={businessName}
+              />
+              <TextField
+                invalid={hasAttemptedSubmit && !registrationNumber.trim()}
+                label="Registration number"
+                onChange={(event) => setRegistrationNumber(event.target.value)}
+                value={registrationNumber}
+              />
+              <TextField
+                invalid={hasAttemptedSubmit && !payoutInformation.trim()}
+                label="Payout information"
+                onChange={(event) => setPayoutInformation(event.target.value)}
+                value={payoutInformation}
+              />
             </>
           )}
 

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
+import { useAuth } from '../../auth/useAuth';
 import { cartApi } from '../../cart/api/cartApi';
 import { productApi } from '../api/productApi';
 import type { ProductDetails } from '../types';
@@ -21,6 +22,9 @@ export default function ProductDetailsPage() {
 
   const listingId = searchParams.get('listingId');
   const { currency } = useCurrency();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const priceFormatter = useMemo(
     () => new Intl.NumberFormat(getCurrencyLocale(product?.currencyCode ?? currency), { style: 'currency', currency: product?.currencyCode ?? currency }),
     [currency, product?.currencyCode],
@@ -80,10 +84,16 @@ export default function ProductDetailsPage() {
       return;
     }
 
+    if (!isAuthenticated) {
+      const returnTo = `${location.pathname}${location.search}${location.hash}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+
     try {
       setIsAdding(true);
       setCartMessage(null);
-      await cartApi.addItem(product.listingId, quantity);
+      await cartApi.addItem(product.listingId, quantity, currency);
       setCartMessageVariant('success');
       setCartMessage('Added to cart.');
     } catch {

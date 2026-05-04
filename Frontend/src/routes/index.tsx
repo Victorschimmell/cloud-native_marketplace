@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../features/auth/pages/LoginPage';
 import RegisterPage from '../features/auth/pages/RegisterPage';
+import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 import ProductListPage from '../features/products/pages/ProductListPage';
 import ProductDetailsPage from '../features/products/pages/ProductDetailsPage';
 import CategoriesPage from '../pages/CategoriesPage';
@@ -35,10 +36,15 @@ export const router = createBrowserRouter([
       { path: 'products', element: <ProductListPage /> },
       { path: 'products/:id', element: <ProductDetailsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
-      { path: 'cart', element: <CartPage /> },
-      { path: 'checkout', element: <CheckoutPage /> },
-      { path: 'orders', element: <OrdersPage /> },
-      { path: 'orders/:id', element: <OrderDetailsPage /> },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: 'cart', element: <CartPage /> },
+          { path: 'checkout', element: <CheckoutPage /> },
+          { path: 'orders', element: <OrdersPage /> },
+          { path: 'orders/:id', element: <OrderDetailsPage /> },
+        ],
+      },
       { path: 'customers/:id', element: <CustomerPage /> },
       { path: 'sellers/:id', element: <SellersPage /> },
       { path: 'reviews', element: <ReviewsPage /> },

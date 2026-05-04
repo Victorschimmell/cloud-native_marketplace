@@ -28,13 +28,29 @@ public sealed record UpdateCartItemRequest(Guid? CartId, Guid? UserId, Guid? Ses
 
 public sealed record CheckoutLineDto(Guid ListingId, int Quantity, decimal UnitPrice, decimal LineTotal, string CurrencyCode);
 
+public sealed record CheckoutPreviewDto(
+    IReadOnlyList<CheckoutLineDto> Lines,
+    decimal SubtotalAmount,
+    decimal FreightAmount,
+    decimal TotalAmount,
+    string CurrencyCode);
+
 public sealed record GetCheckoutPreviewRequest(Guid? CartId, Guid? UserId, Guid? SessionId);
+
+public sealed record CheckoutShippingAddressDto(
+    string PostalCode,
+    string City,
+    string State,
+    string? AddressLine1,
+    string? AddressLine2,
+    string CountryCode);
 
 public sealed record CheckoutRequest(
     Guid? CartId,
     Guid? UserId,
     Guid? SessionId,
-    Guid ShippingAddressId,
+    CheckoutShippingAddressDto ShippingAddress,
+    bool SaveShippingAddressAsDefault,
     IReadOnlyList<RecordPaymentDetails> Payments);
 
 public sealed record CheckoutResponse(

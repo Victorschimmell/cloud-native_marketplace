@@ -15,12 +15,15 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wasRegistered = searchParams.get('registered') === '1';
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setHasAttemptedSubmit(true);
 
     const trimmedEmail = email.trim();
     const validationError = validateLoginForm(trimmedEmail, password);
@@ -33,7 +36,7 @@ export default function LoginPage() {
       setIsSubmitting(true);
       setError(null);
       await login({ email: trimmedEmail, password });
-      navigate('/products');
+      navigate(returnTo);
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Could not log in right now.');
     } finally {
@@ -54,13 +57,20 @@ export default function LoginPage() {
 
           {error ? <FormNotice variant="error">{error}</FormNotice> : null}
 
-          <TextField autoComplete="email" label="Email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          <TextField
+            autoComplete="email"
+            invalid={hasAttemptedSubmit && (!email.trim() || !emailPattern.test(email.trim()))}
+            label="Email"
+            onChange={(event) => setEmail(event.target.value)}
+            type="email"
+            value={email}
+          />
 
           <TextField
             autoComplete="current-password"
+            invalid={hasAttemptedSubmit && !password}
             label="Password"
             onChange={(event) => setPassword(event.target.value)}
-            required
             type="password"
             value={password}
           />
@@ -76,6 +86,14 @@ export default function LoginPage() {
       </AuthPageFrame>
     </PageSkeleton>
   );
+}
+
+function getSafeReturnTo(value: string | null): string {
+  if (value?.startsWith('/') && !value.startsWith('//')) {
+    return value;
+  }
+
+  return '/products';
 }
 
 function validateLoginForm(email: string, password: string): string | null {

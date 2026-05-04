@@ -2,6 +2,7 @@ using Backend.Application.DTOs;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
+using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
@@ -32,6 +33,16 @@ internal static class ApplicationMappings
             seller.VerificationStatus,
             seller.VerifiedAtUtc,
             seller.OlistSellerId);
+
+    public static AddressDto ToAddressDto(this Address address) =>
+        new(
+            address.Id,
+            address.PostalCode,
+            address.City,
+            address.State,
+            address.AddressLine1,
+            address.AddressLine2,
+            address.CountryCode);
 
     public static UserAccountDto ToUserAccountDto(this UserAccount userAccount) =>
         new(

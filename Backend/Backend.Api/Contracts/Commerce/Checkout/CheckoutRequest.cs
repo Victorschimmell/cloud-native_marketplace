@@ -1,31 +1,38 @@
-using System.ComponentModel.DataAnnotations;
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Payments;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Api.Contracts.Commerce.Checkout;
 
-public sealed record CheckoutRequest : IValidatableObject
+public sealed record CheckoutShippingAddressRequest
+{
+    [Required]
+    public required string PostalCode { get; init; }
+
+    [Required]
+    public required string City { get; init; }
+
+    [Required]
+    public required string State { get; init; }
+
+    [Required]
+    public required string AddressLine1 { get; init; }
+
+    public string? AddressLine2 { get; init; }
+
+    [Required]
+    public required string CountryCode { get; init; }
+}
+
+public sealed record CheckoutRequest
 {
     [NotEmptyGuid]
     public Guid? CartId { get; init; }
 
-    [NotEmptyGuid]
-    public Guid? UserId { get; init; }
+    [Required]
+    public required CheckoutShippingAddressRequest ShippingAddress { get; init; }
 
-    [NotEmptyGuid]
-    public Guid? SessionId { get; init; }
+    public bool SaveShippingAddressAsDefault { get; init; }
 
-    [NotEmptyGuid]
-    public required Guid ShippingAddressId { get; init; }
     public required IReadOnlyList<RecordPaymentRequest> Payments { get; init; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (!CartId.HasValue && !UserId.HasValue && !SessionId.HasValue)
-        {
-            yield return new ValidationResult(
-                "At least one of CartId, UserId, or SessionId must be provided.",
-                [nameof(CartId), nameof(UserId), nameof(SessionId)]);
-        }
-    }
 }

@@ -8,8 +8,8 @@ namespace Backend.Api.Mappings.Commerce.Checkout;
 
 public static class CheckoutMappingExtensions
 {
-    public static App.GetCheckoutPreviewRequest ToApplicationRequest(this CheckoutPreviewRequest request) =>
-        new(request.CartId, request.UserId, request.SessionId);
+    public static App.GetCheckoutPreviewRequest ToApplicationRequest(this CheckoutPreviewRequest request, Guid authenticatedUserId) =>
+        new(request.CartId, authenticatedUserId, null);
 
     public static CheckoutPreviewLineResponse ToResponse(this App.CheckoutLineDto line) =>
         new()
@@ -21,13 +21,33 @@ public static class CheckoutMappingExtensions
             CurrencyCode = line.CurrencyCode
         };
 
-    public static App.CheckoutRequest ToApplicationRequest(this CheckoutRequest request) =>
+    public static CheckoutPreviewResponse ToResponse(this App.CheckoutPreviewDto preview) =>
+        new()
+        {
+            Lines = preview.Lines.Select(line => line.ToResponse()).ToArray(),
+            SubtotalAmount = preview.SubtotalAmount,
+            FreightAmount = preview.FreightAmount,
+            TotalAmount = preview.TotalAmount,
+            CurrencyCode = preview.CurrencyCode
+        };
+
+    public static App.CheckoutRequest ToApplicationRequest(this CheckoutRequest request, Guid authenticatedUserId) =>
         new(
             request.CartId,
-            request.UserId,
-            request.SessionId,
-            request.ShippingAddressId,
+            authenticatedUserId,
+            null,
+            request.ShippingAddress.ToApplicationRequest(),
+            request.SaveShippingAddressAsDefault,
             request.Payments.Select(p => p.ToApplicationRequest()).ToArray());
+
+    private static App.CheckoutShippingAddressDto ToApplicationRequest(this CheckoutShippingAddressRequest request) =>
+        new(
+            request.PostalCode,
+            request.City,
+            request.State,
+            request.AddressLine1,
+            request.AddressLine2,
+            request.CountryCode);
 
     public static CheckoutResponse ToResponse(this App.CheckoutResponse response) =>
         new()

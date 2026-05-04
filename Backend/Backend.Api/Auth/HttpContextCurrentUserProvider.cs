@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Backend.Application.Common.Abstractions;
 
@@ -9,7 +10,8 @@ internal sealed class HttpContextCurrentUserProvider(IHttpContextAccessor httpCo
     {
         get
         {
-            var value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var value = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
             return Guid.TryParse(value, out var userId) ? userId : null;
         }
     }

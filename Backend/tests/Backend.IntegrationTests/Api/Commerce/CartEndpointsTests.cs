@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -36,9 +37,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Cart product", "CART-001", 39.95m);
         var userId = await SeedCustomerAsync("add_cart@example.com");
+        AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 2
         };
@@ -62,10 +63,42 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task GetCurrentCart_WhenAuthenticatedUserHasActiveCart_ReturnsCart()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Current cart product", "CURRENT-CART-001", 42.95m);
+        var userId = await SeedCustomerAsync("current_cart@example.com");
+        AuthenticateAs(userId);
+
+        var addResponse = await _client.PostAsJsonAsync(
+            "/api/cart/items?displayCurrency=BRL",
+            new AddCartItemRequest
+            {
+                ListingId = listingId,
+                Quantity = 1
+            },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, addResponse.StatusCode);
+
+        // Act
+        var response = await _client.GetAsync("/api/cart/current?displayCurrency=BRL", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(cart);
+        Assert.Equal(userId, cart.UserId);
+        Assert.Single(cart.Items);
+    }
+
+    [Fact]
     public async Task AddCartItem_WithExistingCartAndDifferentListing_ReturnsCartWithBothItems()
     {
         // Arrange
         var userId = await SeedCustomerAsync("bbb@example.com");
+        AuthenticateAs(userId);
 
         var firstListingId = await SeedProductListingAsync("First cart product", "CART-002", 19.95m);
         var secondListingId = await SeedProductListingAsync("Second cart product", "CART-003", 29.95m);
@@ -73,7 +106,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             "/api/cart/items?displayCurrency=BRL",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = firstListingId,
                 Quantity = 1
             },
@@ -114,9 +146,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Out of stock cart product", "CART-OUT-001", 39.95m, inventoryQuantity: 0);
         var userId = await SeedCustomerAsync("ccc@example.com");
+        AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -133,6 +165,8 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Arrange
         var listingId = await SeedProductListingAsync("Limited stock cart product", "CART-LIMIT-001", 39.95m, inventoryQuantity: 2);
+        var userId = await SeedCustomerAsync("limited@example.com");
+        AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
             ListingId = listingId,
@@ -151,9 +185,10 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Arrange
         var listingId = Guid.NewGuid();
+        var userId = await SeedCustomerAsync("patch-missing@example.com");
+        AuthenticateAs(userId);
         var patchItemRequest = new UpdateCartItemRequest
         {
-            UserId = Guid.NewGuid(),
             Quantity = 1
         };
 
@@ -170,12 +205,12 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Remove product", "REMOVE-001", 29.95m);
         var userId = await SeedCustomerAsync("remove@example.com");
+        AuthenticateAs(userId);
 
         var addResponse = await _client.PostAsJsonAsync(
             "/api/cart/items?displayCurrency=BRL",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = listingId,
                 Quantity = 2
             },
@@ -206,12 +241,12 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Reduce product", "REDUCE-001", 19.95m);
         var userId = await SeedCustomerAsync("reduce@example.com");
+        AuthenticateAs(userId);
 
         var addResponse = await _client.PostAsJsonAsync(
             "/api/cart/items?displayCurrency=USD",
             new AddCartItemRequest
             {
-                UserId = userId,
                 ListingId = listingId,
                 Quantity = 5
             },
@@ -242,11 +277,11 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Currency product", "CURRENCY-001", 49.95m);
         var userId = await SeedCustomerAsync("currency@example.com");
+        AuthenticateAs(userId);
 
         // Act & Assert
         var addRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -277,9 +312,9 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Arrange
         var listingId = await SeedProductListingAsync("Deleted product", "DELETED-001", 39.95m, isDeleted: true);
         var userId = await SeedCustomerAsync("deleted@example.com");
+        AuthenticateAs(userId);
         var addItemRequest = new AddCartItemRequest
         {
-            UserId = userId,
             ListingId = listingId,
             Quantity = 1
         };
@@ -303,7 +338,6 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     //         "/api/cart/items?displayCurrency=BRL",
     //         new AddCartItemRequest
     //         {
-    //             UserId = userId,
     //             ListingId = listingId,
     //             Quantity = 1
     //         },
@@ -370,5 +404,12 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return customerUser.Id;
+    }
+
+    private void AuthenticateAs(Guid userId)
+    {
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            IntegrationTestAuth.CreateBearerToken(userId));
     }
 }

@@ -1,13 +1,35 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import StatusMessage from '../../../shared/components/StatusMessage';
 import { ApiError } from '../../../shared/api/request';
 import { useCurrency } from '../../../shared/currency/useCurrency';
+import { useAuth } from '../../auth/useAuth';
 import { checkoutApi } from '../api/checkoutApi';
-import { CheckoutPaymentPanel, CheckoutPreviewList } from '../components';
-import type { CheckoutPreviewLine, PaymentType, Currency } from '../types';
+import { CheckoutCustomerPanel, CheckoutPaymentPanel, CheckoutPreviewList, CheckoutShippingAddressForm } from '../components';
+import { PaymentType } from '../types';
+import type { CheckoutCustomerProfile, CheckoutPreview, CheckoutShippingAddress, Currency } from '../types';
 import './CheckoutPage.css';
+
+const paymentCurrencyCode = 'BRL';
+const checkoutFormId = 'checkout-form';
+
+const emptyPreview = (currencyCode: string): CheckoutPreview => ({
+  lines: [],
+  subtotalAmount: 0,
+  freightAmount: 0,
+  totalAmount: 0,
+  currencyCode,
+});
+
+const emptyShippingAddress: CheckoutShippingAddress = {
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  postalCode: '',
+  countryCode: 'DK',
+};
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
@@ -30,13 +52,20 @@ function getErrorMessage(err: unknown): string {
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
   const [isLoadingCurrency, setIsLoadingCurrency] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [previewLines, setPreviewLines] = useState<CheckoutPreviewLine[]>([]);
+  const [preview, setPreview] = useState<CheckoutPreview>(() => emptyPreview('BRL'));
+  const [paymentPreview, setPaymentPreview] = useState<CheckoutPreview>(() => emptyPreview(paymentCurrencyCode));
+  const [customerProfile, setCustomerProfile] = useState<CheckoutCustomerProfile | null>(null);
   const [currencyInfo, setCurrencyInfo] = useState<Currency | null>(null);
-  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType | null>(null);
+  const [shippingAddress, setShippingAddress] = useState<CheckoutShippingAddress>(emptyShippingAddress);
+  const [hasEditedShippingAddress, setHasEditedShippingAddress] = useState(false);
+  const [saveShippingAddressAsDefault, setSaveShippingAddressAsDefault] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currency } = useCurrency();
+  const { user } = useAuth();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -46,8 +75,12 @@ export default function CheckoutPage() {
         setIsLoading(true);
         setError(null);
 
-        const lines = await checkoutApi.getCheckoutPreview(currency, abortController.signal);
-        setPreviewLines(lines);
+        const displayPreview = await checkoutApi.getCheckoutPreview(currency, abortController.signal);
+        const nextPaymentPreview = currency === paymentCurrencyCode
+          ? displayPreview
+          : await checkoutApi.getCheckoutPreview(paymentCurrencyCode, abortController.signal);
+        setPreview(displayPreview);
+        setPaymentPreview(nextPaymentPreview);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return;
@@ -69,6 +102,75 @@ export default function CheckoutPage() {
   }, [currency]);
 
   useEffect(() => {
+    if (!user) {
+      setIsLoadingCustomer(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    async function loadCustomerProfile() {
+      try {
+        setIsLoadingCustomer(true);
+        setError(null);
+
+        const profile = await checkoutApi.getCustomerProfile(user!.id, abortController.signal);
+        setCustomerProfile(profile);
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+          return;
+        }
+
+        setError(`Failed to load customer information: ${getErrorMessage(requestError)}`);
+      } finally {
+        if (!abortController.signal.aborted) {
+          setIsLoadingCustomer(false);
+        }
+      }
+    }
+
+    void loadCustomerProfile();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!customerProfile?.defaultAddressId || hasEditedShippingAddress) {
+      return;
+    }
+
+    const abortController = new AbortController();
+
+    async function loadDefaultAddress() {
+      try {
+        const defaultAddress = await checkoutApi.getAddress(customerProfile!.defaultAddressId!, abortController.signal);
+        setShippingAddress({
+          addressLine1: defaultAddress.addressLine1,
+          addressLine2: defaultAddress.addressLine2,
+          city: defaultAddress.city,
+          state: defaultAddress.state,
+          postalCode: defaultAddress.postalCode,
+          countryCode: defaultAddress.countryCode,
+        });
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+          return;
+        }
+
+        setError(`Failed to load default address: ${getErrorMessage(requestError)}`);
+      }
+    }
+
+    void loadDefaultAddress();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [customerProfile, hasEditedShippingAddress]);
+
+  useEffect(() => {
     const abortController = new AbortController();
 
     async function loadCurrency() {
@@ -76,7 +178,7 @@ export default function CheckoutPage() {
         setIsLoadingCurrency(true);
         setError(null);
 
-        const info = await checkoutApi.getCurrency('BRL', abortController.signal);
+        const info = await checkoutApi.getCurrency(paymentCurrencyCode, abortController.signal);
         setCurrencyInfo(info);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
@@ -98,23 +200,30 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  const previewTotal = useMemo(() => {
-    return previewLines.reduce((sum, line) => sum + line.lineTotal, 0);
-  }, [previewLines]);
-
-  const hasPreview = previewLines.length > 0;
+  const previewTotal = preview.totalAmount;
+  const paymentTotal = paymentPreview.totalAmount;
+  const hasPreview = preview.lines.length > 0;
+  const isCheckoutDisabled = isSubmitting
+    || isLoadingCurrency
+    || isLoadingCustomer
+    || !currencyInfo
+    || !customerProfile
+    || !hasPreview
+    || paymentTotal <= 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setHasAttemptedSubmit(true);
 
-    if (!currencyInfo || !selectedPaymentType || !hasPreview) {
-      setError('Please select a payment method and ensure items are in your cart.');
+    if (!currencyInfo || !customerProfile || !hasPreview || paymentTotal <= 0) {
+      setError('Please ensure your cart, customer profile, and payment information are ready.');
       return;
     }
 
-    const cartId = window.localStorage.getItem('marketplace.checkout.cartId');
-    if (!cartId) {
-      setError('Cart information is missing. Please try again.');
+    const normalizedShippingAddress = normalizeShippingAddress(shippingAddress);
+    const addressValidationError = validateShippingAddress(normalizedShippingAddress);
+    if (addressValidationError) {
+      setError(addressValidationError);
       return;
     }
 
@@ -122,23 +231,25 @@ export default function CheckoutPage() {
       setIsSubmitting(true);
       setError(null);
 
+      const cartId = window.localStorage.getItem('marketplace.checkout.cartId') ?? undefined;
       const response = await checkoutApi.checkout(
         {
           cartId,
-          shippingAddressId: '', // TODO: Get from user input or state
+          shippingAddress: normalizedShippingAddress,
+          saveShippingAddressAsDefault,
           payments: [
             {
               currencyId: currencyInfo.id,
-              paymentType: selectedPaymentType,
+              paymentType: PaymentType.CreditCard,
               paymentInstallments: 1,
-              paymentValue: previewTotal,
+              paymentValue: paymentTotal,
             },
           ],
         },
-        currency
+        paymentCurrencyCode
       );
 
-      // Navigate to order details page with the order ID
+      checkoutApi.clearCheckoutCart();
       navigate(`/orders/${response.order.id}`);
     } catch (requestError) {
       setError(`Checkout failed: ${getErrorMessage(requestError)}`);
@@ -169,30 +280,82 @@ export default function CheckoutPage() {
         </StatusMessage>
       )}
 
-      <div className="checkout-page__layout" aria-busy={isLoading}>
+      <form id={checkoutFormId} className="checkout-page__layout" aria-busy={isLoading || isLoadingCustomer} noValidate onSubmit={handleSubmit}>
         <div className="checkout-page__main">
-          {hasPreview && (
-            <CheckoutPreviewList
-              currency={currency}
-              lines={previewLines}
-            />
-          )}
-        </div>
+          <CheckoutCustomerPanel
+            customer={customerProfile}
+            email={user?.email ?? ''}
+            isLoading={isLoadingCustomer}
+          />
 
-        <div className="checkout-page__sidebar">
+          <CheckoutShippingAddressForm
+            address={shippingAddress}
+            disabled={isSubmitting}
+            onAddressChange={(nextAddress) => {
+              setHasEditedShippingAddress(true);
+              setShippingAddress(nextAddress);
+            }}
+            onSaveAsDefaultChange={setSaveShippingAddressAsDefault}
+            saveAsDefault={saveShippingAddressAsDefault}
+            showValidation={hasAttemptedSubmit}
+          />
+
           <CheckoutPaymentPanel
             currency={currency}
             total={previewTotal}
+            paymentTotal={paymentTotal}
             currencyInfo={currencyInfo}
-            selectedPaymentType={selectedPaymentType}
-            onPaymentTypeChange={setSelectedPaymentType}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
             isLoadingCurrency={isLoadingCurrency}
           />
-
         </div>
-      </div>
+
+        <div className="checkout-page__sidebar">
+          {hasPreview && (
+            <CheckoutPreviewList
+              currency={currency}
+              formId={checkoutFormId}
+              isDisabled={isCheckoutDisabled}
+              isSubmitting={isSubmitting}
+              preview={preview}
+            />
+          )}
+        </div>
+      </form>
     </PageSkeleton>
   );
+}
+
+function normalizeShippingAddress(address: CheckoutShippingAddress): CheckoutShippingAddress {
+  return {
+    addressLine1: address.addressLine1.trim(),
+    addressLine2: address.addressLine2?.trim() || null,
+    city: address.city.trim(),
+    state: address.state.trim(),
+    postalCode: address.postalCode.trim(),
+    countryCode: address.countryCode.trim().toUpperCase(),
+  };
+}
+
+function validateShippingAddress(address: CheckoutShippingAddress): string | null {
+  if (!address.addressLine1) {
+    return 'Enter a shipping address.';
+  }
+
+  if (!address.city) {
+    return 'Enter a shipping city.';
+  }
+
+  if (!address.state) {
+    return 'Enter a shipping state or region.';
+  }
+
+  if (!address.postalCode) {
+    return 'Enter a ZIP or postal code.';
+  }
+
+  if (!address.countryCode) {
+    return 'Enter a country code.';
+  }
+
+  return null;
 }
