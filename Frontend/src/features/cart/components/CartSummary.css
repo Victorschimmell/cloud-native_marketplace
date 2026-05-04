@@ -34,9 +34,15 @@
 
 .cart-summary__checkout-link,
 .cart-summary__continue-shopping-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto 18px;
-  color: #2563eb;
+  min-height: 42px;
+  border-radius: 8px;
+  background: #2446b8;
+  color: #ffffff;
   font-weight: 600;
   text-align: center;
+  text-decoration: none;
 }
