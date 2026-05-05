@@ -1,6 +1,7 @@
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Location;
+using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 using Backend.Domain.ValueObjects;
@@ -95,5 +96,26 @@ internal static class TestEntityFactory
             SubtotalAmount = 100m,
             FreightAmount = 15m,
             TotalAmount = 115m
+        };
+
+    public static AuditLog CreateAuditLog(
+        Guid? actorUserId = null,
+        string? actorIpAddress = "127.0.0.1",
+        AuditActionType actionType = AuditActionType.Created,
+        string targetEntityType = "Product",
+        string targetEntityId = "test-entity-id",
+        AuditOutcome outcome = AuditOutcome.Succeeded,
+        string details = "Test audit log",
+        DateTimeOffset? createdAtUtc = null) =>
+        new()
+        {
+            ActorUserId = actorUserId,
+            ActorIpAddress = actorIpAddress,
+            ActionType = actionType,
+            TargetEntityType = targetEntityType,
+            TargetEntityId = targetEntityId,
+            Outcome = outcome,
+            Details = details,
+            CreatedAtUtc = createdAtUtc ?? DateTimeOffset.UtcNow
         };
 }
