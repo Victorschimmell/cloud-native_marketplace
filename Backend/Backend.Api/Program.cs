@@ -50,6 +50,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi(options =>
 {
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     options.AddOperationTransformer<DefaultResponsesTransformer>();
 });
 
@@ -76,7 +77,16 @@ app.UseSerilogRequestLogging();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .AddPreferredSecuritySchemes("Bearer")
+            .AddHttpAuthentication(
+                "Bearer",
+                auth => { }
+            )
+            .EnablePersistentAuthentication();
+    });
 }
 
 app.UseHttpsRedirection();
