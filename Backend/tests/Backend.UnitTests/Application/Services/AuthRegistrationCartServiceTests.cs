@@ -19,7 +19,7 @@ public sealed class AuthRegistrationCartServiceTests
             UserAccount = CreateUser("customer@example.com", "hashed::Password123!")
         };
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), unitOfWork);
+        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("customer@example.com", "Password123!"), TestContext.Current.CancellationToken);
 
@@ -41,7 +41,7 @@ public sealed class AuthRegistrationCartServiceTests
             UserAccount = user
         };
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), unitOfWork);
+        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("blocked@example.com", "Password123!"), TestContext.Current.CancellationToken);
 

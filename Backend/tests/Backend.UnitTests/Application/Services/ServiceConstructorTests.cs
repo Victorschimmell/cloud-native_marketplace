@@ -20,7 +20,7 @@ public sealed class ServiceConstructorTests
     [Fact]
     public void AuthService_Throws_When_PasswordHasher_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new AuthService(new FakeUserAccountRepository(), null!, new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeUnitOfWork()));
+        Assert.Throws<ArgumentNullException>(() => new AuthService(new FakeUserAccountRepository(), null!, new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork()));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class ServiceConstructorTests
         _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakeAddressRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
         _ = new AddressService(new FakeAddressRepository(), new FakeCustomerRepository(), new FakeUnitOfWork());
         _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
-        _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeUnitOfWork());
+        _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new RegistrationService(
             new FakeUserAccountRepository(),
             new FakeCustomerRepository(),
