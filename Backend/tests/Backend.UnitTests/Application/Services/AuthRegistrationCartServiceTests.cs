@@ -65,6 +65,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             unitOfWork);
 
         var result = await service.RegisterCustomerAsync(
@@ -100,6 +101,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             unitOfWork);
 
         var result = await service.RegisterCustomerAsync(
@@ -125,6 +127,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             new FakeUnitOfWork());
 
         var result = await service.RegisterSellerAsync(

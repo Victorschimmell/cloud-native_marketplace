@@ -46,6 +46,7 @@ public sealed class ServiceConstructorTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             new FakeUnitOfWork());
         _ = new AdminService(new FakeUserAccountRepository(), new FakeAuditLogRepository());
         _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider());
