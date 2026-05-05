@@ -1,38 +1,43 @@
 using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Operation.AuditLog;
+using Backend.Api.Mappings.Operation.AuditLog;
+using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Backend.Api.Attributes;
 
 namespace Backend.Api.Controllers.Operations;
 
 [Route("api/admin/audit-logs")]
+[Authorize]
 public class AuditLogController : ApiControllerBase
 {
     private readonly IAdminService _adminService;
-    private readonly IAuditLogService _auditLogService;
+    private readonly ICurrentUserProvider _currentUserProvider;
 
-    public AuditLogController(IAdminService adminService, IAuditLogService auditLogService)
+    public AuditLogController(IAdminService adminService, ICurrentUserProvider currentUserProvider)
     {
         _adminService = adminService;
-        _auditLogService = auditLogService;
+        _currentUserProvider = currentUserProvider;
     }
 
-    [HttpGet("{actorUserId:guid}")]
-    public async Task<ActionResult<PageResponse<AuditLogEntryResponse>>> GetByActorUserAsync([NotEmptyGuid] Guid actorUserId, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    [HttpGet]
+    public async Task<ActionResult<PageResponse<AuditLogEntryResponse>>> GetAuditLogsAsync([FromQuery] GetAuditLogsRequest request, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
+        if (!_currentUserProvider.IsAdmin)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can access audit logs." });
+        }
 
-    [HttpGet("{entityType}/{entityId}")]
-    public async Task<ActionResult<IReadOnlyList<AuditLogEntryResponse>>> GetByTargetEntityAsync(string entityType, string entityId, CancellationToken cancellationToken)
-    {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<AuditLogEntryResponse>> WriteEntryAsync([FromBody] WriteAuditLogEntryRequest request, CancellationToken cancellationToken)
-    {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _adminService.GetAuditLogsAsync(request.ToApplicationRequest(pageRequest), cancellationToken);
+        return HandleResult(
+            result,
+            page => new PageResponse<AuditLogEntryResponse>
+            {
+                Items = page.Items.Select(entry => entry.ToResponse()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
     }
 }
