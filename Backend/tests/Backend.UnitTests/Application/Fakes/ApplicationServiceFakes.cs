@@ -189,6 +189,13 @@ internal sealed class FakeShipmentRepository : IShipmentRepository
     public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakeAuditLogService : IAuditLogService
+{
+    public Task<Result<PagedResult<AuditLogEntryDto>>> GetByActorUserAsync(Guid actorUserId, PagedRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PagedResult<AuditLogEntryDto>>.NotImplemented());
+    public Task<Result<IReadOnlyList<AuditLogEntryDto>>> GetByTargetEntityAsync(string entityType, string entityId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<AuditLogEntryDto>>.NotImplemented());
+    public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result.NotImplemented());
+}
+
 internal sealed class FakeAuditLogRepository : IAuditLogRepository
 {
     public Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default) => Task.CompletedTask;
@@ -286,6 +293,7 @@ internal sealed class FakeCurrentUserProvider : ICurrentUserProvider
     public Guid? UserId { get; set; } = Guid.Parse("11111111-1111-1111-1111-111111111111");
     public bool IsAuthenticated { get; set; } = true;
     public bool IsAdmin { get; set; } = true;
+    public string? IpAddress { get; set; } = "0.0.0.0";
 }
 
 internal sealed class FakePasswordHasher : IPasswordHasher

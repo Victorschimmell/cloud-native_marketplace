@@ -50,7 +50,7 @@ public sealed class ServiceConstructorTests
         _ = new AdminService(new FakeUserAccountRepository(), new FakeAuditLogRepository());
         _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider());
         _ = new ShipmentService(new FakeShipmentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
-        _ = new AuditLogService(new FakeAuditLogRepository(), new FakeDateTimeProvider());
+        _ = new AuditLogService(new FakeAuditLogRepository(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
     }
 }
 

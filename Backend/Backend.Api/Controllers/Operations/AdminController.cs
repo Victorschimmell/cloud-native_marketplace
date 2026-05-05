@@ -32,12 +32,6 @@ public class AdminController : ApiControllerBase
         return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 
-    [HttpGet("audit-logs")]
-    public async Task<ActionResult<PageResponse<AuditLogEntryResponse>>> GetAuditLogs([FromQuery] GetAuditLogsRequest request, [FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
-    {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
-
     [HttpGet("sellers/verifications")]
     // TODO: Return type
     public async Task<IActionResult> GetSellerVerifications([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
