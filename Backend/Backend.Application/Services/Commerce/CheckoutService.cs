@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Results;
@@ -8,6 +9,7 @@ using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
+
 namespace Backend.Application.Services;
 
 public sealed class CheckoutService : ICheckoutService
@@ -22,6 +24,7 @@ public sealed class CheckoutService : ICheckoutService
     private readonly IPaymentService _paymentService;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ICurrencyConversionService _currencyConversionService;
+    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CheckoutService(
@@ -35,6 +38,7 @@ public sealed class CheckoutService : ICheckoutService
         IPaymentService paymentService,
         IDateTimeProvider dateTimeProvider,
         ICurrencyConversionService currencyConversionService,
+        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
@@ -47,6 +51,7 @@ public sealed class CheckoutService : ICheckoutService
         ArgumentNullException.ThrowIfNull(paymentService);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
+        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _cartRepository = cartRepository;
@@ -59,6 +64,7 @@ public sealed class CheckoutService : ICheckoutService
         _paymentService = paymentService;
         _dateTimeProvider = dateTimeProvider;
         _currencyConversionService = currencyConversionService;
+        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
     }
 
@@ -224,6 +230,13 @@ public sealed class CheckoutService : ICheckoutService
             {
                 // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
                 // await _unitOfWork.RollbackAsync(cancellationToken);
+                await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                    ActionType: AuditActionType.Created,
+                    TargetEntityType: nameof(Order),
+                    TargetEntityId: order.Id.ToString(),
+                    Outcome: AuditOutcome.Failed,
+                    Details: $"Payment processing failed: {paymentResult.Error}"
+                ), cancellationToken);
                 return Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error);
             }
 
@@ -241,6 +254,19 @@ public sealed class CheckoutService : ICheckoutService
 
         // 4. Save all changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Created,
+            TargetEntityType: nameof(Order),
+            TargetEntityId: order.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: JsonSerializer.Serialize(new
+            {
+                order.OrderNumber,
+                customerId,
+                totalAmount,
+                payments.Count
+            })
+        ), cancellationToken);
 
         // 5. Return response
         var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
