@@ -95,7 +95,7 @@ public sealed class RegistrationService : IRegistrationService
 
         if (existingUser is not null)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         var userAccount = CreateUserAccount(normalizedEmail, request.Password);
@@ -127,7 +127,7 @@ public sealed class RegistrationService : IRegistrationService
         }
         catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(
