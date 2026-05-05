@@ -5,6 +5,7 @@ import StatusMessage from '../../../shared/components/StatusMessage';
 import { ApiError } from '../../../shared/api/request';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { useAuth } from '../../auth/useAuth';
+import { cartApi } from '../../cart/api/cartApi';
 import { checkoutApi } from '../api/checkoutApi';
 import { CheckoutCustomerPanel, CheckoutPaymentPanel, CheckoutPreviewList, CheckoutShippingAddressForm } from '../components';
 import { PaymentType } from '../types';
@@ -249,7 +250,7 @@ export default function CheckoutPage() {
         paymentCurrencyCode
       );
 
-      checkoutApi.clearCheckoutCart();
+      cartApi.clearStoredCart();
       navigate(`/orders/${response.order.id}?confirmed=1`);
     } catch (requestError) {
       setError(`Checkout failed: ${getErrorMessage(requestError)}`);

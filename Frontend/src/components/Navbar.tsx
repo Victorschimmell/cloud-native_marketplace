@@ -14,6 +14,7 @@ export default function Navbar() {
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
   const cartBadgeText = cartItemCount > 9 ? '9+' : cartItemCount.toString();
+  const cartAriaLabel = `Cart with ${cartItemCount} ${cartItemCount === 1 ? 'item' : 'items'}`;
 
   useEffect(() => {
     let isMounted = true;
@@ -108,7 +109,7 @@ export default function Navbar() {
           </div>
 
           <Link
-            aria-label={`Cart with ${cartItemCount > 9 ? '9 or more' : cartItemCount} ${cartItemCount === 1 ? 'item' : 'items'}`}
+            aria-label={cartAriaLabel}
             className="navbar__cart"
             to="/cart"
           >
