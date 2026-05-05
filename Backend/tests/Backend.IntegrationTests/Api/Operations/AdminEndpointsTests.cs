@@ -45,22 +45,6 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetAuditLogs_ReturnsNotImplemented()
-    {
-        // Arrange
-        var getLogsRequest = new GetAuditLogsRequest
-        {
-            ActorUserId = Guid.NewGuid()
-        };
-
-        // Act
-        var response = await _client.GetAsync($"/api/admin/audit-logs?actorUserId={getLogsRequest.ActorUserId}", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetSellerVerificationRequests_ReturnsNotImplemented()
     {
         // Act

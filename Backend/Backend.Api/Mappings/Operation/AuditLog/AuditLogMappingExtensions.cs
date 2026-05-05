@@ -9,8 +9,8 @@ public static class AuditLogMappingExtensions
     public static App.GetAuditLogsRequest ToApplicationRequest(this GetAuditLogsRequest request, PageRequest pageRequest) =>
         new(
             request.ActorUserId,
-            request.TargetEntityType,
-            request.TargetEntityId,
+            request.EntityType,
+            request.EntityId,
             pageRequest.Page,
             pageRequest.PageSize);
 

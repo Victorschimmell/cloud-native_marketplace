@@ -14,12 +14,15 @@ public sealed class RepositoryDITests
     private static ServiceProvider BuildServiceProvider()
     {
         var services = new ServiceCollection();
+        var databaseName = Guid.NewGuid().ToString();
 
         services.AddScoped<IDateTimeProvider, InfrastructureDateTimeProvider>();
         services.AddScoped<AuditTimestampInterceptor>();
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString())
+            options.UseInMemoryDatabase(databaseName)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
+        services.AddDbContextFactory<ApplicationDbContext>(options =>
+            options.UseInMemoryDatabase(databaseName));
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();

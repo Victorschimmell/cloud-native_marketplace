@@ -6,6 +6,6 @@ public sealed record GetAuditLogsRequest
 {
     [NotEmptyGuid]
     public Guid? ActorUserId { get; init; }
-    public string? TargetEntityType { get; init; }
-    public string? TargetEntityId { get; init; }
+    public string? EntityType { get; init; }
+    public string? EntityId { get; init; }
 }

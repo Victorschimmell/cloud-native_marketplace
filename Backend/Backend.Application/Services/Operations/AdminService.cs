@@ -33,12 +33,12 @@ public sealed class AdminService : IAdminService
     {
         if (request.Page <= 0 || request.PageSize <= 0)
         {
-            return Result<PagedResult<AuditLogEntryDto>>.Failure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<AuditLogEntryDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
         }
 
         if (request.TargetEntityId is not null && request.TargetEntityType is null)
         {
-            return Result<PagedResult<AuditLogEntryDto>>.Failure("TargetEntityType must be provided when TargetEntityId is specified.");
+            return Result<PagedResult<AuditLogEntryDto>>.ValidationFailure("TargetEntityType must be provided when TargetEntityId is specified.");
         }
 
         var result = await _auditLogRepository.GetByFilterAsync(request.ActorUserId, request.TargetEntityType, request.TargetEntityId, request.Page, request.PageSize, cancellationToken);
