@@ -42,6 +42,51 @@
   gap: 14px;
 }
 
+.navbar__cart {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  color: var(--text-dark);
+}
+
+.navbar__cart:hover,
+.navbar__cart:focus-visible {
+  background: #eff6ff;
+  color: var(--primary-color);
+}
+
+.navbar__cart svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.navbar__cart-badge {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  border: 1.5px solid #ffffff;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 3px;
+}
+
 .navbar__currency {
   position: relative;
   padding: 8px 0;
