@@ -250,7 +250,7 @@ export default function CheckoutPage() {
       );
 
       checkoutApi.clearCheckoutCart();
-      navigate(`/orders/${response.order.id}`);
+      navigate(`/orders/${response.order.id}?confirmed=1`);
     } catch (requestError) {
       setError(`Checkout failed: ${getErrorMessage(requestError)}`);
     } finally {

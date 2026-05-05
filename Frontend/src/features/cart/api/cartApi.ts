@@ -37,9 +37,10 @@ export const cartApi = {
     } catch (error) {
       if (shouldClearStoredCartId(error)) {
         clearStoredCartId();
+        return getEmptyCart();
       }
 
-      return getEmptyCart();
+      throw error;
     }
   },
 

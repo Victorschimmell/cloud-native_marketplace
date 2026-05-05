@@ -118,16 +118,22 @@ internal static class ApplicationMappings
     public static CategoryDto ToCategoryDto(this ProductCategory category) =>
         new(category.Id, category.CategoryNamePt, category.CategoryNameEn);
 
-    public static CartItemDto ToCartItemDto(this CartItem item, string currencyCode, Func<decimal, decimal> priceConverter) =>
-        new(
+    public static CartItemDto ToCartItemDto(this CartItem item, string currencyCode, Func<decimal, decimal> priceConverter)
+    {
+        var product = item.Listing?.Product ?? throw new InvalidOperationException("Cart item must include listing product details.");
+
+        return new CartItemDto(
             item.Id,
             item.CartId,
             item.ListingId,
+            product.Id,
+            product.ProductName,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             currencyCode,
             item.AddedAtUtc,
             item.UpdatedAtUtc);
+    }
 
     public static CartDto ToCartDto(this ShoppingCart cart, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
@@ -144,7 +150,10 @@ internal static class ApplicationMappings
             item.OrderItemId,
             item.ListingId,
             item.ProductId,
+            item.Product?.ProductName ?? $"Product {item.ProductId:N}"[..20],
+            item.Product?.ProductPhotosQty ?? 0,
             item.SellerId,
+            item.Seller?.BusinessName ?? $"Seller {item.SellerId:N}"[..15],
             item.Quantity,
             priceConverter(item.UnitPrice),
             priceConverter(item.FreightValue),
@@ -192,10 +201,11 @@ internal static class ApplicationMappings
             shipment.DeliveredAtUtc,
             shipment.ReturnedAtUtc);
 
-    public static OrderDto ToOrderDto(this Order order, string currencyCode, Func<decimal, decimal> priceConverter) =>
+    public static OrderDto ToOrderDto(this Order order, Guid userId, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             order.Id,
             order.CustomerId,
+            userId,
             order.ShippingAddressId,
             order.OrderNumber,
             order.OrderStatus,

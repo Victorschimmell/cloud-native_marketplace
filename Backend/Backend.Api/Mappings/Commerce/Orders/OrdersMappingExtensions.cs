@@ -13,6 +13,7 @@ public static class OrdersMappingExtensions
         {
             Id = order.Id,
             CustomerId = order.CustomerId,
+            UserId = order.UserId,
             ShippingAddressId = order.ShippingAddressId,
             OrderNumber = order.OrderNumber,
             OrderStatus = (OrderStatus)order.OrderStatus,
@@ -39,7 +40,10 @@ public static class OrdersMappingExtensions
             OrderItemId = item.OrderItemId,
             ListingId = item.ListingId,
             ProductId = item.ProductId,
+            ProductName = item.ProductName,
+            ProductPhotosQty = item.ProductPhotosQty,
             SellerId = item.SellerId,
+            SellerName = item.SellerName,
             Quantity = item.Quantity,
             UnitPrice = item.UnitPrice,
             FreightValue = item.FreightValue,

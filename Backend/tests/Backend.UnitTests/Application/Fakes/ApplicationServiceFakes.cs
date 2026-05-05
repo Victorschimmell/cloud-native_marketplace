@@ -106,8 +106,11 @@ internal sealed class FakeCartRepository : ICartRepository
     public Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
+    public Task<ShoppingCart?> GetActiveBySessionIdWithProductDetailsAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task<ShoppingCart?> GetActiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
+    public Task<ShoppingCart?> GetActiveByUserIdWithProductDetailsAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task<ShoppingCart?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
+    public Task<ShoppingCart?> GetByIdWithProductDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
     public Task UpdateAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -117,7 +120,9 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task DeleteAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Order>>([]);
     public Task<IReadOnlyList<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Order>>([]);
+    public Task<PagedResult<Order>> GetByCustomerIdWithDetailsAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
     public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
+    public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
@@ -141,6 +146,7 @@ internal sealed class FakePaymentService : IPaymentService
 {
     public Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string currencyCode, CancellationToken cancellationToken = default) => Task.FromResult(Result<CurrencyDto>.NotImplemented());
     public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
+    public Task<Result<PaymentDto>> RecordCheckoutPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
     public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
 }
 

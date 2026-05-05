@@ -18,7 +18,19 @@
 
 .cart-empty__continue-shopping-link {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 18px;
-  color: #2563eb;
+  min-height: 42px;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #ffffff;
   font-weight: 600;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.cart-empty__continue-shopping-link:hover,
+.cart-empty__continue-shopping-link:focus-visible {
+  background: var(--primary-hover-color);
 }

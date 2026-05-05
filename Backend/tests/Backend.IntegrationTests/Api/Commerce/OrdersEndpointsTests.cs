@@ -17,29 +17,29 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetOrderById_ReturnsNotImplemented()
+    public async Task GetOrderById_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetOrderItems_ReturnsNotImplemented()
+    public async Task GetOrderItems_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}/items", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateOrderStatus_ReturnsNotImplemented()
+    public async Task UpdateOrderStatus_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -52,11 +52,11 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PatchAsJsonAsync($"/api/orders/{orderId}", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task CancelOrder_ReturnsNotImplemented()
+    public async Task CancelOrder_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -66,33 +66,33 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PostAsJsonAsync($"/api/orders/{orderId}/cancel", cancelRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetOrderReviews_ReturnsNotImplemented()
+    public async Task GetOrderReviews_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}/reviews", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetOrderShipments_ReturnsNotImplemented()
+    public async Task GetOrderShipments_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}/shipments", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task CreateOrderShipment_ReturnsNotImplemented()
+    public async Task CreateOrderShipment_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Arrange
         var orderId = Guid.NewGuid();
@@ -108,6 +108,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PostAsJsonAsync($"/api/orders/{orderId}/shipments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

@@ -36,7 +36,7 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
           <article className="checkout-page__preview-line" key={line.listingId}>
             <div className="checkout-page__preview-line-main">
               <div className="checkout-page__preview-line-title" title={line.listingId}>
-                Listing {formatListingId(line.listingId)}
+                {line.productName}
               </div>
               <div className="checkout-page__preview-line-detail">
                 {line.quantity}x
@@ -103,12 +103,4 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
       </div>
     </aside>
   );
-}
-
-function formatListingId(listingId: string) {
-  if (listingId.length <= 12) {
-    return listingId;
-  }
-
-  return `${listingId.slice(0, 8)}...${listingId.slice(-4)}`;
 }

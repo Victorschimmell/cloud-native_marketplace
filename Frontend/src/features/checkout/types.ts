@@ -16,6 +16,8 @@ export interface Currency {
 
 export interface CheckoutPreviewLine {
   listingId: string;
+  productId: string;
+  productName: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

@@ -80,6 +80,11 @@
   color: #ffffff;
 }
 
+.home-page__button--primary:hover,
+.home-page__button--primary:focus-visible {
+  background: var(--primary-hover-color);
+}
+
 .home-page__button--secondary {
   border: 1px solid #d1d5db;
   background: #ffffff;

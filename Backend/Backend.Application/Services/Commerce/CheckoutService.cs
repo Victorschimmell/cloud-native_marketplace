@@ -69,7 +69,13 @@ public sealed class CheckoutService : ICheckoutService
             return Result<CheckoutPreviewDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
         }
 
-        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        var activeCart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        if (activeCart is null)
+        {
+            return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        var cart = await GetCartWithProductDetailsAsync(activeCart.Id, request.UserId, request.SessionId, cancellationToken);
         if (cart is null)
         {
             return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
@@ -82,6 +88,8 @@ public sealed class CheckoutService : ICheckoutService
 
         var checkoutLines = cart.Items.Select(item => new CheckoutLineDto(
             item.ListingId,
+            item.Listing?.ProductId ?? throw new InvalidOperationException("Cart item must include listing details."),
+            item.Listing?.Product?.ProductName ?? throw new InvalidOperationException("Cart item must include listing product details."),
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             priceConverter(item.UnitPriceAtAddition * item.Quantity),
@@ -211,7 +219,7 @@ public sealed class CheckoutService : ICheckoutService
         {
             var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
             // NOTE: Currently never fails
-            var paymentResult = await _paymentService.RecordPaymentAsync(paymentRequestWithOrderId, cancellationToken);
+            var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, cancellationToken);
             if (!paymentResult.IsSuccess)
             {
                 // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
@@ -230,16 +238,20 @@ public sealed class CheckoutService : ICheckoutService
         await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
         cart.Status = CartStatus.Converted;
         await _cartRepository.UpdateAsync(cart, cancellationToken);
-        order.OrderStatus = OrderStatus.Approved;
-        await _orderRepository.UpdateAsync(order, cancellationToken);
 
         // 4. Save all changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 5. Return response
+        var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
+            throw new InvalidOperationException("Order must exist after checkout.");
+
+        var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, cancellationToken) ??
+            throw new InvalidOperationException("Cart must exist after checkout.");
+
         var response = new CheckoutResponse(
-            order.ToOrderDto(currencyCode, priceConverter),
-            cart.ToCartDto(currencyCode, priceConverter),
+            savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
+            savedCart.ToCartDto(currencyCode, priceConverter),
             payments,
             priceConverter(order.TotalAmount),
             currencyCode);
@@ -394,6 +406,32 @@ public sealed class CheckoutService : ICheckoutService
         return cart;
     }
 
+    private async Task<ShoppingCart?> GetCartWithProductDetailsAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
+    {
+        ShoppingCart? cart = null;
+
+        if (CartId.HasValue)
+        {
+            cart = await _cartRepository.GetByIdWithProductDetailsAsync(CartId.Value, cancellationToken);
+            if (cart is not null && !CartAccessPolicy.CanAccess(cart, UserId, SessionId))
+            {
+                return null;
+            }
+        }
+
+        if (cart is null && UserId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveByUserIdWithProductDetailsAsync(UserId.Value, cancellationToken);
+        }
+
+        if (cart is null && SessionId.HasValue)
+        {
+            cart = await _cartRepository.GetActiveBySessionIdWithProductDetailsAsync(SessionId.Value, cancellationToken);
+        }
+
+        return cart;
+    }
+
     private async Task<ShoppingCart?> GetActiveCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = await GetCartAsync(CartId, UserId, SessionId, cancellationToken);
@@ -416,4 +454,5 @@ public sealed class CheckoutService : ICheckoutService
 
         return null;
     }
+
 }

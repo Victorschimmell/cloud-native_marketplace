@@ -7,7 +7,7 @@ function App() {
   return (
     <AuthProvider>
       <CurrencyProvider>
-        <RouterProvider router={router} />
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
       </CurrencyProvider>
     </AuthProvider>
   );

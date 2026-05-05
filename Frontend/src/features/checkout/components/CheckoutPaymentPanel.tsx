@@ -18,6 +18,17 @@ export default function CheckoutPaymentPanel({
   isLoadingCurrency,
 }: CheckoutPaymentPanelProps) {
   const locale = getCurrencyLocale(currency);
+  const formattedDisplayTotal = total.toLocaleString(locale, {
+    style: 'currency',
+    currency,
+  });
+  const formattedPaymentTotal = currencyInfo
+    ? paymentTotal.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: currencyInfo.code,
+      })
+    : '';
+  const showChargedCurrencyDisclosure = currencyInfo?.code !== currency;
 
   return (
     <section className="checkout-page__section checkout-page__section--payment" aria-labelledby="checkout-payment-title">
@@ -45,26 +56,14 @@ export default function CheckoutPaymentPanel({
           <dl className="checkout-page__payment-meta">
             <div className="checkout-page__payment-meta-item">
               <dt>Display total</dt>
-              <dd>
-                {total.toLocaleString(locale, {
-                  style: 'currency',
-                  currency,
-                })}
-              </dd>
-            </div>
-            <div className="checkout-page__payment-meta-item">
-              <dt>Charged total</dt>
-              <dd>
-                {paymentTotal.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: currencyInfo.code,
-                })}
-              </dd>
+              <dd>{formattedDisplayTotal}</dd>
             </div>
           </dl>
 
           <p className="checkout-page__payment-note">
-            Installments are fixed at 1. Card details are handled by the marketplace payment flow.
+            Installments are fixed at 1.
+            {showChargedCurrencyDisclosure && ` Your card will be charged ${formattedPaymentTotal} in ${currencyInfo.code}.`}
+            {' '}Card details are handled by the marketplace payment flow.
           </p>
         </div>
       )}

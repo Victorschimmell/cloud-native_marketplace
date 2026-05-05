@@ -35,14 +35,33 @@ public sealed class PaymentService : IPaymentService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
-        var result = _paymentRepository.GetByOrderIdAsync(orderId, cancellationToken)
-            .ContinueWith(task => task.Result.Select(payment => payment.ToPaymentDto()).ToList(), cancellationToken);
-        return Task.FromResult(Result<IReadOnlyList<PaymentDto>>.Success(result.Result));
+        var payments = await _paymentRepository.GetByOrderIdAsync(orderId, cancellationToken);
+        var paymentDtos = payments.Select(payment => payment.ToPaymentDto()).ToArray();
+
+        return Result<IReadOnlyList<PaymentDto>>.Success(paymentDtos);
     }
 
     public async Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        var result = await AddPaymentAsync(request, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return result;
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    public Task<Result<PaymentDto>> RecordCheckoutPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        return AddPaymentAsync(request, cancellationToken);
+    }
+
+    private async Task<Result<PaymentDto>> AddPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken)
     {
         var orderId = request.OrderId;
         var paymentDetails = request.PaymentDetails;
@@ -60,9 +79,6 @@ public sealed class PaymentService : IPaymentService
 
         // NOTE: Currently never fails
         await _paymentRepository.AddAsync(orderPayment, cancellationToken);
-
-        // NOTE: CheckoutService will also save changes again
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<PaymentDto>.Success(orderPayment.ToPaymentDto());
     }

@@ -20,11 +20,10 @@ export default function CartLine({
 }: CartLineProps) {
   const locale = getCurrencyLocale(currency);
 
-  // TODO: No method to get product name using listingId currently
   return (
     <div className="cart-line">
       <div className="cart-line__info">
-        <div className="cart-line__listing-id">Listing ID: {item.listingId}</div>
+        <div className="cart-line__listing-id">{item.productName}</div>
         <div className="cart-line__price">
           {item.unitPriceAtAddition.toLocaleString(locale, {
             style: 'currency',

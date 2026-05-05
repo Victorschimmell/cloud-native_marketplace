@@ -7,7 +7,10 @@ public sealed record OrderItemDto(
     int OrderItemId,
     Guid ListingId,
     Guid ProductId,
+    string ProductName,
+    int ProductPhotosQty,
     Guid SellerId,
+    string SellerName,
     int Quantity,
     decimal UnitPrice,
     decimal FreightValue,
@@ -54,6 +57,7 @@ public sealed record ShipmentDto(
 public sealed record OrderDto(
     Guid Id,
     Guid CustomerId,
+    Guid UserId,
     Guid ShippingAddressId,
     string OrderNumber,
     OrderStatus OrderStatus,

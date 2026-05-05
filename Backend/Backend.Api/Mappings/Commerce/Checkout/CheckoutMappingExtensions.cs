@@ -15,6 +15,8 @@ public static class CheckoutMappingExtensions
         new()
         {
             ListingId = line.ListingId,
+            ProductId = line.ProductId,
+            ProductName = line.ProductName,
             Quantity = line.Quantity,
             UnitPrice = line.UnitPrice,
             LineTotal = line.LineTotal,
