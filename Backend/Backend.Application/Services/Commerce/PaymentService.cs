@@ -13,22 +13,26 @@ public sealed class PaymentService : IPaymentService
     private readonly IOrderRepository _orderRepository;
     private readonly ICurrencyRepository _currencyRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IUnitOfWork _unitOfWork;
 
     public PaymentService(
         IPaymentRepository paymentRepository,
         IOrderRepository orderRepository,
         ICurrencyRepository currencyRepository,
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider,
+        IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(paymentRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(currencyRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _paymentRepository = paymentRepository;
         _orderRepository = orderRepository;
         _currencyRepository = currencyRepository;
         _dateTimeProvider = dateTimeProvider;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -40,6 +44,24 @@ public sealed class PaymentService : IPaymentService
     }
 
     public async Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        var result = await AddPaymentAsync(request, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return result;
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    public Task<Result<PaymentDto>> RecordCheckoutPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default)
+    {
+        return AddPaymentAsync(request, cancellationToken);
+    }
+
+    private async Task<Result<PaymentDto>> AddPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken)
     {
         var orderId = request.OrderId;
         var paymentDetails = request.PaymentDetails;

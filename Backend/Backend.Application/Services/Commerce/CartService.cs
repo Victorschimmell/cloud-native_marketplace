@@ -124,6 +124,8 @@ public sealed class CartService : ICartService
 
             existingCartItem.Quantity = newQuantity;
             existingCartItem.UpdatedAtUtc = now;
+
+            await _cartRepository.UpdateItemAsync(existingCartItem, cancellationToken);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

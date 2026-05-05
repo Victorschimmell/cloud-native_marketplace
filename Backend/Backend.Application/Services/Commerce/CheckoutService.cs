@@ -219,7 +219,7 @@ public sealed class CheckoutService : ICheckoutService
         {
             var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
             // NOTE: Currently never fails
-            var paymentResult = await _paymentService.RecordPaymentAsync(paymentRequestWithOrderId, cancellationToken);
+            var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, cancellationToken);
             if (!paymentResult.IsSuccess)
             {
                 // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
@@ -246,9 +246,12 @@ public sealed class CheckoutService : ICheckoutService
         var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
             throw new InvalidOperationException("Order must exist after checkout.");
 
+        var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, cancellationToken) ??
+            throw new InvalidOperationException("Cart must exist after checkout.");
+
         var response = new CheckoutResponse(
             savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
-            await GetCartForResponseAsync(cart.Id, currencyCode, priceConverter, cancellationToken),
+            savedCart.ToCartDto(currencyCode, priceConverter),
             payments,
             priceConverter(order.TotalAmount),
             currencyCode);
@@ -452,11 +455,4 @@ public sealed class CheckoutService : ICheckoutService
         return null;
     }
 
-    private async Task<CartDto> GetCartForResponseAsync(Guid cartId, string currencyCode, Func<decimal, decimal> priceConverter, CancellationToken cancellationToken)
-    {
-        var cart = await _cartRepository.GetByIdWithProductDetailsAsync(cartId, cancellationToken) ??
-            throw new InvalidOperationException("Cart must exist after checkout.");
-
-        return cart.ToCartDto(currencyCode, priceConverter);
-    }
 }
