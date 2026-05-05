@@ -2,7 +2,15 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.Api.Contracts.Common;
+using Backend.Api.Contracts.Commerce.Checkout;
+using Backend.Api.Contracts.Commerce.Payments;
 using Backend.Api.Contracts.Operation.AuditLog;
+using Backend.Api.Contracts.User.Auth;
+using Backend.Api.Contracts.User.Registration;
+using Backend.Domain.Entities.Carts;
+using Backend.Domain.Entities.Catalog;
+using Backend.Domain.Entities.IdentityAccess;
+using Backend.Domain.Entities.Orders;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -380,6 +388,177 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         });
     }
 
+    [Fact]
+    public async Task RegisterCustomer_WritesAuditLogEntry()
+    {
+        // Arrange
+        ClearAuthentication();
+        var email = $"auditlog-register-{Guid.NewGuid():N}@example.com";
+        var request = new RegisterCustomerRequest
+        {
+            Email = email,
+            Password = "Password123!",
+            FirstName = "Audit",
+            LastName = "Customer",
+            Phone = "+4512345678"
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/registration/customer", request, TestContext.Current.CancellationToken);
+        var registration = await response.Content.ReadFromJsonAsync<RegistrationResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(registration);
+        Assert.NotNull(registration.Customer);
+
+        var adminUserId = await SeedAdminAsync("auditlog-register-admin@example.com");
+        AuthenticateAs(adminUserId, isAdmin: true);
+
+        var auditResponse = await _client.GetAsync(
+            $"/api/admin/audit-logs?entityType={nameof(UserAccount)}&entityId={registration.Customer.Id}",
+            TestContext.Current.CancellationToken);
+        var auditLogs = await auditResponse.Content.ReadFromJsonAsync<PageResponse<AuditLogEntryResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, auditResponse.StatusCode);
+        Assert.NotNull(auditLogs);
+        Assert.Contains(auditLogs.Items, entry =>
+            entry.ActionType == AuditActionType.Created &&
+            entry.Outcome == AuditOutcome.Succeeded &&
+            entry.TargetEntityId == registration.Customer.Id.ToString());
+    }
+
+    [Fact]
+    public async Task Login_WritesAuditLogEntry()
+    {
+        // Arrange
+        ClearAuthentication();
+        var email = $"auditlog-login-{Guid.NewGuid():N}@example.com";
+        var password = "Password123!";
+        var registrationRequest = new RegisterCustomerRequest
+        {
+            Email = email,
+            Password = password,
+            FirstName = "Audit",
+            LastName = "Login",
+            Phone = "+4512345678"
+        };
+
+        var registrationResponse = await _client.PostAsJsonAsync(
+            "/api/registration/customer",
+            registrationRequest,
+            TestContext.Current.CancellationToken);
+        var registration = await registrationResponse.Content.ReadFromJsonAsync<RegistrationResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, registrationResponse.StatusCode);
+        Assert.NotNull(registration);
+
+        ClearAuthentication();
+        var loginRequest = new LoginRequest
+        {
+            Email = email,
+            Password = password
+        };
+
+        // Act
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            loginRequest,
+            TestContext.Current.CancellationToken);
+        var login = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+        Assert.NotNull(login);
+
+        var adminUserId = await SeedAdminAsync("auditlog-login-admin@example.com");
+        AuthenticateAs(adminUserId, isAdmin: true);
+
+        var auditResponse = await _client.GetAsync(
+            $"/api/admin/audit-logs?entityType={nameof(UserAccount)}&entityId={login.User.Id}",
+            TestContext.Current.CancellationToken);
+        var auditLogs = await auditResponse.Content.ReadFromJsonAsync<PageResponse<AuditLogEntryResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, auditResponse.StatusCode);
+        Assert.NotNull(auditLogs);
+        Assert.Contains(auditLogs.Items, entry =>
+            entry.ActionType == AuditActionType.Login &&
+            entry.Outcome == AuditOutcome.Succeeded &&
+            entry.TargetEntityId == login.User.Id.ToString());
+    }
+
+    [Fact]
+    public async Task Checkout_WritesAuditLogEntry()
+    {
+        // Arrange
+        var (userId, cartId, currencyId, expectedTotal) = await SeedCheckoutCartAsync();
+        AuthenticateAs(userId, isAdmin: false);
+
+        var checkoutRequest = new CheckoutRequest
+        {
+            CartId = cartId,
+            SaveShippingAddressAsDefault = false,
+            ShippingAddress = new CheckoutShippingAddressRequest
+            {
+                PostalCode = "2100",
+                City = "Copenhagen",
+                State = "Capital Region",
+                AddressLine1 = "Test Street 1",
+                CountryCode = "DK"
+            },
+            Payments = new List<RecordPaymentRequest>
+            {
+                new()
+                {
+                    CurrencyId = currencyId,
+                    PaymentType = PaymentType.CreditCard,
+                    PaymentInstallments = 1,
+                    PaymentValue = expectedTotal
+                }
+            }
+        };
+
+        // Act
+        var checkoutResponse = await _client.PostAsJsonAsync(
+            "/api/checkout?currency=BRL",
+            checkoutRequest,
+            TestContext.Current.CancellationToken);
+        var checkout = await checkoutResponse.Content.ReadFromJsonAsync<CheckoutResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, checkoutResponse.StatusCode);
+        Assert.NotNull(checkout);
+
+        var adminUserId = await SeedAdminAsync("auditlog-checkout-admin@example.com");
+        AuthenticateAs(adminUserId, isAdmin: true);
+
+        var auditResponse = await _client.GetAsync(
+            $"/api/admin/audit-logs?entityType={nameof(Order)}&entityId={checkout.Order.Id}",
+            TestContext.Current.CancellationToken);
+        var auditLogs = await auditResponse.Content.ReadFromJsonAsync<PageResponse<AuditLogEntryResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, auditResponse.StatusCode);
+        Assert.NotNull(auditLogs);
+        Assert.Contains(auditLogs.Items, entry =>
+            entry.ActionType == AuditActionType.Created &&
+            entry.Outcome == AuditOutcome.Succeeded &&
+            entry.TargetEntityId == checkout.Order.Id.ToString());
+    }
+
 
     private async Task<Guid> SeedCustomerAsync(string email)
     {
@@ -417,6 +596,11 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
             IntegrationTestAuth.CreateBearerToken(userId, isAdmin));
     }
 
+    private void ClearAuthentication()
+    {
+        _client.DefaultRequestHeaders.Authorization = null;
+    }
+
     private async Task<Guid> SeedAuditLogAsync(
         Guid? actorUserId = null,
         DomainEnums.AuditActionType actionType = DomainEnums.AuditActionType.Created,
@@ -440,5 +624,56 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return auditLog.Id;
+    }
+
+    private async Task<(Guid UserId, Guid CartId, Guid CurrencyId, decimal ExpectedTotal)> SeedCheckoutCartAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var customerUser = TestEntityFactory.CreateUserAccount($"checkout-customer-{Guid.NewGuid():N}@example.com");
+        var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
+        var sellerUser = TestEntityFactory.CreateUserAccount($"checkout-seller-{Guid.NewGuid():N}@example.com");
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var category = TestEntityFactory.CreateCategory("checkout-category", "Checkout category");
+        var product = TestEntityFactory.CreateProduct(category.Id, "Checkout product");
+        var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"SKU-{Guid.NewGuid():N}", 50m);
+        listing.InventoryQuantity = 10;
+
+        var cart = new ShoppingCart
+        {
+            UserId = customerUser.Id,
+            Status = DomainEnums.CartStatus.Active,
+            ExpiresAtUtc = DateTimeOffset.UtcNow.AddDays(1)
+        };
+
+        var cartItem = new CartItem
+        {
+            CartId = cart.Id,
+            ListingId = listing.Id,
+            Quantity = 2,
+            UnitPriceAtAddition = listing.ListingPrice,
+            AddedAtUtc = DateTimeOffset.UtcNow,
+            UpdatedAtUtc = DateTimeOffset.UtcNow
+        };
+
+        var currency = TestEntityFactory.CreateCurrency("BRL", "Brazilian Real");
+
+        dbContext.UserAccounts.AddRange(customerUser, sellerUser);
+        dbContext.Customers.Add(customer);
+        dbContext.Sellers.Add(seller);
+        dbContext.ProductCategories.Add(category);
+        dbContext.Products.Add(product);
+        dbContext.ProductListings.Add(listing);
+        dbContext.ShoppingCarts.Add(cart);
+        dbContext.CartItems.Add(cartItem);
+        dbContext.Currencies.Add(currency);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var subtotal = cartItem.UnitPriceAtAddition * cartItem.Quantity;
+        var freight = 100m;
+        var expectedTotal = subtotal + freight;
+
+        return (customerUser.Id, cart.Id, currency.Id, expectedTotal);
     }
 }
