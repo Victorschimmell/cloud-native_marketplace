@@ -1,11 +1,14 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
+using Backend.Domain.Entities.IdentityAccess;
+using Backend.Domain.Enums;
+using Backend.Domain.ValueObjects;
 using Backend.Infrastructure.Auth;
 using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Persistence;
-using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
+using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Repositories;
 using Backend.Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +33,8 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
             options.UseNpgsql(connectionString)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
+        services.AddDbContextFactory<ApplicationDbContext>((serviceProvider, options) =>
+            options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         var olistOptions = BuildOlistSeedOptions(configuration);
@@ -73,6 +78,40 @@ public static class DependencyInjection
         using var scope = services.CreateScope();
         var seeder = scope.ServiceProvider.GetRequiredService<IOlistDataSeeder>();
         await seeder.SeedAsync(cancellationToken);
+    }
+
+    public static async Task SeedAdminDataAsync(this IServiceProvider serviceProvider, IConfiguration configuration, CancellationToken cancellationToken = default)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+        var email = configuration.GetSection("AdminUser")["Email"]?.Trim().ToLowerInvariant() ?? "";
+        var password = configuration.GetSection("AdminUser")["Password"] ?? "";
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            return;
+        }
+
+        var adminEmail = new EmailAddress(email);
+        var adminPasswordHash = passwordHasher.HashPassword(password.Trim());
+
+        // Check if an admin user already exists
+        if (await dbContext.UserAccounts.AnyAsync(u => u.Email == adminEmail && u.IsAdmin, cancellationToken))
+        {
+            return;
+        }
+
+        var adminUser = new UserAccount
+        {
+            Email = adminEmail,
+            PasswordHash = adminPasswordHash,
+            AccountStatus = AccountStatus.Active,
+            IsAdmin = true
+        };
+        await dbContext.UserAccounts.AddAsync(adminUser, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static OlistSeedOptions BuildOlistSeedOptions(IConfiguration configuration)

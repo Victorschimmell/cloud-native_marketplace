@@ -76,6 +76,8 @@ app.UseSerilogRequestLogging();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    await app.Services.SeedAdminDataAsync(builder.Configuration);
+
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
