@@ -198,7 +198,15 @@ internal sealed class FakeAuditLogService : IAuditLogService
 
 internal sealed class FakeAuditLogRepository : IAuditLogRepository
 {
-    public Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public List<AuditLog> AddedLogs { get; } = [];
+    public int AddCalls { get; private set; }
+
+    public Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default)
+    {
+        AddedLogs.Add(auditLog);
+        AddCalls += 1;
+        return Task.CompletedTask;
+    }
     public Task<IReadOnlyList<AuditLog>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
     public Task<IReadOnlyList<AuditLog>> GetByActorUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
     public Task<IReadOnlyList<AuditLog>> GetByTargetEntityAsync(string entityType, string entityId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
