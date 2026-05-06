@@ -2,12 +2,6 @@ html {
   overflow-y: scroll;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
 html,
 body,
 #root {
