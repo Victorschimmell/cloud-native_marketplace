@@ -1,6 +1,6 @@
 .product-card-skeleton {
   display: flex;
-  min-height: 372px;
+  min-height: 336px;
   flex-direction: column;
   padding: 20px;
   border: 1px solid #e5e7eb;
@@ -17,8 +17,8 @@
 
 .product-card-skeleton__block--media {
   width: 100%;
-  height: 132px;
-  margin-bottom: 16px;
+  height: 96px;
+  margin-bottom: 14px;
   border-radius: 8px;
 }
 

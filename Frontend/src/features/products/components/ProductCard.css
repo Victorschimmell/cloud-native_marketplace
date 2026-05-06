@@ -1,7 +1,7 @@
 .product-card {
   display: flex;
   min-width: 0;
-  min-height: 372px;
+  min-height: 336px;
   flex-direction: column;
   padding: 20px;
   border: 1px solid #e5e7eb;
@@ -31,8 +31,8 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 132px;
-  margin-bottom: 16px;
+  min-height: 96px;
+  margin-bottom: 14px;
   border: 1px solid #dbe4f0;
   border-radius: 8px;
   background: #ffffff;
@@ -105,5 +105,5 @@
 }
 
 .product-card__stock--empty {
-  color: #b45309;
+  color: #64748b;
 }

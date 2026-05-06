@@ -139,7 +139,7 @@ export default function ProductDetailsPage() {
         {!isLoading && product ? (
           <div className="product-details-page__layout">
             <div className="product-details-page__media" aria-hidden="true">
-              <span>{product.productPhotosQty > 0 ? `${product.productPhotosQty} photos` : 'No image'}</span>
+              <span>No image</span>
             </div>
 
             <section className="product-details-page__panel" aria-labelledby="product-details-page-title">
