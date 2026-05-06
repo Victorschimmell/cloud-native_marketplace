@@ -130,6 +130,7 @@ internal static class ApplicationMappings
             product.ProductName,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
+            priceConverter(item.UnitPriceAtAddition * item.Quantity),
             currencyCode,
             item.AddedAtUtc,
             item.UpdatedAtUtc);

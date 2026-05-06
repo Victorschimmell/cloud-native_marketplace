@@ -23,7 +23,7 @@ export default function CartLine({
     style: 'currency',
     currency: item.currencyCode,
   });
-  const formattedSubtotal = (item.unitPriceAtAddition * item.quantity).toLocaleString(locale, {
+  const formattedLineTotal = item.lineTotal.toLocaleString(locale, {
     style: 'currency',
     currency: item.currencyCode,
   });
@@ -76,7 +76,7 @@ export default function CartLine({
       </div>
 
       <div className="cart-line__subtotal">
-        {formattedSubtotal}
+        {formattedLineTotal}
       </div>
     </div>
   );

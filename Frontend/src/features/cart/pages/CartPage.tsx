@@ -53,7 +53,7 @@ export default function CartPage() {
     if (!cart?.items) return { itemCount: 0, total: 0 };
 
     const total = cart.items.reduce((sum, item) => {
-      return sum + item.unitPriceAtAddition * item.quantity;
+      return sum + item.lineTotal;
     }, 0);
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 

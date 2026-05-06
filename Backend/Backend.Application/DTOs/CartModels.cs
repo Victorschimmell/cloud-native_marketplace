@@ -10,6 +10,7 @@ public sealed record CartItemDto(
     string ProductName,
     int Quantity,
     decimal UnitPriceAtAddition,
+    decimal LineTotal,
     string CurrencyCode,
     DateTimeOffset AddedAtUtc,
     DateTimeOffset UpdatedAtUtc);

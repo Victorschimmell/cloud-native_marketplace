@@ -62,6 +62,36 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal("Cart product", item.ProductName);
         Assert.Equal(2, item.Quantity);
         Assert.Equal(39.95m, item.UnitPriceAtAddition);
+        Assert.Equal(79.90m, item.LineTotal);
+    }
+
+    [Fact]
+    public async Task AddCartItem_WhenDisplayCurrencyHasRoundingDifference_ReturnsBackendCalculatedLineTotal()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Rounded DKK cart product", "CART-DKK-ROUNDING-001", 118.58m);
+        var userId = await SeedCustomerAsync("cart_dkk_rounding@example.com");
+        AuthenticateAs(userId);
+        var addItemRequest = new AddCartItemRequest
+        {
+            ListingId = listingId,
+            Quantity = 10
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/cart/items?displayCurrency=DKK", addItemRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(cart);
+        var item = Assert.Single(cart.Items);
+        Assert.Equal(138.74m, item.UnitPriceAtAddition);
+        Assert.Equal(1387.39m, item.LineTotal);
+        Assert.Equal("DKK", item.CurrencyCode);
     }
 
     [Fact]

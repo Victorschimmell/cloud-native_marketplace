@@ -6,6 +6,7 @@ export interface CartItem {
   productName: string;
   quantity: number;
   unitPriceAtAddition: number;
+  lineTotal: number;
   currencyCode: string;
   addedAtUtc: string;
   updatedAtUtc: string;

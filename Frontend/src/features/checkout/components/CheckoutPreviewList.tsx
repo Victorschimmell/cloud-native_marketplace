@@ -14,6 +14,7 @@ interface CheckoutPreviewListProps {
 export default function CheckoutPreviewList({ currency, formId, isDisabled, isSubmitting, preview }: CheckoutPreviewListProps) {
   const locale = getCurrencyLocale(currency);
   const lines = preview.lines;
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return (
     <aside className="checkout-page__section checkout-page__summary" aria-labelledby="checkout-summary-title">
@@ -27,7 +28,7 @@ export default function CheckoutPreviewList({ currency, formId, isDisabled, isSu
           </p>
         </div>
         <div className="checkout-page__summary-count">
-          {lines.length} item{lines.length === 1 ? '' : 's'}
+          {itemCount} item{itemCount === 1 ? '' : 's'}
         </div>
       </div>
 
