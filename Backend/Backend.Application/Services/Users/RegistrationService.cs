@@ -69,7 +69,7 @@ public sealed class RegistrationService : IRegistrationService
                 Details: $"Customer registration failed, email already in use: {normalizedEmail}"
             ), cancellationToken);
 
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         var userAccount = CreateUserAccount(normalizedEmail, request.Password);
@@ -106,7 +106,7 @@ public sealed class RegistrationService : IRegistrationService
                 Details: $"Customer registration failed, email already in use: {normalizedEmail}"
             ), cancellationToken);
 
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(
