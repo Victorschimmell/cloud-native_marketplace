@@ -10,6 +10,7 @@ interface ProductCardProps {
 export default function ProductCard({ priceFormatter, product }: ProductCardProps) {
   const stockText = product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock';
   const stockModifier = product.stockQuantity === 0 ? ' product-card__stock--empty' : '';
+  const mediaText = product.productPhotosQty > 0 ? `${product.productPhotosQty} photos` : 'No image';
 
   return (
     <Link
@@ -18,6 +19,10 @@ export default function ProductCard({ priceFormatter, product }: ProductCardProp
       key={product.listingId}
       to={`/products/${product.productId}?listingId=${product.listingId}`}
     >
+      <span className="product-card__media" aria-hidden="true">
+        {mediaText}
+      </span>
+
       <div className="product-card__category">
         {product.categoryName ?? 'Marketplace'}
       </div>
