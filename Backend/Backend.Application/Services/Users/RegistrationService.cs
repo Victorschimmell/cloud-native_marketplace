@@ -91,9 +91,17 @@ public sealed class RegistrationService : IRegistrationService
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Created,
                 TargetEntityType: nameof(UserAccount),
-                TargetEntityId: customer.Id.ToString(),
+                TargetEntityId: userAccount.Id.ToString(),
                 Outcome: AuditOutcome.Succeeded,
-                Details: $"New customer account registered with email {request.Email}"
+                Details: $"New user account registered with email {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Customer),
+                TargetEntityId: customer.Id.ToString(), 
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"Customer profile created for user {request.Email}"
             ), cancellationToken);
         }
         catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
@@ -164,9 +172,25 @@ public sealed class RegistrationService : IRegistrationService
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Created,
                 TargetEntityType: nameof(UserAccount),
+                TargetEntityId: userAccount.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"New user account registered with email {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Seller),
                 TargetEntityId: seller.Id.ToString(),
                 Outcome: AuditOutcome.Succeeded,
-                Details: $"New seller account registered with email {request.Email}"
+                Details: $"Seller profile created for user {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(), 
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"Verification request submitted for seller {seller.Id}"
             ), cancellationToken);
         }
         catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
