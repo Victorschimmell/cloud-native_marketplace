@@ -105,7 +105,7 @@ export default function OrderDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    <strong>{formatMoney(item.unitPrice * item.quantity, item.currencyCode)}</strong>
+                    <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
                   </article>
                 ))}
               </div>

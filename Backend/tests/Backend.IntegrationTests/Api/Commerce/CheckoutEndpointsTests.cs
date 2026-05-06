@@ -234,6 +234,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal("MarketplaceTraders", orderItem.SellerName);
         Assert.Equal(1, orderItem.Quantity);
         Assert.Equal(100.00m, orderItem.UnitPrice);
+        Assert.Equal(100.00m, orderItem.LineTotal);
         Assert.Equal(100.00m, orderItem.FreightValue);
         Assert.Equal("BRL", orderItem.CurrencyCode);
 
@@ -376,6 +377,48 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(18.00m, checkout.Order.FreightAmount);
         Assert.Equal(36.00m, checkout.Order.TotalAmount);
         Assert.Equal(36.00m, Assert.Single(checkout.Payments).PaymentValue);
+    }
+
+    [Fact]
+    public async Task Checkout_WhenCurrencyIsDkk_ReturnsOrderItemLineTotalFromBasePriceTotal()
+    {
+        // Arrange
+        var (_, _, cartId) = await SeedCartWithItemAsync("checkout-dkk-rounding@example.com", "Checkout DKK product", "CHECKOUT-DKK-ROUNDING-001", 118.58m, 10);
+        var currencyId = await SeedCurrencyAsync("DKK", "Danish Krone");
+        var checkoutRequest = new CheckoutRequest
+        {
+            CartId = cartId,
+            ShippingAddress = CreateShippingAddressRequest(),
+            Payments = new[]
+            {
+                new RecordPaymentRequest
+                {
+                    CurrencyId = currencyId,
+                    PaymentType = PaymentType.CreditCard,
+                    PaymentInstallments = 1,
+                    PaymentValue = 1504.39m
+                }
+            }
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/checkout?currency=DKK", checkoutRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        Assert.NotNull(checkout);
+        Assert.Equal("DKK", checkout.Order.CurrencyCode);
+        Assert.Equal(1387.39m, checkout.Order.SubtotalAmount);
+        Assert.Equal(117.00m, checkout.Order.FreightAmount);
+        Assert.Equal(1504.39m, checkout.Order.TotalAmount);
+
+        var orderItem = Assert.Single(checkout.Order.Items);
+        Assert.Equal(10, orderItem.Quantity);
+        Assert.Equal(138.74m, orderItem.UnitPrice);
+        Assert.Equal(1387.39m, orderItem.LineTotal);
+        Assert.Equal("DKK", orderItem.CurrencyCode);
     }
 
     [Fact]
