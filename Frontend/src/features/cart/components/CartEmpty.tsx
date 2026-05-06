@@ -7,7 +7,7 @@ export default function CartEmpty() {
             <h2>Your cart is empty</h2>
             <p>Continue shopping to add items to your cart.</p>
             <Link className="cart-empty__continue-shopping-link" to="/products">
-                Back to products
+                Continue shopping
             </Link>
         </div>
     );
