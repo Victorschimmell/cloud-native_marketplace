@@ -98,7 +98,7 @@ public static class DependencyInjection
         var adminPasswordHash = passwordHasher.HashPassword(password.Trim());
 
         // Check if an admin user already exists
-        if (await dbContext.UserAccounts.AnyAsync(u => u.Email == adminEmail && u.IsAdmin, cancellationToken))
+        if (await dbContext.UserAccounts.AnyAsync(u => u.Email == adminEmail, cancellationToken))
         {
             return;
         }
