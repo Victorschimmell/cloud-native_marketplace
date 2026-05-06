@@ -2,6 +2,7 @@ import { ApiError, request } from '../../../shared/api/request';
 import type { Cart } from '../types';
 
 const cartIdStorageKey = 'marketplace.checkout.cartId';
+const cartUpdatedEventName = 'marketplace:cart-updated';
 
 function getEmptyCart(): Cart {
   return {
@@ -16,10 +17,29 @@ function getEmptyCart(): Cart {
 
 function clearStoredCartId() {
   window.localStorage.removeItem(cartIdStorageKey);
+  notifyCartUpdated(getEmptyCart());
 }
 
 function shouldClearStoredCartId(error: unknown) {
   return error instanceof ApiError && (error.status === 403 || error.status === 404);
+}
+
+function notifyCartUpdated(cart: Cart) {
+  const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  window.dispatchEvent(new CustomEvent(cartUpdatedEventName, { detail: { itemCount } }));
+}
+
+export function subscribeToCartUpdates(callback: (itemCount: number) => void) {
+  function handleCartUpdated(event: Event) {
+    const customEvent = event as CustomEvent<{ itemCount?: number }>;
+    callback(customEvent.detail?.itemCount ?? 0);
+  }
+
+  window.addEventListener(cartUpdatedEventName, handleCartUpdated);
+
+  return () => {
+    window.removeEventListener(cartUpdatedEventName, handleCartUpdated);
+  };
 }
 
 export const cartApi = {
@@ -33,6 +53,7 @@ export const cartApi = {
     try {
       const cart = await request<Cart>(path);
       window.localStorage.setItem(cartIdStorageKey, cart.id);
+      notifyCartUpdated(cart);
       return cart;
     } catch (error) {
       if (shouldClearStoredCartId(error)) {
@@ -74,6 +95,7 @@ export const cartApi = {
     }
 
     window.localStorage.setItem(cartIdStorageKey, cart.id);
+    notifyCartUpdated(cart);
     return cart;
   },
 
@@ -84,7 +106,7 @@ export const cartApi = {
     if (!cartId) throw new Error('No cart found');
 
     try {
-      return await request<Cart>(`/api/cart/items/${listingId}?displayCurrency=${displayCurrency}`, {
+      const cart = await request<Cart>(`/api/cart/items/${listingId}?displayCurrency=${displayCurrency}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -94,6 +116,8 @@ export const cartApi = {
           quantity,
         }),
       });
+      notifyCartUpdated(cart);
+      return cart;
     } catch (error) {
       if (shouldClearStoredCartId(error)) {
         clearStoredCartId();
@@ -109,7 +133,7 @@ export const cartApi = {
     if (!cartId) throw new Error('No cart found');
 
     try {
-      return await request<Cart>(`/api/cart/items/${listingId}?displayCurrency=${displayCurrency}`, {
+      const cart = await request<Cart>(`/api/cart/items/${listingId}?displayCurrency=${displayCurrency}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -119,6 +143,8 @@ export const cartApi = {
           quantity: 0,
         }),
       });
+      notifyCartUpdated(cart);
+      return cart;
     } catch (error) {
       if (shouldClearStoredCartId(error)) {
         clearStoredCartId();

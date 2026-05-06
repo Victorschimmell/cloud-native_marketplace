@@ -46,6 +46,7 @@ public static class OrdersMappingExtensions
             SellerName = item.SellerName,
             Quantity = item.Quantity,
             UnitPrice = item.UnitPrice,
+            LineTotal = item.LineTotal,
             FreightValue = item.FreightValue,
             CurrencyCode = item.CurrencyCode,
             ShippingLimitDateUtc = item.ShippingLimitDateUtc

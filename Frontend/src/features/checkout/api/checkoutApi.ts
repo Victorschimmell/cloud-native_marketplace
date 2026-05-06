@@ -105,8 +105,4 @@ export const checkoutApi = {
       signal,
     });
   },
-
-  clearCheckoutCart: () => {
-    window.localStorage.removeItem(checkoutCartIdStorageKey);
-  },
 };

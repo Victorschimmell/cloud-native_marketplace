@@ -5,6 +5,7 @@ import './CartItemsList.css';
 
 interface CartItemsListProps {
   items: CartItemType[];
+  itemCount: number;
   updatingItems: Set<string>;
   currency: CurrencyCode;
   onUpdateQuantity: (item: CartItemType, newQuantity: number) => void;
@@ -13,6 +14,7 @@ interface CartItemsListProps {
 
 export default function CartItemsList({
   items,
+  itemCount,
   updatingItems,
   currency,
   onUpdateQuantity,
@@ -20,7 +22,16 @@ export default function CartItemsList({
 }: CartItemsListProps) {
   return (
     <div className="cart-items__section">
-      <h2>Cart Items ({items.length})</h2>
+      <div className="cart-items__header">
+        <h2>Products</h2>
+        <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+      </div>
+      <div className="cart-items__columns" aria-hidden="true">
+        <span>Product</span>
+        <span>Price</span>
+        <span>Quantity</span>
+        <span>Total</span>
+      </div>
       <div className="cart-items__list">
         {items.map((item) => (
           <CartLine

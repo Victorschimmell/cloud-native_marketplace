@@ -12,6 +12,7 @@ public sealed record OrderItemModel
     public required string SellerName { get; init; }
     public required int Quantity { get; init; }
     public required decimal UnitPrice { get; init; }
+    public required decimal LineTotal { get; init; }
     public required decimal FreightValue { get; init; }
     public required string CurrencyCode { get; init; }
     public DateTimeOffset? ShippingLimitDateUtc { get; init; }

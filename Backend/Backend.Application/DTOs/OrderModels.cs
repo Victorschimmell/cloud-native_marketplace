@@ -13,6 +13,7 @@ public sealed record OrderItemDto(
     string SellerName,
     int Quantity,
     decimal UnitPrice,
+    decimal LineTotal,
     decimal FreightValue,
     string CurrencyCode,
     DateTimeOffset? ShippingLimitDateUtc);

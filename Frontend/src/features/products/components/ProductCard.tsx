@@ -9,6 +9,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ priceFormatter, product }: ProductCardProps) {
   const stockText = product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock';
+  const stockModifier = product.stockQuantity === 0 ? ' product-card__stock--empty' : '';
 
   return (
     <Link
@@ -17,18 +18,25 @@ export default function ProductCard({ priceFormatter, product }: ProductCardProp
       key={product.listingId}
       to={`/products/${product.productId}?listingId=${product.listingId}`}
     >
+      <span className="product-card__media" aria-hidden="true">
+        No image
+      </span>
+
       <div className="product-card__category">
         {product.categoryName ?? 'Marketplace'}
       </div>
+
       <h2 className="product-card__title">
         {product.productName}
       </h2>
+
       <p className="product-card__description">
         {product.description}
       </p>
+
       <div className="product-card__meta">
         <strong className="product-card__price">{priceFormatter.format(product.price)}</strong>
-        <span className={`product-card__stock${product.stockQuantity === 0 ? ' product-card__stock--empty' : ''}`}>
+        <span className={`product-card__stock${stockModifier}`}>
           {stockText}
         </span>
       </div>

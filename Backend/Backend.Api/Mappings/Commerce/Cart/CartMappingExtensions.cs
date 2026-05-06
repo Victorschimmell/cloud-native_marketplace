@@ -43,6 +43,7 @@ public static class CartMappingExtensions
             ProductName = item.ProductName,
             Quantity = item.Quantity,
             UnitPriceAtAddition = item.UnitPriceAtAddition,
+            LineTotal = item.LineTotal,
             CurrencyCode = item.CurrencyCode,
             AddedAtUtc = item.AddedAtUtc,
             UpdatedAtUtc = item.UpdatedAtUtc

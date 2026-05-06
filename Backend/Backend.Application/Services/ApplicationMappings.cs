@@ -130,6 +130,7 @@ internal static class ApplicationMappings
             product.ProductName,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
+            priceConverter(item.UnitPriceAtAddition * item.Quantity),
             currencyCode,
             item.AddedAtUtc,
             item.UpdatedAtUtc);
@@ -156,6 +157,7 @@ internal static class ApplicationMappings
             item.Seller?.BusinessName ?? $"Seller {item.SellerId:N}"[..15],
             item.Quantity,
             priceConverter(item.UnitPrice),
+            priceConverter(item.UnitPrice * item.Quantity),
             priceConverter(item.FreightValue),
             currencyCode,
             item.ShippingLimitDateUtc);

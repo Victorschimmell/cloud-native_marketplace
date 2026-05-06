@@ -24,6 +24,7 @@ export interface OrderItem {
   sellerName: string;
   quantity: number;
   unitPrice: number;
+  lineTotal: number;
   freightValue: number;
   currencyCode: CurrencyCode;
   shippingLimitDateUtc?: string | null;

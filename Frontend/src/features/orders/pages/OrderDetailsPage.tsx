@@ -94,7 +94,7 @@ export default function OrderDetailsPage() {
                   <article className="order-details__line" key={`${item.orderId}-${item.orderItemId}`}>
                     <div className="order-details__line-product">
                       <span className="order-details__product-media" aria-hidden="true">
-                        {item.productPhotosQty > 0 ? `${item.productPhotosQty} photos` : 'No image'}
+                        No image
                       </span>
                       <div>
                         <h3>{item.productName}</h3>
@@ -105,7 +105,7 @@ export default function OrderDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    <strong>{formatMoney(item.unitPrice * item.quantity, item.currencyCode)}</strong>
+                    <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
                   </article>
                 ))}
               </div>

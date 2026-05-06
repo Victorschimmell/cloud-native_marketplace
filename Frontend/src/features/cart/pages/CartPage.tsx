@@ -49,14 +49,15 @@ export default function CartPage() {
     loadCart();
   }, [currency]);
 
-  const { total } = useMemo(() => {
-    if (!cart?.items) return { total: 0 };
+  const { itemCount, total } = useMemo(() => {
+    if (!cart?.items) return { itemCount: 0, total: 0 };
 
     const total = cart.items.reduce((sum, item) => {
-      return sum + item.unitPriceAtAddition * item.quantity;
+      return sum + item.lineTotal;
     }, 0);
+    const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-    return { total };
+    return { itemCount, total };
   }, [cart?.items]);
 
   const handleUpdateQuantity = async (item: CartItem, newQuantity: number) => {
@@ -111,9 +112,13 @@ export default function CartPage() {
   }
 
   const isEmpty = !cart?.items || cart.items.length === 0;
+  const pageSummary = isEmpty
+    ? 'Your cart is ready when you are.'
+    : `${itemCount} ${itemCount === 1 ? 'item' : 'items'} in your cart`;
 
   return (
     <PageSkeleton
+      summary={pageSummary}
       title="Shopping Cart"
       titleId="cart-page-title"
     >
@@ -130,6 +135,7 @@ export default function CartPage() {
           <div className="cart-content">
             <CartItemsList
               items={cart!.items}
+              itemCount={itemCount}
               updatingItems={updatingItems}
               currency={currency}
               onUpdateQuantity={handleUpdateQuantity}
