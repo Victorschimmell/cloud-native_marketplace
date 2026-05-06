@@ -1,4 +1,5 @@
 import type { AuditLogFilterState } from '../types';
+import searchIconUrl from '../../../assets/search.svg';
 import './AuditLogFilters.css';
 
 interface AuditLogFiltersProps {
@@ -8,8 +9,10 @@ interface AuditLogFiltersProps {
   onChange: (field: keyof AuditLogFilterState, value: string) => void;
   onPageSizeChange: (value: number) => void;
   onReset: () => void;
+  onSearch: () => void;
   pageSize: number;
   pageSizeOptions: readonly number[];
+  searchDisabled: boolean;
 }
 
 export default function AuditLogFilters({
@@ -19,8 +22,10 @@ export default function AuditLogFilters({
   onChange,
   onPageSizeChange,
   onReset,
+  onSearch,
   pageSize,
   pageSizeOptions,
+  searchDisabled,
 }: AuditLogFiltersProps) {
   return (
     <div className="audit-log-filters">
@@ -76,17 +81,25 @@ export default function AuditLogFilters({
       </label>
 
       <div className="audit-log-filters__actions">
-        <button
-          className="audit-log-filters__button"
-          disabled={!hasActiveFilters}
-          onClick={onReset}
-          type="button"
-        >
-          Clear filters
-        </button>
-        {/* <span className="audit-log-filters__hint">
-          Filters update automatically.
-        </span> */}
+        <div className="audit-log-filters__action-buttons">
+          <button
+            className="audit-log-filters__button"
+            disabled={!hasActiveFilters}
+            onClick={onReset}
+            type="button"
+          >
+            Clear filters
+          </button>
+          <button
+            aria-label="Search audit logs"
+            className="audit-log-filters__button audit-log-filters__button--icon"
+            disabled={searchDisabled}
+            onClick={onSearch}
+            type="button"
+          >
+            <img className="audit-log-filters__icon" src={searchIconUrl} alt="" aria-hidden="true" />
+          </button>
+        </div>
       </div>
     </div>
   );

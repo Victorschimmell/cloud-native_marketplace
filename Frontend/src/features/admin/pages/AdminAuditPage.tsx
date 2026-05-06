@@ -24,7 +24,8 @@ export default function AdminAuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(10);
-  const [filters, setFilters] = useState<AuditLogFilterState>(emptyFilters);
+  const [draftFilters, setDraftFilters] = useState<AuditLogFilterState>(emptyFilters);
+  const [appliedFilters, setAppliedFilters] = useState<AuditLogFilterState>(emptyFilters);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -33,19 +34,19 @@ export default function AdminAuditPage() {
     : `${totalCount} audit log${totalCount === 1 ? '' : 's'} found`;
 
   const trimmedFilters = useMemo(() => {
-    const actorUserId = filters.actorUserId.trim();
-    const entityType = filters.entityType.trim();
-    const entityId = filters.entityId.trim();
+    const actorUserId = appliedFilters.actorUserId.trim();
+    const entityType = appliedFilters.entityType.trim();
+    const entityId = appliedFilters.entityId.trim();
 
     return {
       actorUserId: actorUserId || undefined,
       entityType: entityType || undefined,
       entityId: entityType && entityId ? entityId : undefined,
     };
-  }, [filters]);
+  }, [appliedFilters]);
 
-  const hasActiveFilters = Object.values(filters).some((value) => value.trim().length > 0);
-  const isEntityIdDisabled = filters.entityType.trim().length === 0;
+  const hasActiveFilters = Object.values(draftFilters).some((value) => value.trim().length > 0);
+  const isEntityIdDisabled = draftFilters.entityType.trim().length === 0;
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -93,20 +94,23 @@ export default function AdminAuditPage() {
   }
 
   function updateFilter(field: keyof AuditLogFilterState, value: string) {
-    setFilters((currentFilters) => ({
+    setDraftFilters((currentFilters) => ({
       ...currentFilters,
       [field]: value,
     }));
-    setPage(1);
   }
 
   function resetFilters() {
-    setFilters(emptyFilters);
-    setPage(1);
+    setDraftFilters(emptyFilters);
   }
 
   function updatePageSize(value: number) {
     setPageSize(value);
+    setPage(1);
+  }
+
+  function applySearch() {
+    setAppliedFilters({ ...draftFilters });
     setPage(1);
   }
 
@@ -122,14 +126,16 @@ export default function AdminAuditPage() {
 
         <div className="admin-audit-page__filters">
           <AuditLogFilters
-            filters={filters}
+            filters={draftFilters}
             hasActiveFilters={hasActiveFilters}
             isEntityIdDisabled={isEntityIdDisabled}
             onChange={updateFilter}
             onPageSizeChange={updatePageSize}
             onReset={resetFilters}
+            onSearch={applySearch}
             pageSize={pageSize}
             pageSizeOptions={pageSizeOptions}
+            searchDisabled={isLoading}
           />
         </div>
 
@@ -166,6 +172,13 @@ function getErrorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     const payload = err.payload as Record<string, unknown>;
     if (payload && typeof payload === 'object') {
+      if ('errors' in payload) {
+        const details = formatValidationErrors(payload.errors);
+        if (details) {
+          return details;
+        }
+      }
+
       if ('error' in payload) {
         return String(payload.error);
       }
@@ -178,4 +191,17 @@ function getErrorMessage(err: unknown): string {
   }
 
   return 'Unknown error';
+}
+
+function formatValidationErrors(errors: unknown): string | null {
+  if (!errors || typeof errors !== 'object') {
+    return null;
+  }
+
+  const messages = Object.values(errors as Record<string, unknown>)
+    .flatMap((value) => (Array.isArray(value) ? value : []))
+    .filter((message) => typeof message === 'string' && message.trim().length > 0)
+    .map((message) => message.trim());
+
+  return messages.length > 0 ? messages.join('; ') : null;
 }
