@@ -143,7 +143,6 @@ export default function CartPage() {
             />
 
             <CartSummary
-              itemCount={itemCount}
               total={total}
               currency={currency}
             />

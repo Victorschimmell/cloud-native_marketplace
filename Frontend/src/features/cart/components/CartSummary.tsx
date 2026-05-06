@@ -4,13 +4,11 @@ import type { CurrencyCode } from '../../../shared/currency/currency';
 import './CartSummary.css';
 
 interface CartSummaryProps {
-  itemCount: number;
   total: number;
   currency: CurrencyCode;
 }
 
 export default function CartSummary({
-  itemCount,
   total,
   currency,
 }: CartSummaryProps) {
@@ -24,7 +22,6 @@ export default function CartSummary({
     <aside className="cart-summary">
       <div className="cart-summary__header">
         <h3>Order Summary</h3>
-        <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
       </div>
 
       <div className="cart-summary__row">
