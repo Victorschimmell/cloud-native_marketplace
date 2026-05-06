@@ -1,0 +1,7 @@
+This project uses icons from the VS Code Icons repository.
+
+Project: microsoft/vscode-icons
+Creator: Microsoft Corporation
+Source: https://github.com/microsoft/vscode-icons
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+License Link: https://creativecommons.org/licenses/by/4.0/
