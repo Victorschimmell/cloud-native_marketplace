@@ -24,7 +24,7 @@
 
 .auth-page__panel {
   position: relative;
-  min-height: 100%;
+  min-height: 420px;
   overflow: hidden;
   border: 1px solid #dbeafe;
   border-radius: 8px;
