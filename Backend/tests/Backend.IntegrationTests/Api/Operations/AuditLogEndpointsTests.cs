@@ -418,7 +418,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         AuthenticateAs(adminUserId, isAdmin: true);
 
         var auditResponse = await _client.GetAsync(
-            $"/api/admin/audit-logs?entityType={nameof(UserAccount)}&entityId={registration.Customer.Id}",
+            $"/api/admin/audit-logs?entityType={nameof(UserAccount)}&entityId={registration.User.Id}",
             TestContext.Current.CancellationToken);
         var auditLogs = await auditResponse.Content.ReadFromJsonAsync<PageResponse<AuditLogEntryResponse>>(
             IntegrationTestJson.Options,
@@ -429,7 +429,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Contains(auditLogs.Items, entry =>
             entry.ActionType == AuditActionType.Created &&
             entry.Outcome == AuditOutcome.Succeeded &&
-            entry.TargetEntityId == registration.Customer.Id.ToString());
+            entry.TargetEntityId == registration.User.Id.ToString());
     }
 
     [Fact]
