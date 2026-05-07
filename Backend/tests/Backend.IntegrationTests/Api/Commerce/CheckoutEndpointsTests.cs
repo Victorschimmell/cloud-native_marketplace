@@ -20,6 +20,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     private readonly HttpClient _client;
     private readonly MarketplaceApiFactory _factory;
     private readonly ITestOutputHelper _testOutputHelper;
+    private readonly JsonSerializerOptions _jsonOptions = IntegrationTestJson.Options;
 
     public CheckoutEndpointsTests(MarketplaceApiFactory factory, ITestOutputHelper testOutputHelper)
     {
