@@ -21,4 +21,7 @@ internal sealed class HttpContextCurrentUserProvider(IHttpContextAccessor httpCo
     public bool IsAdmin =>
         httpContextAccessor.HttpContext?.User.IsInRole("Admin") == true ||
         httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role) == "Admin";
+
+    public string? IpAddress =>
+        httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 }

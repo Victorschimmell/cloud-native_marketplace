@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Backend.Api;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
@@ -12,7 +11,6 @@ using Backend.IntegrationTests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Backend.IntegrationTests;
 
@@ -22,18 +20,13 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     private readonly HttpClient _client;
     private readonly MarketplaceApiFactory _factory;
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly JsonSerializerOptions _jsonOptions;
+    private readonly JsonSerializerOptions _jsonOptions = IntegrationTestJson.Options;
 
     public CheckoutEndpointsTests(MarketplaceApiFactory factory, ITestOutputHelper testOutputHelper)
     {
         _factory = factory;
         _client = factory.CreateClient();
         _testOutputHelper = testOutputHelper;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-        _jsonOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
     [Fact]
@@ -85,7 +78,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var preview = await response.Content.ReadFromJsonAsync<CheckoutPreviewResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var preview = await response.Content.ReadFromJsonAsync<CheckoutPreviewResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(preview);
         Assert.Equal(36.00m, preview.SubtotalAmount);
         Assert.Equal(18.00m, preview.FreightAmount);
@@ -212,7 +205,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(checkout);
 
         Assert.Equal(200.00m, checkout.TotalAmount);
@@ -303,7 +296,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(checkout);
 
         using var scope = _factory.Services.CreateScope();
@@ -369,7 +362,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(checkout);
         Assert.Equal(36.00m, checkout.TotalAmount);
         Assert.Equal("USD", checkout.Order.CurrencyCode);
@@ -447,7 +440,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(checkout);
         Assert.Equal(cartId, checkout.Cart.Id);
         Assert.Equal(CartStatus.Converted, checkout.Cart.Status);
@@ -582,7 +575,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
-        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
 
         return (listingId, userId, cart.Id);

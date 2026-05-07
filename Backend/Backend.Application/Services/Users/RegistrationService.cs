@@ -1,6 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
-using Backend.Application.Common.Exceptions;
 using Backend.Application.Common.Abstractions;
+using Backend.Application.Common.Exceptions;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
@@ -19,6 +19,7 @@ public sealed class RegistrationService : IRegistrationService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuthTokenGenerator _authTokenGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegistrationService(
@@ -29,6 +30,7 @@ public sealed class RegistrationService : IRegistrationService
         IPasswordHasher passwordHasher,
         IAuthTokenGenerator authTokenGenerator,
         IDateTimeProvider dateTimeProvider,
+        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(userAccountRepository);
@@ -38,6 +40,7 @@ public sealed class RegistrationService : IRegistrationService
         ArgumentNullException.ThrowIfNull(passwordHasher);
         ArgumentNullException.ThrowIfNull(authTokenGenerator);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
+        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _userAccountRepository = userAccountRepository;
@@ -47,6 +50,7 @@ public sealed class RegistrationService : IRegistrationService
         _passwordHasher = passwordHasher;
         _authTokenGenerator = authTokenGenerator;
         _dateTimeProvider = dateTimeProvider;
+        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
     }
 
@@ -57,7 +61,15 @@ public sealed class RegistrationService : IRegistrationService
 
         if (existingUser is not null)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: normalizedEmail,
+                Outcome: AuditOutcome.Failed,
+                Details: $"Customer registration failed, email already in use: {normalizedEmail}"
+            ), cancellationToken);
+
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         var userAccount = CreateUserAccount(normalizedEmail, request.Password);
@@ -75,10 +87,34 @@ public sealed class RegistrationService : IRegistrationService
             await _userAccountRepository.AddAsync(userAccount, cancellationToken);
             await _customerRepository.AddAsync(customer, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: userAccount.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"New user account registered with email {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Customer),
+                TargetEntityId: customer.Id.ToString(), 
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"Customer profile created for user {request.Email}"
+            ), cancellationToken);
         }
         catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: normalizedEmail,
+                Outcome: AuditOutcome.Failed,
+                Details: $"Customer registration failed, email already in use: {normalizedEmail}"
+            ), cancellationToken);
+
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(
@@ -95,7 +131,15 @@ public sealed class RegistrationService : IRegistrationService
 
         if (existingUser is not null)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: normalizedEmail,
+                Outcome: AuditOutcome.Failed,
+                Details: $"Seller registration failed, email already in use: {normalizedEmail}"
+            ), cancellationToken);
+
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         var userAccount = CreateUserAccount(normalizedEmail, request.Password);
@@ -124,10 +168,42 @@ public sealed class RegistrationService : IRegistrationService
             await _sellerRepository.AddAsync(seller, cancellationToken);
             await _sellerVerificationRequestRepository.AddAsync(verificationRequest, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: userAccount.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"New user account registered with email {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Seller),
+                TargetEntityId: seller.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"Seller profile created for user {request.Email}"
+            ), cancellationToken);
+
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(), 
+                Outcome: AuditOutcome.Succeeded,
+                Details: $"Verification request submitted for seller {seller.Id}"
+            ), cancellationToken);
         }
         catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.UserAccountEmail)
         {
-            return Result<RegistrationResponse>.Conflict("An account with this email already exists.");
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: normalizedEmail,
+                Outcome: AuditOutcome.Failed,
+                Details: $"Seller registration failed, email already in use: {normalizedEmail}"
+            ), cancellationToken);
+
+            return Result<RegistrationResponse>.Conflict("Registration failed. Please check your information and try again.");
         }
 
         return Result<RegistrationResponse>.Success(new RegistrationResponse(

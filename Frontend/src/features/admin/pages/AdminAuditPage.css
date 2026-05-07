@@ -1,0 +1,57 @@
+.admin-audit-page {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-audit-page__filters {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-audit-page__section-title {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.admin-audit-page__section-description {
+  margin: 6px 0 0;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-audit-page__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-audit-page__back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.admin-audit-page__back-link:hover {
+  border-color: #2563eb;
+}
+
+@media (max-width: 680px) {
+  .admin-audit-page__actions {
+    width: 100%;
+  }
+
+  .admin-audit-page__back-link {
+    width: 100%;
+    justify-content: center;
+  }
+}

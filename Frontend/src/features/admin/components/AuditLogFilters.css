@@ -1,0 +1,127 @@
+.audit-log-filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(140px, 200px) minmax(160px, max-content);
+  gap: 16px;
+  align-items: end;
+}
+
+.audit-log-filters__control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.audit-log-filters__control input,
+.audit-log-filters__control select {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-weight: 400;
+  padding: 8px 10px;
+}
+
+.audit-log-filters__control input:focus,
+.audit-log-filters__control select:focus {
+  border-color: #2563eb;
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+}
+
+.audit-log-filters__control input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.audit-log-filters__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.audit-log-filters__action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.audit-log-filters__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-weight: 600;
+  padding: 0 16px;
+}
+
+.audit-log-filters__button--icon {
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
+}
+
+.audit-log-filters__icon {
+  width: 18px;
+  height: 18px;
+}
+
+.audit-log-filters__icon-placeholder {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid #9ca3af;
+  display: inline-block;
+}
+
+.audit-log-filters__button:not(:disabled):hover {
+  border-color: #2563eb;
+}
+
+.audit-log-filters__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.audit-log-filters__hint {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+@media (max-width: 980px) {
+  .audit-log-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .audit-log-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-log-filters__actions {
+    align-items: stretch;
+  }
+
+  .audit-log-filters__action-buttons {
+    width: 100%;
+  }
+
+  .audit-log-filters__button {
+    flex: 1;
+  }
+
+  .audit-log-filters__button--icon {
+    flex: 0 0 40px;
+  }
+}

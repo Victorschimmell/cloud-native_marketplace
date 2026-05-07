@@ -1,9 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Backend.Api;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
@@ -17,18 +14,11 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;
     private readonly MarketplaceApiFactory _factory;
-    private readonly JsonSerializerOptions _jsonOptions;
 
     public CartEndpointsTests(MarketplaceApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient();
-
-        _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-        _jsonOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
     [Fact]
@@ -249,7 +239,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             },
             TestContext.Current.CancellationToken);
 
-        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cartAfterAdd);
         Assert.Single(cartAfterAdd.Items);
 
@@ -263,7 +253,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
         Assert.Empty(cart.Items);
     }
@@ -285,7 +275,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
             },
             TestContext.Current.CancellationToken);
 
-        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cartAfterAdd);
 
         // Act
@@ -298,7 +288,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cart);
         var item = Assert.Single(cart.Items);
         Assert.Equal(2, item.Quantity);
@@ -320,21 +310,21 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
         var responseBRL = await _client.PostAsJsonAsync("/api/cart/items?displayCurrency=BRL", addRequest, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, responseBRL.StatusCode);
-        var cartBRL = await responseBRL.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cartBRL = await responseBRL.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cartBRL);
         Assert.Single(cartBRL.Items);
 
         // Act & Assert
         var responseUSD = await _client.PostAsJsonAsync("/api/cart/items?displayCurrency=USD", addRequest, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, responseUSD.StatusCode);
-        var cartUSD = await responseUSD.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cartUSD = await responseUSD.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cartUSD);
         Assert.Single(cartUSD.Items);
 
         // Act & Assert
         var responseDKK = await _client.PostAsJsonAsync("/api/cart/items?displayCurrency=DKK", addRequest, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, responseDKK.StatusCode);
-        var cartDKK = await responseDKK.Content.ReadFromJsonAsync<CartResponse>(_jsonOptions, TestContext.Current.CancellationToken);
+        var cartDKK = await responseDKK.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
         Assert.NotNull(cartDKK);
         Assert.Single(cartDKK.Items);
     }

@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 
 namespace Backend.Api.OpenApi.Transformers;
 
-public class DefaultResponsesTransformer : IOpenApiOperationTransformer
+internal sealed class DefaultResponsesTransformer : IOpenApiOperationTransformer
 {
     public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
     {
@@ -40,8 +40,8 @@ public class DefaultResponsesTransformer : IOpenApiOperationTransformer
             operation.Responses.TryAdd("404", new OpenApiResponse { Description = "Not Found" });
         }
 
-        // operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });
-        // operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden" });
+        operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });
+        operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden" });
         operation.Responses.TryAdd("500", new OpenApiResponse { Description = "Internal Server Error" });
         operation.Responses.TryAdd("501", new OpenApiResponse { Description = "Not Implemented" });
 

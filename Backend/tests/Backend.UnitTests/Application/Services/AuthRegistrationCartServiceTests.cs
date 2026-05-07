@@ -19,7 +19,7 @@ public sealed class AuthRegistrationCartServiceTests
             UserAccount = CreateUser("customer@example.com", "hashed::Password123!")
         };
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), unitOfWork);
+        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("customer@example.com", "Password123!"), TestContext.Current.CancellationToken);
 
@@ -41,7 +41,7 @@ public sealed class AuthRegistrationCartServiceTests
             UserAccount = user
         };
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), unitOfWork);
+        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("blocked@example.com", "Password123!"), TestContext.Current.CancellationToken);
 
@@ -65,6 +65,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             unitOfWork);
 
         var result = await service.RegisterCustomerAsync(
@@ -100,6 +101,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             unitOfWork);
 
         var result = await service.RegisterCustomerAsync(
@@ -108,7 +110,7 @@ public sealed class AuthRegistrationCartServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(ResultFailureType.Conflict, result.FailureType);
-        Assert.Equal("An account with this email already exists.", result.Error);
+        Assert.Equal("Registration failed. Please check your information and try again.", result.Error);
     }
 
     [Fact]
@@ -125,6 +127,7 @@ public sealed class AuthRegistrationCartServiceTests
             new FakePasswordHasher(),
             new FakeAuthTokenGenerator(),
             new FakeDateTimeProvider(),
+            new FakeAuditLogService(),
             new FakeUnitOfWork());
 
         var result = await service.RegisterSellerAsync(

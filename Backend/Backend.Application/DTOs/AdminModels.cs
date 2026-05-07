@@ -14,8 +14,6 @@ public sealed record AuditLogEntryDto(
     DateTimeOffset CreatedAtUtc);
 
 public sealed record WriteAuditLogEntryRequest(
-    Guid? ActorUserId,
-    string? ActorIpAddress,
     AuditActionType ActionType,
     string TargetEntityType,
     string TargetEntityId,

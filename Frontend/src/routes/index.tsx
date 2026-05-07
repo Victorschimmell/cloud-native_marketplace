@@ -23,7 +23,7 @@ import SellerVerificationPage from '../pages/SellerVerificationPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../pages/AdminSellerVerificationsPage';
-import AdminAuditPage from '../pages/AdminAuditPage';
+import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
 
 export const router = createBrowserRouter([
   {
