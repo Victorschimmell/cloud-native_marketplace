@@ -506,7 +506,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var responseJson = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(
             "Only credit card payments are supported at checkout.",
-            responseJson.RootElement.GetProperty("error").GetString());
+            responseJson.RootElement.GetProperty("detail").GetString());
     }
 
     private async Task<Guid> SeedProductListingAsync(

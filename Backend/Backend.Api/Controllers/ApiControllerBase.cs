@@ -32,14 +32,14 @@ public abstract class ApiControllerBase : ControllerBase
     {
         return result.FailureType switch
         {
-            ResultFailureType.NotFound => NotFound(new { Error = result.Error }),
-            ResultFailureType.ValidationFailure => BadRequest(new { Error = result.Error }),
-            ResultFailureType.Conflict => Conflict(new { Error = result.Error }),
-            ResultFailureType.Unauthorized => Unauthorized(new { Error = result.Error }),
-            ResultFailureType.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { Error = result.Error }),
-            ResultFailureType.NotImplemented => StatusCode(StatusCodes.Status501NotImplemented, new { Error = result.Error }),
+            ResultFailureType.NotFound => Problem(detail: result.Error, statusCode: StatusCodes.Status404NotFound, title: "Not Found"),
+            ResultFailureType.ValidationFailure => Problem(detail: result.Error, statusCode: StatusCodes.Status400BadRequest, title: "Bad Request"),
+            ResultFailureType.Conflict => Problem(detail: result.Error, statusCode: StatusCodes.Status409Conflict, title: "Conflict"),
+            ResultFailureType.Unauthorized => Problem(detail: result.Error, statusCode: StatusCodes.Status401Unauthorized, title: "Unauthorized"),
+            ResultFailureType.Forbidden => Problem(detail: result.Error, statusCode: StatusCodes.Status403Forbidden, title: "Forbidden"),
+            ResultFailureType.NotImplemented => Problem(detail: result.Error, statusCode: StatusCodes.Status501NotImplemented, title: "Not Implemented"),
 
-            _ => StatusCode(StatusCodes.Status500InternalServerError, new { Error = result.Error ?? "Internal Server Error" })
+            _ => Problem(detail: result.Error ?? "An unexpected error occurred.", statusCode: StatusCodes.Status500InternalServerError, title: "Internal Server Error")
         };
     }
 

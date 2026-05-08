@@ -110,7 +110,7 @@ public sealed class AuthRegistrationCartServiceTests
 
         Assert.True(result.IsFailure);
         Assert.Equal(ResultFailureType.Conflict, result.FailureType);
-        Assert.Equal("Registration failed. Please check your information and try again.", result.Error);
+        Assert.Equal("An account with this email address already exists.", result.Error);
     }
 
     [Fact]
