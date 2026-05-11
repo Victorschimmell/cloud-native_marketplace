@@ -6,16 +6,18 @@ import { useCurrency } from '../../../shared/currency/useCurrency';
 import { useAuth } from '../../auth/useAuth';
 import { cartApi } from '../../cart/api/cartApi';
 import { productApi } from '../api/productApi';
-import type { ProductDetails } from '../types';
+import type { ProductDetails, ProductReview } from '../types';
 import './ProductDetailsPage.css';
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
   const [cartMessage, setCartMessage] = useState<string | null>(null);
   const [cartMessageVariant, setCartMessageVariant] = useState<'success' | 'error'>('success');
   const [quantity, setQuantity] = useState(1);
@@ -43,8 +45,21 @@ export default function ProductDetailsPage() {
       try {
         setIsLoading(true);
         setError(null);
+        setReviewsError(null);
+        setReviews([]);
         const response = await productApi.getProduct(id, listingId, currency, abortController.signal);
         setProduct(response);
+
+        try {
+          const reviewResponse = await productApi.getProductReviews(id, abortController.signal);
+          setReviews(reviewResponse);
+        } catch (reviewRequestError) {
+          if (reviewRequestError instanceof DOMException && reviewRequestError.name === 'AbortError') {
+            return;
+          }
+
+          setReviewsError('Reviews could not be loaded right now.');
+        }
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return;
@@ -128,6 +143,7 @@ export default function ProductDetailsPage() {
     ? 'Only customer accounts can add products to the cart.'
     : null;
   const stockText = isInStock && product ? `${product.stockQuantity} in stock` : 'Out of stock';
+  const ratingSummary = useMemo(() => getRatingSummary(reviews), [reviews]);
 
   return (
     <PageSkeleton summary={summary} title={title} titleId="product-details-page-title">
@@ -162,18 +178,15 @@ export default function ProductDetailsPage() {
                 <span className="product-details-page__seller">
                   Sold by <strong>{product.sellerName}</strong>
                 </span>
-                {/* Temporary placeholder until a product review summary endpoint is implemented. */}
-                <span className="product-details-page__rating" aria-label="Review summary placeholder: 4.6 out of 5 stars from 4,009 reviews">
-                  <strong>4.6</strong>
+                <span className="product-details-page__rating" aria-label={ratingSummary.ariaLabel}>
+                  <strong>{ratingSummary.averageLabel}</strong>
                   <span className="product-details-page__stars" aria-hidden="true">
-                    <span className="product-details-page__star product-details-page__star--filled" />
-                    <span className="product-details-page__star product-details-page__star--filled" />
-                    <span className="product-details-page__star product-details-page__star--filled" />
-                    <span className="product-details-page__star product-details-page__star--filled" />
-                    <span className="product-details-page__star product-details-page__star--half" />
+                    {ratingSummary.stars.map((starClass, index) => (
+                      <span className={`product-details-page__star ${starClass}`} key={index} />
+                    ))}
                   </span>
-                  <span className="product-details-page__rating-caret" aria-hidden="true" />
-                  <span className="product-details-page__rating-count">(4,009)</span>
+                  {ratingSummary.count > 0 ? <span className="product-details-page__rating-caret" aria-hidden="true" /> : null}
+                  <span className="product-details-page__rating-count">{ratingSummary.countLabel}</span>
                 </span>
               </div>
 
@@ -234,9 +247,80 @@ export default function ProductDetailsPage() {
                 ) : null}
               </div>
             </section>
+
+            <section className="product-details-page__reviews" aria-labelledby="product-reviews-title">
+              <div className="product-details-page__reviews-heading">
+                <h2 id="product-reviews-title">Reviews</h2>
+                <span>{ratingSummary.countLabel}</span>
+              </div>
+
+              {reviewsError ? (
+                <p className="product-details-page__reviews-notice" role="alert">{reviewsError}</p>
+              ) : null}
+
+              {!reviewsError && reviews.length === 0 ? (
+                <p className="product-details-page__reviews-empty">No reviews yet.</p>
+              ) : null}
+
+              {reviews.length > 0 ? (
+                <div className="product-details-page__review-list">
+                  {reviews.map((review) => (
+                    <article className="product-details-page__review" key={review.id}>
+                      <div className="product-details-page__review-meta">
+                        <strong>{review.reviewerDisplayName || 'Customer'}</strong>
+                        <span>{formatReviewDate(review.reviewCreationDateUtc)}</span>
+                      </div>
+                      <div className="product-details-page__review-score" aria-label={`${review.reviewScore} out of 5 stars`}>
+                        {review.reviewScore}/5
+                      </div>
+                      {review.reviewCommentTitle ? <h3>{review.reviewCommentTitle}</h3> : null}
+                      {review.reviewCommentMessage ? <p>{review.reviewCommentMessage}</p> : null}
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+            </section>
           </div>
         ) : null}
       </div>
     </PageSkeleton>
   );
+}
+
+function getRatingSummary(reviews: ProductReview[]) {
+  const count = reviews.length;
+  const average = count === 0
+    ? 0
+    : reviews.reduce((total, review) => total + review.reviewScore, 0) / count;
+  const roundedToHalf = Math.round(average * 2) / 2;
+
+  return {
+    average,
+    averageLabel: count === 0 ? 'New' : average.toFixed(1),
+    ariaLabel: count === 0
+      ? 'No product reviews yet'
+      : `Review summary: ${average.toFixed(1)} out of 5 stars from ${count} ${count === 1 ? 'review' : 'reviews'}`,
+    count,
+    countLabel: count === 0 ? 'No reviews' : `(${count.toLocaleString()})`,
+    stars: Array.from({ length: 5 }, (_, index) => {
+      const starValue = index + 1;
+      if (roundedToHalf >= starValue) {
+        return 'product-details-page__star--filled';
+      }
+
+      if (roundedToHalf === starValue - 0.5) {
+        return 'product-details-page__star--half';
+      }
+
+      return '';
+    }),
+  };
+}
+
+function formatReviewDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value));
 }

@@ -81,9 +81,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
     public async Task RecordReview_WithReviewScoreBelowRange_ReturnsBadRequest()
     {
         // Arrange
+        await AuthenticateAsRegisteredCustomerAsync();
         var recordRequest = new RecordReviewRequest
         {
             OrderId = Guid.NewGuid(),
+            OrderItemId = 1,
             ReviewScore = 0 // Invalid: must be between 1 and 5
         };
 

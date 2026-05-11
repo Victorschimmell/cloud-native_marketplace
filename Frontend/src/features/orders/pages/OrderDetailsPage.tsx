@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { useCurrency } from '../../../shared/currency/useCurrency';
+import { FormNotice, TextAreaField, TextField } from '../../../shared/forms';
 import { orderApi } from '../api/orderApi';
 import type { Order } from '../types';
 import { formatDateTime, formatMoney, getOrderItemCount, getPaymentStatus, getStatusTone } from '../utils';
@@ -14,6 +15,12 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reviewingItemId, setReviewingItemId] = useState<number | null>(null);
+  const [reviewScore, setReviewScore] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const isConfirmed = searchParams.get('confirmed') === '1';
 
   useEffect(() => {
@@ -50,6 +57,39 @@ export default function OrderDetailsPage() {
   const itemCount = useMemo(() => (order ? getOrderItemCount(order) : 0), [order]);
   const sellerSummary = useMemo(() => (order ? getSellerSummary(order) : ''), [order]);
   const approvalState = useMemo(() => (order ? getApprovalState(order) : 'Pending'), [order]);
+  const reviewedItemIds = useMemo(() => new Set(order?.reviews.map((review) => review.orderItemId).filter(isNumber) ?? []), [order]);
+  const canReviewOrder = Boolean(order && isReviewable(order));
+
+  async function submitReview(orderItemId: number) {
+    if (!order) {
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+      setReviewError(null);
+      const review = await orderApi.createReview({
+        orderId: order.id,
+        orderItemId,
+        reviewScore,
+        reviewCommentTitle: reviewTitle.trim() || undefined,
+        reviewCommentMessage: reviewMessage.trim() || undefined,
+      });
+
+      setOrder({
+        ...order,
+        reviews: [...order.reviews, review],
+      });
+      setReviewingItemId(null);
+      setReviewScore(5);
+      setReviewTitle('');
+      setReviewMessage('');
+    } catch (requestError) {
+      setReviewError(requestError instanceof Error ? requestError.message : 'Could not submit this review.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }
 
   return (
     <PageSkeleton
@@ -105,7 +145,102 @@ export default function OrderDetailsPage() {
                         </p>
                       </div>
                     </div>
-                    <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
+                    <div className="order-details__line-side">
+                      <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
+                      {reviewedItemIds.has(item.orderItemId) ? (
+                        <span className="order-details__review-state">Reviewed</span>
+                      ) : canReviewOrder ? (
+                        <button
+                          className="order-details__review-button"
+                          onClick={() => {
+                            setReviewingItemId(item.orderItemId);
+                            setReviewError(null);
+                          }}
+                          type="button"
+                        >
+                          Review product
+                        </button>
+                      ) : null}
+                    </div>
+                    {reviewingItemId === item.orderItemId ? (
+                      <form
+                        className="order-details__review-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void submitReview(item.orderItemId);
+                        }}
+                      >
+                        <div className="order-details__review-form-header">
+                          <h3>Review product</h3>
+                          <span>{item.productName}</span>
+                        </div>
+
+                        <fieldset className="order-details__rating-field" disabled={isSubmittingReview}>
+                          <legend>Rating</legend>
+                          <div className="order-details__rating-options">
+                            {[1, 2, 3, 4, 5].map((score) => (
+                              <button
+                                aria-pressed={reviewScore === score}
+                                aria-label={`${score} ${score === 1 ? 'star' : 'stars'}`}
+                                className="order-details__rating-option"
+                                data-active={score <= reviewScore}
+                                key={score}
+                                onClick={() => setReviewScore(score)}
+                                type="button"
+                              >
+                                <span aria-hidden="true">★</span>
+                              </button>
+                            ))}
+                          </div>
+                        </fieldset>
+
+                        <div className="order-details__review-title-field">
+                          <TextField
+                            className="order-details__review-control"
+                            disabled={isSubmittingReview}
+                            label="Title"
+                            maxLength={200}
+                            onChange={(event) => setReviewTitle(event.target.value)}
+                            placeholder="Short summary"
+                            value={reviewTitle}
+                          />
+                        </div>
+                        <div className="order-details__review-form-message">
+                          <TextAreaField
+                            className="order-details__review-control order-details__review-feedback"
+                            disabled={isSubmittingReview}
+                            label="Feedback"
+                            maxLength={2000}
+                            onChange={(event) => setReviewMessage(event.target.value)}
+                            placeholder="What should future customers know?"
+                            rows={3}
+                            value={reviewMessage}
+                          />
+                        </div>
+                        {reviewError ? (
+                          <div className="order-details__review-form-notice">
+                            <FormNotice variant="error">{reviewError}</FormNotice>
+                          </div>
+                        ) : null}
+                        <div className="order-details__review-actions">
+                          <button
+                            className="order-details__review-action order-details__review-action--primary"
+                            disabled={isSubmittingReview}
+                            type="submit"
+                          >
+                            {isSubmittingReview ? 'Submitting...' : 'Submit review'}
+                          </button>
+                          <button
+                            className="order-details__review-action order-details__review-action--secondary"
+                            disabled={isSubmittingReview}
+                            onClick={() => setReviewingItemId(null)}
+                            type="button"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -215,4 +350,12 @@ function getDeliveryState(order: Order) {
   }
 
   return 'Not started';
+}
+
+function isReviewable(order: Order) {
+  return order.orderStatus === 'Delivered' || order.orderStatus === 'Returned';
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number';
 }

@@ -10,6 +10,9 @@ public static class ReviewsMappingExtensions
         {
             Id = review.Id,
             OrderId = review.OrderId,
+            OrderItemId = review.OrderItemId,
+            ProductId = review.ProductId,
+            ReviewerDisplayName = review.ReviewerDisplayName,
             ReviewScore = review.ReviewScore,
             ReviewCommentTitle = review.ReviewCommentTitle,
             ReviewCommentMessage = review.ReviewCommentMessage,
@@ -22,10 +25,21 @@ public static class ReviewsMappingExtensions
         {
             Id = review.Id,
             OrderId = review.OrderId,
+            OrderItemId = review.OrderItemId,
+            ProductId = review.ProductId,
+            ReviewerDisplayName = review.ReviewerDisplayName,
             ReviewScore = review.ReviewScore,
             ReviewCommentTitle = review.ReviewCommentTitle,
             ReviewCommentMessage = review.ReviewCommentMessage,
             ReviewCreationDateUtc = review.ReviewCreationDateUtc,
             ReviewAnswerTimestampUtc = review.ReviewAnswerTimestampUtc,
         };
+
+    public static App.CreateReviewRequest ToApplicationRequest(this RecordReviewRequest request) =>
+        new(
+            request.OrderId,
+            request.OrderItemId,
+            request.ReviewScore,
+            request.ReviewCommentTitle,
+            request.ReviewCommentMessage);
 }

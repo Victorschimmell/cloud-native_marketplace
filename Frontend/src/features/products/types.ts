@@ -37,6 +37,19 @@ export interface ProductDetails {
   sellerVerificationStatus: string;
 }
 
+export interface ProductReview {
+  id: string;
+  orderId: string;
+  orderItemId?: number | null;
+  productId?: string | null;
+  reviewerDisplayName?: string | null;
+  reviewScore: number;
+  reviewCommentTitle?: string | null;
+  reviewCommentMessage?: string | null;
+  reviewCreationDateUtc: string;
+  reviewAnswerTimestampUtc?: string | null;
+}
+
 export interface Category {
   id: string;
   categoryNamePt: string;

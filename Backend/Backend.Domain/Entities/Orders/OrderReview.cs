@@ -10,6 +10,7 @@ public sealed class OrderReview : Entity<Guid>
     }
 
     public Guid OrderId { get; set; }
+    public int? OrderItemId { get; set; }
     public string? OlistReviewId { get; set; }
     public int ReviewScore { get; set; }
     public string? ReviewCommentTitle { get; set; }
@@ -18,4 +19,5 @@ public sealed class OrderReview : Entity<Guid>
     public DateTimeOffset? ReviewAnswerTimestampUtc { get; set; }
 
     public Order? Order { get; set; }
+    public OrderItem? OrderItem { get; set; }
 }

@@ -10,12 +10,18 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
     public async Task<OrderReview?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.OrderReviews
+            .Include(r => r.Order)
+                .ThenInclude(o => o!.Customer)
+            .Include(r => r.OrderItem)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrderReview>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return await dbContext.OrderReviews
+            .Include(r => r.Order)
+                .ThenInclude(o => o!.Customer)
+            .Include(r => r.OrderItem)
             .Where(r => r.OrderId == orderId)
             .OrderBy(r => r.ReviewCreationDateUtc)
             .ToListAsync(cancellationToken);
@@ -24,9 +30,18 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
     public async Task<IReadOnlyList<OrderReview>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         return await dbContext.OrderReviews
-            .Where(review => review.Order != null && review.Order.Items.Any(item => item.ProductId == productId))
-            .OrderBy(review => review.ReviewCreationDateUtc)
+            .Include(r => r.Order)
+                .ThenInclude(o => o!.Customer)
+            .Include(r => r.OrderItem)
+            .Where(review => review.OrderItem != null && review.OrderItem.ProductId == productId)
+            .OrderByDescending(review => review.ReviewCreationDateUtc)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsForOrderItemAsync(Guid orderId, int orderItemId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrderReviews
+            .AnyAsync(review => review.OrderId == orderId && review.OrderItemId == orderItemId, cancellationToken);
     }
 
     public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)

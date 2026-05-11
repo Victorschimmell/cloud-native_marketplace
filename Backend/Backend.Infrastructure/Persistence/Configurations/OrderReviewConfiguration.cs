@@ -18,6 +18,10 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
         builder.HasIndex(r => r.OlistReviewId)
             .IsUnique();
 
+        builder.HasIndex(r => new { r.OrderId, r.OrderItemId })
+            .IsUnique()
+            .HasFilter("\"OrderItemId\" IS NOT NULL");
+
         builder.Property(r => r.ReviewScore)
             .IsRequired();
 
@@ -26,5 +30,11 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
 
         builder.Property(r => r.ReviewCommentMessage)
             .HasMaxLength(2000);
+
+        builder.HasOne(r => r.OrderItem)
+            .WithMany(i => i.Reviews)
+            .HasForeignKey(r => new { r.OrderId, r.OrderItemId })
+            .HasPrincipalKey(i => new { i.OrderId, i.OrderItemId })
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }

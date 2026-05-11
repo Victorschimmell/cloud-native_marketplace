@@ -152,14 +152,14 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetProductReviews_ReturnsNotImplemented()
+    public async Task GetProductReviews_ReturnsOk()
     {
         // Act
         var productId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/products/{productId}/reviews", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     private async Task<(Guid ProductId, Guid ListingId)> SeedProductListingAsync(string productName, string sku, decimal price)

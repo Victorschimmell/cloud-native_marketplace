@@ -16,4 +16,5 @@ public sealed class OrderItem
     public Catalog.ProductListing? Listing { get; set; }
     public Catalog.Product? Product { get; set; }
     public IdentityAccess.Seller? Seller { get; set; }
+    public ICollection<OrderReview> Reviews { get; } = [];
 }

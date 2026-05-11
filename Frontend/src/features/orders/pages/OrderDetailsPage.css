@@ -155,6 +155,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.order-details__line-side {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
 .order-details__line-product {
   min-width: 0;
   align-items: center;
@@ -246,6 +252,184 @@
   background: var(--primary-hover-color);
 }
 
+.order-details__review-button {
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.order-details__review-button {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 0;
+  text-align: right;
+}
+
+.order-details__review-state {
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.order-details__review-form {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(180px, auto) minmax(260px, 1fr);
+  gap: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 18px;
+}
+
+.order-details__review-form-header {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 3px;
+}
+
+.order-details__review-form-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.order-details__review-form-header span {
+  color: #4b5563;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.order-details__rating-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+}
+
+.order-details__rating-field legend {
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.order-details__rating-options {
+  display: inline-grid;
+  grid-template-columns: repeat(5, 34px);
+  gap: 5px;
+}
+
+.order-details__rating-option {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.order-details__rating-option span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.order-details__rating-option:focus-visible {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+  outline: 0;
+}
+
+.order-details__rating-option[data-active='true'] {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.order-details__rating-option[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+}
+
+.order-details__review-feedback {
+  resize: none;
+}
+
+.order-details__review-title-field {
+  align-self: end;
+}
+
+.order-details__review-form-message,
+.order-details__review-form-notice,
+.order-details__review-actions {
+  grid-column: 1 / -1;
+}
+
+.order-details__review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-details__review-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.order-details__review-action--primary {
+  border: 1px solid var(--primary-color);
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.order-details__review-action--primary:hover:not(:disabled),
+.order-details__review-action--primary:focus-visible:not(:disabled) {
+  background: var(--primary-hover-color);
+}
+
+.order-details__review-action--secondary {
+  border: 1px solid #d7dde7;
+  background: #ffffff;
+  color: #111827;
+}
+
+.order-details__review-action--secondary:hover:not(:disabled),
+.order-details__review-action--secondary:focus-visible:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.order-details__review-action:disabled {
+  cursor: not-allowed;
+}
+
+.order-details__review-action--primary:disabled {
+  border-color: #93c5fd;
+  background: #93c5fd;
+}
+
 .order-details__notice,
 .order-details__loading {
   border-radius: 8px;
@@ -293,5 +477,13 @@
   .order-details__line strong,
   .order-details__totals dd {
     text-align: left;
+  }
+
+  .order-details__line-side {
+    justify-items: start;
+  }
+
+  .order-details__review-form {
+    grid-template-columns: 1fr;
   }
 }
