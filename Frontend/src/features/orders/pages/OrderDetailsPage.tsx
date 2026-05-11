@@ -138,7 +138,14 @@ export default function OrderDetailsPage() {
                         No image
                       </span>
                       <div>
-                        <h3>{item.productName}</h3>
+                        <h3>
+                          <Link
+                            className="order-details__product-link"
+                            to={`/products/${item.productId}?listingId=${item.listingId}`}
+                          >
+                            {item.productName}
+                          </Link>
+                        </h3>
                         <p>
                           Quantity {item.quantity}
                           <span aria-hidden="true"> - </span>
