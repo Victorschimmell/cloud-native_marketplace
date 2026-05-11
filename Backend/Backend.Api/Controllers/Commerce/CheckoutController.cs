@@ -1,6 +1,5 @@
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Mappings.Commerce.Checkout;
-using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,21 +13,15 @@ public class CheckoutController : ApiControllerBase
 {
     private readonly ICheckoutService _checkoutService;
     private readonly ICurrentUserProvider _currentUserProvider;
-    private readonly ICustomerRepository _customerRepository;
-    private readonly ISellerRepository _sellerRepository;
     private readonly ILogger<CheckoutController> _logger;
 
     public CheckoutController(
         ICheckoutService checkoutService,
         ICurrentUserProvider currentUserProvider,
-        ICustomerRepository customerRepository,
-        ISellerRepository sellerRepository,
         ILogger<CheckoutController> logger)
     {
         _checkoutService = checkoutService;
         _currentUserProvider = currentUserProvider;
-        _customerRepository = customerRepository;
-        _sellerRepository = sellerRepository;
         _logger = logger;
     }
 
@@ -38,11 +31,6 @@ public class CheckoutController : ApiControllerBase
         if (!TryGetCurrentUserId(out var userId))
         {
             return Unauthorized(new { Error = "Authenticated user id is missing." });
-        }
-
-        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
-        {
-            return restriction;
         }
 
         _logger.LogInformation(
@@ -62,11 +50,6 @@ public class CheckoutController : ApiControllerBase
         if (!TryGetCurrentUserId(out var userId))
         {
             return Unauthorized(new { Error = "Authenticated user id is missing." });
-        }
-
-        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
-        {
-            return restriction;
         }
 
         _logger.LogInformation(
@@ -90,22 +73,5 @@ public class CheckoutController : ApiControllerBase
 
         userId = Guid.Empty;
         return false;
-    }
-
-    private async Task<ActionResult?> GetBuyerRestrictionAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var seller = await _sellerRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (seller is not null)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Seller accounts cannot check out or buy products." });
-        }
-
-        var customer = await _customerRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (customer is null)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only customer accounts can check out." });
-        }
-
-        return null;
     }
 }

@@ -124,6 +124,9 @@ export default function ProductDetailsPage() {
   const summary = product?.categoryName ?? (isLoading ? 'Loading product...' : undefined);
   const isInStock = Boolean(product && product.stockQuantity > 0);
   const canBuyProduct = !isAuthenticated || capabilities.isCustomer;
+  const buyerRestrictionMessage = isAuthenticated && !capabilities.isCustomer
+    ? 'Only customer accounts can add products to the cart.'
+    : null;
   const stockText = isInStock && product ? `${product.stockQuantity} in stock` : 'Out of stock';
 
   return (
@@ -215,6 +218,11 @@ export default function ProductDetailsPage() {
               </div>
 
               <div className="product-details-page__cart-status">
+                {!cartMessage && buyerRestrictionMessage ? (
+                  <p className="product-details-page__cart-message product-details-page__cart-message--error" role="status">
+                    {buyerRestrictionMessage}
+                  </p>
+                ) : null}
                 {cartMessage ? (
                   <p
                     className={`product-details-page__cart-message product-details-page__cart-message--${cartMessageVariant}`}

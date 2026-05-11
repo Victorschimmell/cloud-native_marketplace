@@ -40,6 +40,20 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task PreviewCheckout_WhenAuthenticatedUserIsSeller_ReturnsForbidden()
+    {
+        // Arrange
+        var sellerUserId = await SeedSellerAsync("seller-preview@example.com");
+        AuthenticateAs(sellerUserId);
+
+        // Act
+        var response = await _client.GetAsync($"/api/checkout/preview?cartId={Guid.NewGuid()}&currency=USD", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task PreviewCheckout_WhenCartDoesNotExist_ReturnsNotFound()
     {
         // Arrange
@@ -110,6 +124,26 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Checkout_WhenAuthenticatedUserIsSeller_ReturnsForbidden()
+    {
+        // Arrange
+        var sellerUserId = await SeedSellerAsync("seller-checkout@example.com");
+        AuthenticateAs(sellerUserId);
+        var checkoutRequest = new CheckoutRequest
+        {
+            CartId = Guid.NewGuid(),
+            ShippingAddress = CreateShippingAddressRequest(),
+            Payments = Array.Empty<RecordPaymentRequest>()
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/checkout?currency=BRL", checkoutRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -550,6 +584,20 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return customerUser.Id;
+    }
+
+    private async Task<Guid> SeedSellerAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerUser = TestEntityFactory.CreateUserAccount(email);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+
+        dbContext.UserAccounts.Add(sellerUser);
+        dbContext.Sellers.Add(seller);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return sellerUser.Id;
     }
 
     private async Task<(Guid ListingId, Guid UserId, Guid CartId)> SeedCartWithItemAsync(
