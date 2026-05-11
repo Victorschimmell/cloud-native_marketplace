@@ -179,13 +179,8 @@ export default function ProductDetailsPage() {
                   Sold by <strong>{product.sellerName}</strong>
                 </span>
                 <span className="product-details-page__rating" aria-label={ratingSummary.ariaLabel}>
+                  <RatingStars rating={ratingSummary.average} />
                   <strong>{ratingSummary.averageLabel}</strong>
-                  <span className="product-details-page__stars" aria-hidden="true">
-                    {ratingSummary.stars.map((starClass, index) => (
-                      <span className={`product-details-page__star ${starClass}`} key={index} />
-                    ))}
-                  </span>
-                  {ratingSummary.count > 0 ? <span className="product-details-page__rating-caret" aria-hidden="true" /> : null}
                   <span className="product-details-page__rating-count">{ratingSummary.countLabel}</span>
                 </span>
               </div>
@@ -250,8 +245,10 @@ export default function ProductDetailsPage() {
 
             <section className="product-details-page__reviews" aria-labelledby="product-reviews-title">
               <div className="product-details-page__reviews-heading">
-                <h2 id="product-reviews-title">Reviews</h2>
-                <span>{ratingSummary.countLabel}</span>
+                <div>
+                  <h2 id="product-reviews-title">Reviews</h2>
+                  <span>{ratingSummary.headerLabel}</span>
+                </div>
               </div>
 
               {reviewsError ? (
@@ -271,7 +268,8 @@ export default function ProductDetailsPage() {
                         <span>{formatReviewDate(review.reviewCreationDateUtc)}</span>
                       </div>
                       <div className="product-details-page__review-score" aria-label={`${review.reviewScore} out of 5 stars`}>
-                        {review.reviewScore}/5
+                        <RatingStars rating={review.reviewScore} />
+                        <span>{review.reviewScore}/5</span>
                       </div>
                       {review.reviewCommentTitle ? <h3>{review.reviewCommentTitle}</h3> : null}
                       {review.reviewCommentMessage ? <p>{review.reviewCommentMessage}</p> : null}
@@ -287,33 +285,47 @@ export default function ProductDetailsPage() {
   );
 }
 
+function RatingStars({ rating }: { rating: number }) {
+  const roundedToHalf = Math.round(rating * 2) / 2;
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const starValue = index + 1;
+    if (roundedToHalf >= starValue) {
+      return 'product-details-page__star--filled';
+    }
+
+    if (roundedToHalf === starValue - 0.5) {
+      return 'product-details-page__star--half';
+    }
+
+    return '';
+  });
+
+  return (
+    <span className="product-details-page__stars" aria-hidden="true">
+      {stars.map((starClass, index) => (
+        <span className={`product-details-page__star ${starClass}`} key={index} />
+      ))}
+    </span>
+  );
+}
+
 function getRatingSummary(reviews: ProductReview[]) {
   const count = reviews.length;
   const average = count === 0
     ? 0
     : reviews.reduce((total, review) => total + review.reviewScore, 0) / count;
-  const roundedToHalf = Math.round(average * 2) / 2;
 
   return {
     average,
     averageLabel: count === 0 ? 'New' : average.toFixed(1),
+    headerLabel: count === 0
+      ? 'No reviews yet'
+      : `${average.toFixed(1)} out of 5 from ${count} ${count === 1 ? 'review' : 'reviews'}`,
     ariaLabel: count === 0
       ? 'No product reviews yet'
       : `Review summary: ${average.toFixed(1)} out of 5 stars from ${count} ${count === 1 ? 'review' : 'reviews'}`,
     count,
     countLabel: count === 0 ? 'No reviews' : `(${count.toLocaleString()})`,
-    stars: Array.from({ length: 5 }, (_, index) => {
-      const starValue = index + 1;
-      if (roundedToHalf >= starValue) {
-        return 'product-details-page__star--filled';
-      }
-
-      if (roundedToHalf === starValue - 0.5) {
-        return 'product-details-page__star--half';
-      }
-
-      return '';
-    }),
   };
 }
 
