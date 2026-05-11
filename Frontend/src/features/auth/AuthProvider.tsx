@@ -1,30 +1,28 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { authApi } from './api/authApi';
 import { AuthContext, type AuthContextValue } from './AuthContext';
-import { clearStoredAuth, getStoredAuth, setStoredAuth } from './authStorage';
-import type { AuthCapabilities, CustomerProfile, RegistrationResponse, SellerProfile, UserAccount } from './types';
+import { authStorageVersion, clearStoredAuth, getStoredAuth, setStoredAuth } from './authStorage';
+import type { AuthCapabilities, AuthProfile, RegistrationResponse, UserAccount } from './types';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [storedAuth, setAuthState] = useState(() => getStoredAuth());
 
   const value = useMemo<AuthContextValue>(
     () => {
-      const capabilities = getCapabilities(storedAuth?.user ?? null, storedAuth?.customer ?? null, storedAuth?.seller ?? null);
+      const capabilities = getCapabilities(storedAuth?.user ?? null, storedAuth?.profile ?? null);
 
       return {
         user: storedAuth?.user ?? null,
-        customer: storedAuth?.customer ?? null,
-        seller: storedAuth?.seller ?? null,
+        profile: storedAuth?.profile ?? null,
         capabilities,
         isAuthenticated: capabilities.isAuthenticated,
         login: async (loginRequest) => {
           const response = await authApi.login(loginRequest);
           const nextAuth = {
-            version: 1,
+            version: authStorageVersion,
             token: response.token,
             user: response.user,
-            customer: response.customer ?? null,
-            seller: response.seller ?? null,
+            profile: response.profile,
           };
           setStoredAuth(nextAuth);
           setAuthState(nextAuth);
@@ -48,11 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (response.token) {
             const nextAuth = {
-              version: 1,
+              version: authStorageVersion,
               token: response.token,
               user: response.user,
-              customer: response.customer ?? null,
-              seller: response.seller ?? null,
+              profile: getRegistrationAuthProfile(response),
             };
             setStoredAuth(nextAuth);
             setAuthState(nextAuth);
@@ -68,17 +65,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-function getCapabilities(user: UserAccount | null, customer: CustomerProfile | null, seller: SellerProfile | null): AuthCapabilities {
+function getCapabilities(user: UserAccount | null, profile: AuthProfile | null): AuthCapabilities {
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.isAdmin === true;
-  const isCustomer = isAuthenticated && Boolean(customer) && !isAdmin;
-  const isSeller = Boolean(seller);
+  const isCustomer = isAuthenticated && Boolean(profile?.customerId) && !isAdmin;
+  const isSeller = Boolean(profile?.sellerId);
+  const isVerifiedSeller = profile?.sellerVerificationStatus === 'Verified';
 
   return {
     isAuthenticated,
     isCustomer,
     isSeller,
-    isVerifiedSeller: seller?.verificationStatus === 'Verified',
+    needsSellerVerification: isSeller && !isVerifiedSeller,
+    isVerifiedSeller,
     isAdmin,
+  };
+}
+
+function getRegistrationAuthProfile(response: RegistrationResponse): AuthProfile {
+  return {
+    customerId: response.customer?.id ?? null,
+    sellerId: response.seller?.id ?? null,
+    sellerVerificationStatus: response.seller?.verificationStatus ?? null,
   };
 }

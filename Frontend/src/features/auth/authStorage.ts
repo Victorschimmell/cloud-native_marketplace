@@ -1,15 +1,14 @@
-import type { AuthToken, CustomerProfile, SellerProfile, UserAccount } from './types';
+import type { AuthProfile, AuthToken, UserAccount } from './types';
 
 const authStorageKey = 'marketplace.auth';
-const authStorageVersion = 1;
+export const authStorageVersion = 2;
 let currentAuth: StoredAuth | null = null;
 
 export interface StoredAuth {
   version: number;
   token: AuthToken;
   user: UserAccount;
-  customer?: CustomerProfile | null;
-  seller?: SellerProfile | null;
+  profile: AuthProfile;
 }
 
 export function getStoredAuth(): StoredAuth | null {
@@ -58,5 +57,5 @@ function readStoredAuth(): StoredAuth | null {
 }
 
 function isValidStoredAuth(auth: StoredAuth | null): auth is StoredAuth {
-  return Boolean(auth?.version === authStorageVersion && auth.token.accessToken && auth.token.expiresAtUtc && auth.user.id);
+  return Boolean(auth?.version === authStorageVersion && auth.token.accessToken && auth.token.expiresAtUtc && auth.user.id && auth.profile);
 }

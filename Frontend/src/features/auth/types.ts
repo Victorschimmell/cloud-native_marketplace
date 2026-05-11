@@ -25,8 +25,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   user: UserAccount;
   token: AuthToken;
-  customer?: CustomerProfile | null;
-  seller?: SellerProfile | null;
+  profile: AuthProfile;
 }
 
 export interface RegisterCustomerRequest {
@@ -67,8 +66,16 @@ export interface SellerProfile {
   registrationNumber: string;
   payoutInformation: string;
   defaultAddressId?: string | null;
-  verificationStatus: string;
+  verificationStatus: SellerVerificationStatus;
   verifiedAtUtc?: string | null;
+}
+
+export type SellerVerificationStatus = 'Unverified' | 'Pending' | 'Verified' | 'Rejected';
+
+export interface AuthProfile {
+  customerId?: string | null;
+  sellerId?: string | null;
+  sellerVerificationStatus?: SellerVerificationStatus | null;
 }
 
 export interface RegistrationResponse {
@@ -82,8 +89,9 @@ export interface AuthCapabilities {
   isAuthenticated: boolean;
   isCustomer: boolean;
   isSeller: boolean;
+  needsSellerVerification: boolean;
   isVerifiedSeller: boolean;
   isAdmin: boolean;
 }
 
-export type AuthCapability = 'authenticated' | 'customer' | 'seller' | 'verifiedSeller' | 'admin';
+export type AuthCapability = 'authenticated' | 'customer' | 'seller' | 'sellerVerification' | 'verifiedSeller' | 'admin';

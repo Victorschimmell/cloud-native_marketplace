@@ -12,7 +12,7 @@ export const primaryNavigationItems: NavigationItem[] = [
   { label: 'Browse Products', to: '/products', audience: 'public' },
   { label: 'Categories', to: '/categories', audience: 'public' },
   { label: 'Orders', to: '/orders', audience: 'customer' },
-  { label: 'Seller Verification', to: '/seller/verification', audience: 'seller' },
+  { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
   { label: 'Seller Products', to: '/seller/products', audience: 'verifiedSeller' },
   { label: 'Seller Orders', to: '/seller/orders', audience: 'verifiedSeller' },
   { label: 'Admin Users', to: '/admin/users', audience: 'admin' },
@@ -28,6 +28,8 @@ export function canUseCapability(capabilities: AuthCapabilities, capability: Aut
       return capabilities.isCustomer;
     case 'seller':
       return capabilities.isSeller;
+    case 'sellerVerification':
+      return capabilities.needsSellerVerification;
     case 'verifiedSeller':
       return capabilities.isVerifiedSeller;
     case 'admin':

@@ -36,6 +36,7 @@ export const router = createBrowserRouter([
       { path: 'products', element: <ProductListPage /> },
       { path: 'products/:id', element: <ProductDetailsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
+      { path: 'not-found', element: <NotFoundPage /> },
       {
         element: <ProtectedRoute capability="customer" />,
         children: [
@@ -54,7 +55,7 @@ export const router = createBrowserRouter([
       { path: 'sellers/:id', element: <SellersPage /> },
       { path: 'reviews', element: <ReviewsPage /> },
       {
-        element: <ProtectedRoute capability="seller" />,
+        element: <ProtectedRoute capability="sellerVerification" />,
         children: [
           { path: 'seller/verification', element: <SellerVerificationPage /> },
         ],

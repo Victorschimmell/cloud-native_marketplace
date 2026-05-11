@@ -17,7 +17,7 @@ export function ProtectedRoute({ capability = 'authenticated' }: ProtectedRouteP
   }
 
   if (!canUseCapability(capabilities, capability)) {
-    return <Navigate replace to="/" />;
+    return <Navigate replace to="/not-found" />;
   }
 
   return <Outlet />;
