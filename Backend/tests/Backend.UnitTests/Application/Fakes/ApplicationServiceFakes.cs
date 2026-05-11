@@ -25,7 +25,7 @@ internal sealed class FakeCustomerRepository : ICustomerRepository
     public Task DeleteAsync(Customer customer, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<PagedResult<Customer>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Customer>([], page, pageSize, 0));
     public Task<Customer?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
-    public Task<Customer?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult<Customer?>(null);
+    public Task<Customer?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Customer is not null && Customer.UserId == userId ? Customer : null);
     public Task UpdateAsync(Customer customer, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 

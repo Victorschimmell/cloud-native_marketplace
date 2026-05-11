@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.User.Auth;
+using Backend.Api.Mappings.User.Registration;
 using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Mappings.User.Auth;
@@ -12,7 +13,9 @@ public static class AuthMappingExtensions
         new()
         {
             User = response.User.ToModel(),
-            Token = response.Token.ToModel()
+            Token = response.Token.ToModel(),
+            Customer = response.Customer?.ToModel(),
+            Seller = response.Seller?.ToModel()
         };
 
     public static UserAccountModel ToModel(this App.UserAccountDto user) =>

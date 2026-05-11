@@ -25,6 +25,8 @@ export interface LoginRequest {
 export interface LoginResponse {
   user: UserAccount;
   token: AuthToken;
+  customer?: CustomerProfile | null;
+  seller?: SellerProfile | null;
 }
 
 export interface RegisterCustomerRequest {
@@ -75,3 +77,13 @@ export interface RegistrationResponse {
   seller?: SellerProfile | null;
   token?: AuthToken | null;
 }
+
+export interface AuthCapabilities {
+  isAuthenticated: boolean;
+  isCustomer: boolean;
+  isSeller: boolean;
+  isVerifiedSeller: boolean;
+  isAdmin: boolean;
+}
+
+export type AuthCapability = 'authenticated' | 'customer' | 'seller' | 'verifiedSeller' | 'admin';
