@@ -21,4 +21,5 @@ public sealed class Customer : AggregateRoot<Guid>
     public UserAccount? UserAccount { get; set; }
     public Address? DefaultAddress { get; set; }
     public ICollection<Orders.Order> Orders { get; } = [];
+    public ICollection<Orders.OrderReview> Reviews { get; } = [];
 }

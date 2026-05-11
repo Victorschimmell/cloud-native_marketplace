@@ -36,7 +36,7 @@ public sealed class OlistDataSeederPostgresTests
         Assert.Equal(3, await dbContext.ProductCategories.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(3, await dbContext.Products.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(5, await dbContext.OrderItems.CountAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(4, await dbContext.OrderReviews.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(3, await dbContext.OrderReviews.CountAsync(TestContext.Current.CancellationToken));
 
         var importedReviews = await dbContext.OrderReviews
             .Where(review => review.Order!.OrderNumber == "order-3")
@@ -44,6 +44,6 @@ public sealed class OlistDataSeederPostgresTests
             .Select(review => review.OlistReviewId)
             .ToListAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(new[] { "review-3", "review-4" }, importedReviews);
+        Assert.Equal(new[] { "review-3" }, importedReviews);
     }
 }

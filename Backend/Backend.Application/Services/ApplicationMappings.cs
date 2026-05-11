@@ -186,8 +186,8 @@ internal static class ApplicationMappings
             review.Id,
             review.OrderId,
             review.OrderItemId,
-            review.OrderItem?.ProductId,
-            review.Order?.Customer is { } customer
+            review.ProductId,
+            review.Customer is { } customer
                 ? $"{customer.FirstName} {customer.LastName}".Trim()
                 : null,
             review.ReviewScore,

@@ -22,6 +22,9 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
             .IsUnique()
             .HasFilter("\"OrderItemId\" IS NOT NULL");
 
+        builder.HasIndex(r => new { r.CustomerId, r.ProductId })
+            .IsUnique();
+
         builder.Property(r => r.ReviewScore)
             .IsRequired();
 
@@ -30,6 +33,16 @@ public sealed class OrderReviewConfiguration : IEntityTypeConfiguration<OrderRev
 
         builder.Property(r => r.ReviewCommentMessage)
             .HasMaxLength(2000);
+
+        builder.HasOne(r => r.Customer)
+            .WithMany(c => c.Reviews)
+            .HasForeignKey(r => r.CustomerId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(r => r.Product)
+            .WithMany(p => p.Reviews)
+            .HasForeignKey(r => r.ProductId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(r => r.OrderItem)
             .WithMany(i => i.Reviews)

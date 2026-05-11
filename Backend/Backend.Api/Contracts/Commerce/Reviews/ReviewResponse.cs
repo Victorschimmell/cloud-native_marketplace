@@ -5,7 +5,7 @@ public sealed record ReviewResponse
     public required Guid Id { get; init; }
     public required Guid OrderId { get; init; }
     public int? OrderItemId { get; init; }
-    public Guid? ProductId { get; init; }
+    public required Guid ProductId { get; init; }
     public string? ReviewerDisplayName { get; init; }
     public required int ReviewScore { get; init; }
     public string? ReviewCommentTitle { get; init; }

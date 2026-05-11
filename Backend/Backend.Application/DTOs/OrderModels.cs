@@ -39,7 +39,7 @@ public sealed record ReviewDto(
     Guid Id,
     Guid OrderId,
     int? OrderItemId,
-    Guid? ProductId,
+    Guid ProductId,
     string? ReviewerDisplayName,
     int ReviewScore,
     string? ReviewCommentTitle,

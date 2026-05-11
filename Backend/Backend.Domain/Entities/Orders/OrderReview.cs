@@ -11,6 +11,8 @@ public sealed class OrderReview : Entity<Guid>
 
     public Guid OrderId { get; set; }
     public int? OrderItemId { get; set; }
+    public Guid CustomerId { get; set; }
+    public Guid ProductId { get; set; }
     public string? OlistReviewId { get; set; }
     public int ReviewScore { get; set; }
     public string? ReviewCommentTitle { get; set; }
@@ -20,4 +22,6 @@ public sealed class OrderReview : Entity<Guid>
 
     public Order? Order { get; set; }
     public OrderItem? OrderItem { get; set; }
+    public IdentityAccess.Customer? Customer { get; set; }
+    public Catalog.Product? Product { get; set; }
 }

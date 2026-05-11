@@ -290,7 +290,7 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         dbContext.OrderItems.Add(orderItem);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return new ReviewScenario(customerUser.Id, order.Id, orderItem.OrderItemId, product.Id);
+        return new ReviewScenario(customerUser.Id, customer.Id, order.Id, orderItem.OrderItemId, product.Id);
     }
 
     private async Task SeedReviewAsync(ReviewScenario scenario, int score)
@@ -302,6 +302,8 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         {
             OrderId = scenario.OrderId,
             OrderItemId = scenario.OrderItemId,
+            CustomerId = scenario.CustomerId,
+            ProductId = scenario.ProductId,
             ReviewScore = score,
             ReviewCommentMessage = $"Score {score}",
             ReviewCreationDateUtc = DateTimeOffset.UtcNow
@@ -309,5 +311,5 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
-    private sealed record ReviewScenario(Guid CustomerUserId, Guid OrderId, int OrderItemId, Guid ProductId);
+    private sealed record ReviewScenario(Guid CustomerUserId, Guid CustomerId, Guid OrderId, int OrderItemId, Guid ProductId);
 }

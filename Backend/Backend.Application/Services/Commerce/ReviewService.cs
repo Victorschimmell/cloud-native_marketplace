@@ -1,5 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
+using Backend.Application.Common.Exceptions;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
@@ -35,10 +36,21 @@ public sealed class ReviewService : IReviewService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<IReadOnlyList<ReviewDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<ReviewDto>>> GetByOrderAsync(Guid orderId, Guid authenticatedUserId, CancellationToken cancellationToken = default)
     {
-        var reviews = await _reviewRepository.GetByOrderIdAsync(orderId, cancellationToken);
-        return Result<IReadOnlyList<ReviewDto>>.Success(reviews.Select(review => review.ToReviewDto()).ToArray());
+        var customer = await _customerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<IReadOnlyList<ReviewDto>>.Forbidden("Only customer accounts can view order reviews.");
+        }
+
+        var order = await _orderRepository.GetByIdWithDetailsAsync(orderId, cancellationToken);
+        if (order is null || order.CustomerId != customer.Id)
+        {
+            return Result<IReadOnlyList<ReviewDto>>.NotFound("Order was not found for the authenticated customer.");
+        }
+
+        return Result<IReadOnlyList<ReviewDto>>.Success(order.Reviews.Select(review => review.ToReviewDto()).ToArray());
     }
 
     public async Task<Result<IReadOnlyList<ReviewDto>>> GetByProductAsync(Guid productId, CancellationToken cancellationToken = default)
@@ -98,7 +110,7 @@ public sealed class ReviewService : IReviewService
             return Result<ReviewDto>.Conflict("This order item has already been reviewed.");
         }
 
-        if (order.Reviews.Any(review => review.OrderItem?.ProductId == orderItem.ProductId) ||
+        if (order.Reviews.Any(review => review.ProductId == orderItem.ProductId) ||
             await _reviewRepository.ExistsForCustomerProductAsync(customer.Id, orderItem.ProductId, cancellationToken))
         {
             return Result<ReviewDto>.Conflict("This product has already been reviewed by this customer.");
@@ -108,6 +120,8 @@ public sealed class ReviewService : IReviewService
         {
             OrderId = order.Id,
             OrderItemId = request.OrderItemId,
+            CustomerId = customer.Id,
+            ProductId = orderItem.ProductId,
             ReviewScore = request.ReviewScore,
             ReviewCommentTitle = title,
             ReviewCommentMessage = message,
@@ -115,9 +129,21 @@ public sealed class ReviewService : IReviewService
         };
 
         await _reviewRepository.AddAsync(review, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.OrderReviewOrderItem)
+        {
+            return Result<ReviewDto>.Conflict("This order item has already been reviewed.");
+        }
+        catch (UniqueConstraintViolationException exception) when (exception.Target == UniqueConstraintTarget.OrderReviewCustomerProduct)
+        {
+            return Result<ReviewDto>.Conflict("This product has already been reviewed by this customer.");
+        }
 
         review.Order = order;
+        review.Customer = customer;
         review.OrderItem = orderItem;
         return Result<ReviewDto>.Success(review.ToReviewDto());
     }

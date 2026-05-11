@@ -71,8 +71,8 @@ public class OrdersController : ApiControllerBase
             return Unauthorized(new { Error = "Authenticated user id is missing." });
         }
 
-        var result = await _orderService.GetByIdForCustomerAsync(orderId, userId, currency: null, cancellationToken);
-        return HandleResult(result, order => order.Reviews.Select(review => review.ToResponse()).ToArray());
+        var result = await _reviewService.GetByOrderAsync(orderId, userId, cancellationToken);
+        return HandleResult(result, reviews => reviews.Select(review => review.ToResponse()).ToArray());
     }
 
     [HttpGet("{orderId:guid}/shipments")]

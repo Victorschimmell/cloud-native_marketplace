@@ -806,9 +806,23 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
     private async Task SeedReviewsAsync(IReadOnlyList<OrderReviewRow> reviews, CancellationToken cancellationToken)
     {
-        var orderLookup = await _dbContext.Orders
+        var reviewTargets = await _dbContext.OrderItems
             .AsNoTracking()
-            .ToDictionaryAsync(order => order.OrderNumber, order => order.Id, StringComparer.OrdinalIgnoreCase, cancellationToken);
+            .Include(item => item.Order)
+            .Where(item => item.Order != null)
+            .OrderBy(item => item.OrderId)
+            .ThenBy(item => item.OrderItemId)
+            .Select(item => new ReviewImportTarget(
+                item.Order!.OrderNumber,
+                item.OrderId,
+                item.OrderItemId,
+                item.Order.CustomerId,
+                item.ProductId))
+            .ToListAsync(cancellationToken);
+
+        var reviewTargetsByOrderNumber = reviewTargets
+            .GroupBy(target => target.OrderNumber, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.OrdinalIgnoreCase);
 
         var existingReviewIds = await _dbContext.OrderReviews
             .AsNoTracking()
@@ -821,6 +835,9 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
             .Select(review => new
             {
                 review.OrderId,
+                review.CustomerId,
+                review.ProductId,
+                review.OrderItemId,
                 review.ReviewScore,
                 review.ReviewCommentTitle,
                 review.ReviewCommentMessage,
@@ -839,17 +856,35 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 review.ReviewAnswerTimestampUtc))
             .ToHashSet(StringComparer.Ordinal);
 
+        var existingOrderItemReviewKeys = existingReviewFingerprints
+            .Where(review => review.OrderItemId.HasValue)
+            .Select(review => $"{review.OrderId:N}:{review.OrderItemId!.Value}")
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var existingCustomerProductReviewKeys = existingReviewFingerprints
+            .Select(review => $"{review.CustomerId:N}:{review.ProductId:N}")
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var reviewsToInsert = new List<OrderReview>();
 
         foreach (var row in reviews)
         {
-            if (!orderLookup.TryGetValue(row.OrderId, out var orderId))
+            if (!reviewTargetsByOrderNumber.TryGetValue(row.OrderId, out var targets))
+            {
+                continue;
+            }
+
+            var target = targets.FirstOrDefault(candidate =>
+                !existingOrderItemReviewKeys.Contains($"{candidate.OrderId:N}:{candidate.OrderItemId}") &&
+                !existingCustomerProductReviewKeys.Contains($"{candidate.CustomerId:N}:{candidate.ProductId:N}"));
+
+            if (target is null)
             {
                 continue;
             }
 
             var fingerprint = CreateReviewFingerprint(
-                orderId,
+                target.OrderId,
                 row.ReviewScore,
                 row.ReviewCommentTitle,
                 row.ReviewCommentMessage,
@@ -863,7 +898,10 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
             reviewsToInsert.Add(new OrderReview
             {
-                OrderId = orderId,
+                OrderId = target.OrderId,
+                OrderItemId = target.OrderItemId,
+                CustomerId = target.CustomerId,
+                ProductId = target.ProductId,
                 OlistReviewId = row.ReviewId,
                 ReviewScore = row.ReviewScore,
                 ReviewCommentTitle = row.ReviewCommentTitle,
@@ -874,6 +912,8 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
             existingReviewIds.Add(row.ReviewId);
             existingFingerprintSet.Add(fingerprint);
+            existingOrderItemReviewKeys.Add($"{target.OrderId:N}:{target.OrderItemId}");
+            existingCustomerProductReviewKeys.Add($"{target.CustomerId:N}:{target.ProductId:N}");
         }
 
         if (reviewsToInsert.Count == 0)
@@ -935,4 +975,11 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
         IReadOnlyList<OrderItemRow> OrderItems,
         IReadOnlyList<OrderPaymentRow> Payments,
         IReadOnlyList<OrderReviewRow> Reviews);
+
+    private sealed record ReviewImportTarget(
+        string OrderNumber,
+        Guid OrderId,
+        int OrderItemId,
+        Guid CustomerId,
+        Guid ProductId);
 }

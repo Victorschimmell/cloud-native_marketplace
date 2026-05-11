@@ -24,4 +24,5 @@ public sealed class Product : AuditableEntity<Guid>
     public ProductCategory? Category { get; set; }
     public ICollection<ProductListing> Listings { get; } = [];
     public ICollection<Orders.OrderItem> OrderItems { get; } = [];
+    public ICollection<Orders.OrderReview> Reviews { get; } = [];
 }
