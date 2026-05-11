@@ -70,7 +70,7 @@ function getCapabilities(user: UserAccount | null, profile: AuthProfile | null):
   const isAdmin = user?.isAdmin === true;
   const isCustomer = isAuthenticated && Boolean(profile?.customerId) && !isAdmin;
   const isSeller = Boolean(profile?.sellerId);
-  const isVerifiedSeller = profile?.sellerVerificationStatus === 'Verified';
+  const isVerifiedSeller = isSeller && profile?.sellerVerificationStatus === 'Verified';
 
   return {
     isAuthenticated,
