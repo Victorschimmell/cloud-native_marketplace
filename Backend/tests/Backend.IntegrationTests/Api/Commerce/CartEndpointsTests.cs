@@ -56,6 +56,26 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task AddCartItem_WhenAuthenticatedUserIsSeller_ReturnsForbidden()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Seller cannot buy", "SELLER-CART-001", 39.95m);
+        var sellerUserId = await SeedSellerAsync("seller-cart@example.com");
+        AuthenticateAs(sellerUserId);
+        var addItemRequest = new AddCartItemRequest
+        {
+            ListingId = listingId,
+            Quantity = 1
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/cart/items?displayCurrency=BRL", addItemRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task AddCartItem_WhenDisplayCurrencyHasRoundingDifference_ReturnsBackendCalculatedLineTotal()
     {
         // Arrange
@@ -427,6 +447,20 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return customerUser.Id;
+    }
+
+    private async Task<Guid> SeedSellerAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerUser = TestEntityFactory.CreateUserAccount(email);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+
+        dbContext.UserAccounts.Add(sellerUser);
+        dbContext.Sellers.Add(seller);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return sellerUser.Id;
     }
 
     private void AuthenticateAs(Guid userId)

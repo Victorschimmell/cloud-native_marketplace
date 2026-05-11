@@ -1,8 +1,17 @@
 import { createContext } from 'react';
-import type { LoginRequest, RegisterRequest, RegistrationResponse, UserAccount } from './types';
+import type {
+  AuthProfile,
+  AuthCapabilities,
+  LoginRequest,
+  RegisterRequest,
+  RegistrationResponse,
+  UserAccount,
+} from './types';
 
 export interface AuthContextValue {
   user: UserAccount | null;
+  profile: AuthProfile | null;
+  capabilities: AuthCapabilities;
   isAuthenticated: boolean;
   login: (request: LoginRequest) => Promise<void>;
   logout: () => void;

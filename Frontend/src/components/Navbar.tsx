@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 import { cartApi, subscribeToCartUpdates } from '../features/cart/api/cartApi';
+import { canShowNavigationItem, primaryNavigationItems } from '../routes/navigation';
 import { currencyOptions } from '../shared/currency/currency';
 import { useCurrency } from '../shared/currency/useCurrency';
 import '../css/variables.css';
@@ -9,18 +10,19 @@ import './Navbar.css';
 
 export default function Navbar() {
   const { currency, setCurrency } = useCurrency();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { capabilities, isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
   const cartBadgeText = cartItemCount > 9 ? '9+' : cartItemCount.toString();
   const cartAriaLabel = `Cart with ${cartItemCount} ${cartItemCount === 1 ? 'item' : 'items'}`;
+  const visibleNavigationItems = primaryNavigationItems.filter((item) => canShowNavigationItem(capabilities, item));
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadCartCount() {
-      if (!isAuthenticated) {
+      if (!capabilities.isCustomer) {
         setCartItemCount(0);
         return;
       }
@@ -50,7 +52,7 @@ export default function Navbar() {
       isMounted = false;
       unsubscribe();
     };
-  }, [currency, isAuthenticated]);
+  }, [capabilities.isCustomer, currency]);
 
   function selectCurrency(nextCurrency: typeof currency) {
     setCurrency(nextCurrency);
@@ -71,10 +73,11 @@ export default function Navbar() {
         </Link>
 
         <div className="navbar__links">
-          <Link to="/products">Browse Products</Link>
-          <Link to="/categories">Categories</Link>
-          <Link to="/seller/products">Seller Dashboard</Link>
-          <Link to="/admin/users">Admin</Link>
+          {visibleNavigationItems.map((item) => (
+            <Link key={item.to} to={item.to}>
+              {item.label}
+            </Link>
+          ))}
         </div>
 
         <div className="navbar__actions">
@@ -108,18 +111,20 @@ export default function Navbar() {
             </div>
           </div>
 
-          <Link
-            aria-label={cartAriaLabel}
-            className="navbar__cart"
-            to="/cart"
-          >
-            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-              <path d="M6.3 6h15l-1.7 8.5a2 2 0 0 1-2 1.5H9.1a2 2 0 0 1-2-1.6L5.6 4H2" />
-              <circle cx="9.5" cy="20" r="1.3" />
-              <circle cx="17.5" cy="20" r="1.3" />
-            </svg>
-            {cartItemCount > 0 ? <span className="navbar__cart-badge">{cartBadgeText}</span> : null}
-          </Link>
+          {capabilities.isCustomer ? (
+            <Link
+              aria-label={cartAriaLabel}
+              className="navbar__cart"
+              to="/cart"
+            >
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+                <path d="M6.3 6h15l-1.7 8.5a2 2 0 0 1-2 1.5H9.1a2 2 0 0 1-2-1.6L5.6 4H2" />
+                <circle cx="9.5" cy="20" r="1.3" />
+                <circle cx="17.5" cy="20" r="1.3" />
+              </svg>
+              {cartItemCount > 0 ? <span className="navbar__cart-badge">{cartBadgeText}</span> : null}
+            </Link>
+          ) : null}
 
           <span className="navbar__utility-divider" aria-hidden="true" />
 

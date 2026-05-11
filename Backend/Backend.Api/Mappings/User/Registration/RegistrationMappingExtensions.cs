@@ -35,7 +35,7 @@ public static class RegistrationMappingExtensions
             OlistCustomerUniqueId = customer.OlistCustomerUniqueId
         };
 
-    private static CustomerModel ToModel(this App.CustomerDto customer) =>
+    public static CustomerModel ToModel(this App.CustomerDto customer) =>
         new()
         {
             Id = customer.Id,
@@ -48,7 +48,7 @@ public static class RegistrationMappingExtensions
             OlistCustomerUniqueId = customer.OlistCustomerUniqueId
         };
 
-    private static SellerModel ToModel(this App.SellerDto seller) =>
+    public static SellerModel ToModel(this App.SellerDto seller) =>
         new()
         {
             Id = seller.Id,

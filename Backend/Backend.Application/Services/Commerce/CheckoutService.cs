@@ -20,6 +20,7 @@ public sealed class CheckoutService : ICheckoutService
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly IOrderNumberGenerator _orderNumberGenerator;
     private readonly ICustomerRepository _customerRepository;
+    private readonly ISellerRepository _sellerRepository;
     private readonly IAddressRepository _addressRepository;
     private readonly IPaymentService _paymentService;
     private readonly IDateTimeProvider _dateTimeProvider;
@@ -34,6 +35,7 @@ public sealed class CheckoutService : ICheckoutService
         IOrderItemRepository orderItemRepository,
         IOrderNumberGenerator orderNumberGenerator,
         ICustomerRepository customerRepository,
+        ISellerRepository sellerRepository,
         IAddressRepository addressRepository,
         IPaymentService paymentService,
         IDateTimeProvider dateTimeProvider,
@@ -47,6 +49,7 @@ public sealed class CheckoutService : ICheckoutService
         ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(orderNumberGenerator);
         ArgumentNullException.ThrowIfNull(customerRepository);
+        ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(addressRepository);
         ArgumentNullException.ThrowIfNull(paymentService);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
@@ -60,6 +63,7 @@ public sealed class CheckoutService : ICheckoutService
         _orderItemRepository = orderItemRepository;
         _orderNumberGenerator = orderNumberGenerator;
         _customerRepository = customerRepository;
+        _sellerRepository = sellerRepository;
         _addressRepository = addressRepository;
         _paymentService = paymentService;
         _dateTimeProvider = dateTimeProvider;
@@ -70,6 +74,11 @@ public sealed class CheckoutService : ICheckoutService
 
     public async Task<Result<CheckoutPreviewDto>> GetCheckoutPreviewAsync(GetCheckoutPreviewRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return Result<CheckoutPreviewDto>.Forbidden(restriction);
+        }
+
         if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
         {
             return Result<CheckoutPreviewDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
@@ -116,6 +125,11 @@ public sealed class CheckoutService : ICheckoutService
 
     public async Task<Result<CheckoutResponse>> CheckoutAsync(CheckoutRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return Result<CheckoutResponse>.Forbidden(restriction);
+        }
+
         if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
@@ -404,6 +418,28 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         return value.Trim();
+    }
+
+    private async Task<string?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return null;
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
+        if (seller is not null)
+        {
+            return "Seller accounts cannot check out or buy products.";
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
+        if (customer is null)
+        {
+            return "Only customer accounts can check out.";
+        }
+
+        return null;
     }
 
     private async Task<ShoppingCart?> GetCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)

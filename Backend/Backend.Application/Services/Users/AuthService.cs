@@ -13,6 +13,8 @@ public sealed class AuthService : IAuthService
     private const string InvalidCredentialsMessage = "Invalid email or password.";
 
     private readonly IUserAccountRepository _userAccountRepository;
+    private readonly ICustomerRepository _customerRepository;
+    private readonly ISellerRepository _sellerRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuthTokenGenerator _authTokenGenerator;
     private readonly IDateTimeProvider _dateTimeProvider;
@@ -21,6 +23,8 @@ public sealed class AuthService : IAuthService
 
     public AuthService(
         IUserAccountRepository userAccountRepository,
+        ICustomerRepository customerRepository,
+        ISellerRepository sellerRepository,
         IPasswordHasher passwordHasher,
         IAuthTokenGenerator authTokenGenerator,
         IDateTimeProvider dateTimeProvider,
@@ -28,6 +32,8 @@ public sealed class AuthService : IAuthService
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(userAccountRepository);
+        ArgumentNullException.ThrowIfNull(customerRepository);
+        ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(passwordHasher);
         ArgumentNullException.ThrowIfNull(authTokenGenerator);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
@@ -35,6 +41,8 @@ public sealed class AuthService : IAuthService
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _userAccountRepository = userAccountRepository;
+        _customerRepository = customerRepository;
+        _sellerRepository = sellerRepository;
         _passwordHasher = passwordHasher;
         _authTokenGenerator = authTokenGenerator;
         _dateTimeProvider = dateTimeProvider;
@@ -149,7 +157,13 @@ public sealed class AuthService : IAuthService
         ), cancellationToken);
 
         var token = _authTokenGenerator.CreateToken(userAccount);
+        var customer = await _customerRepository.GetByUserIdAsync(userAccount.Id, cancellationToken);
+        var seller = await _sellerRepository.GetByUserIdAsync(userAccount.Id, cancellationToken);
 
-        return Result<AuthenticationResponse>.Success(new AuthenticationResponse(userAccount.ToUserAccountDto(), token));
+        return Result<AuthenticationResponse>.Success(new AuthenticationResponse(
+            userAccount.ToUserAccountDto(),
+            token,
+            customer?.ToCustomerDto(),
+            seller?.ToSellerDto()));
     }
 }

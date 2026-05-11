@@ -14,13 +14,13 @@ public sealed class ServiceConstructorTests
     [Fact]
     public void CartService_Throws_When_ProductListingRepository_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new CartService(new FakeCartRepository(), null!, new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork()));
+        Assert.Throws<ArgumentNullException>(() => new CartService(new FakeCartRepository(), null!, new FakeCustomerRepository(), new FakeSellerRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork()));
     }
 
     [Fact]
     public void AuthService_Throws_When_PasswordHasher_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new AuthService(new FakeUserAccountRepository(), null!, new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork()));
+        Assert.Throws<ArgumentNullException>(() => new AuthService(new FakeUserAccountRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), null!, new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork()));
     }
 
     [Fact]
@@ -33,11 +33,11 @@ public sealed class ServiceConstructorTests
         _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeCustomerRepository(), new FakeCurrencyConversionService());
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
-        _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
-        _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakeAddressRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
+        _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
+        _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeAddressRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new AddressService(new FakeAddressRepository(), new FakeCustomerRepository(), new FakeUnitOfWork());
         _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
-        _ = new AuthService(new FakeUserAccountRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
+        _ = new AuthService(new FakeUserAccountRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new RegistrationService(
             new FakeUserAccountRepository(),
             new FakeCustomerRepository(),

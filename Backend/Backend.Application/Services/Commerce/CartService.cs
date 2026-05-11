@@ -11,6 +11,8 @@ public sealed class CartService : ICartService
 {
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
+    private readonly ICustomerRepository _customerRepository;
+    private readonly ISellerRepository _sellerRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IUnitOfWork _unitOfWork;
@@ -18,18 +20,24 @@ public sealed class CartService : ICartService
     public CartService(
         ICartRepository cartRepository,
         IProductListingRepository productListingRepository,
+        ICustomerRepository customerRepository,
+        ISellerRepository sellerRepository,
         IDateTimeProvider dateTimeProvider,
         ICurrencyConversionService currencyConversionService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
+        ArgumentNullException.ThrowIfNull(customerRepository);
+        ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _cartRepository = cartRepository;
         _productListingRepository = productListingRepository;
+        _customerRepository = customerRepository;
+        _sellerRepository = sellerRepository;
         _dateTimeProvider = dateTimeProvider;
         _currencyConversionService = currencyConversionService;
         _unitOfWork = unitOfWork;
@@ -37,6 +45,11 @@ public sealed class CartService : ICartService
 
     public async Task<Result<CartDto>> GetCartAsync(GetCartRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return restriction;
+        }
+
         var cart = await GetCartWithProductDetailsAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
 
         if (cart is null)
@@ -54,6 +67,11 @@ public sealed class CartService : ICartService
 
     public async Task<Result<CartDto>> AddItemAsync(AddCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return restriction;
+        }
+
         if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
@@ -135,6 +153,11 @@ public sealed class CartService : ICartService
 
     public async Task<Result<CartDto>> UpdateItemAsync(UpdateCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return restriction;
+        }
+
         if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
@@ -287,5 +310,27 @@ public sealed class CartService : ICartService
         await _cartRepository.AddAsync(cart, cancellationToken);
 
         return cart;
+    }
+
+    private async Task<Result<CartDto>?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
+    {
+        if (!userId.HasValue)
+        {
+            return null;
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
+        if (seller is not null)
+        {
+            return Result<CartDto>.Forbidden("Seller accounts cannot use carts or buy products.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
+        if (customer is null)
+        {
+            return Result<CartDto>.Forbidden("Only customer accounts can use carts.");
+        }
+
+        return null;
     }
 }

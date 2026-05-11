@@ -18,14 +18,24 @@ public sealed class AuthRegistrationCartServiceTests
         {
             UserAccount = CreateUser("customer@example.com", "hashed::Password123!")
         };
+        var customerRepository = new FakeCustomerRepository();
+        await customerRepository.AddAsync(new Customer
+        {
+            UserId = userRepository.UserAccount.Id,
+            FirstName = "Ada",
+            LastName = "Lovelace",
+            Phone = "+4512345678"
+        }, TestContext.Current.CancellationToken);
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
+        var service = new AuthService(userRepository, customerRepository, new FakeSellerRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("customer@example.com", "Password123!"), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal($"token-for-{userRepository.UserAccount.Id}", result.Value.Token.AccessToken);
+        Assert.NotNull(result.Value.Customer);
+        Assert.Equal(userRepository.UserAccount.Id, result.Value.Customer.UserId);
         Assert.Equal(new DateTimeOffset(2026, 4, 9, 12, 0, 0, TimeSpan.Zero), userRepository.UserAccount.LastLoginAtUtc);
         Assert.Equal(1, userRepository.UpdateCalls);
         Assert.Equal(1, unitOfWork.SaveChangesCalls);
@@ -41,7 +51,7 @@ public sealed class AuthRegistrationCartServiceTests
             UserAccount = user
         };
         var unitOfWork = new FakeUnitOfWork();
-        var service = new AuthService(userRepository, new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
+        var service = new AuthService(userRepository, new FakeCustomerRepository(), new FakeSellerRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), unitOfWork);
 
         var result = await service.LoginAsync(new LoginRequest("blocked@example.com", "Password123!"), TestContext.Current.CancellationToken);
 

@@ -36,8 +36,9 @@ export const router = createBrowserRouter([
       { path: 'products', element: <ProductListPage /> },
       { path: 'products/:id', element: <ProductDetailsPage /> },
       { path: 'categories', element: <CategoriesPage /> },
+      { path: 'not-found', element: <NotFoundPage /> },
       {
-        element: <ProtectedRoute />,
+        element: <ProtectedRoute capability="customer" />,
         children: [
           { path: 'cart', element: <CartPage /> },
           { path: 'checkout', element: <CheckoutPage /> },
@@ -45,17 +46,37 @@ export const router = createBrowserRouter([
           { path: 'orders/:id', element: <OrderDetailsPage /> },
         ],
       },
-      { path: 'customers/:id', element: <CustomerPage /> },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: 'customers/:id', element: <CustomerPage /> },
+        ],
+      },
       { path: 'sellers/:id', element: <SellersPage /> },
       { path: 'reviews', element: <ReviewsPage /> },
-      { path: 'analytics', element: <AnalyticsDashboardPage /> },
-      { path: 'seller/products', element: <SellerProductsPage /> },
-      { path: 'seller/orders', element: <SellerOrdersPage /> },
-      { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
-      { path: 'seller/verification', element: <SellerVerificationPage /> },
-      { path: 'admin/users', element: <AdminUsersPage /> },
-      { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
-      { path: 'admin/audit', element: <AdminAuditPage /> },
+      {
+        element: <ProtectedRoute capability="sellerVerification" />,
+        children: [
+          { path: 'seller/verification', element: <SellerVerificationPage /> },
+        ],
+      },
+      {
+        element: <ProtectedRoute capability="verifiedSeller" />,
+        children: [
+          { path: 'seller/products', element: <SellerProductsPage /> },
+          { path: 'seller/orders', element: <SellerOrdersPage /> },
+          { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
+        ],
+      },
+      {
+        element: <ProtectedRoute capability="admin" />,
+        children: [
+          { path: 'analytics', element: <AnalyticsDashboardPage /> },
+          { path: 'admin/users', element: <AdminUsersPage /> },
+          { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
+          { path: 'admin/audit', element: <AdminAuditPage /> },
+        ],
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

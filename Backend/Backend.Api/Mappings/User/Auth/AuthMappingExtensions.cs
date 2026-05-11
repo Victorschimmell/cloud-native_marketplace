@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.User.Auth;
+using Backend.Api.Contracts.User.SellerVerification;
 using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Mappings.User.Auth;
@@ -12,7 +13,18 @@ public static class AuthMappingExtensions
         new()
         {
             User = response.User.ToModel(),
-            Token = response.Token.ToModel()
+            Token = response.Token.ToModel(),
+            Profile = response.ToProfileModel()
+        };
+
+    private static AuthProfileModel ToProfileModel(this App.AuthenticationResponse response) =>
+        new()
+        {
+            CustomerId = response.Customer?.Id,
+            SellerId = response.Seller?.Id,
+            SellerVerificationStatus = response.Seller is null
+                ? null
+                : (VerificationStatus)response.Seller.VerificationStatus
         };
 
     public static UserAccountModel ToModel(this App.UserAccountDto user) =>

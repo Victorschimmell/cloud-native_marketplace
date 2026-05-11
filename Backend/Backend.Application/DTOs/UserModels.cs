@@ -37,7 +37,11 @@ public sealed record LoginRequest(string Email, string Password);
 
 public sealed record AuthTokenDto(string AccessToken, DateTimeOffset ExpiresAtUtc, string? RefreshToken = null);
 
-public sealed record AuthenticationResponse(UserAccountDto User, AuthTokenDto Token);
+public sealed record AuthenticationResponse(
+    UserAccountDto User,
+    AuthTokenDto Token,
+    CustomerDto? Customer,
+    SellerDto? Seller);
 
 public sealed record RegisterCustomerRequest(
     string Email,
