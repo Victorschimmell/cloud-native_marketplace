@@ -173,6 +173,7 @@ internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
 {
     public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<bool> ExistsForCustomerProductAsync(Guid customerId, Guid productId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     public Task<bool> ExistsForOrderItemAsync(Guid orderId, int orderItemId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     public Task<OrderReview?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<OrderReview?>(null);
     public Task<IReadOnlyList<OrderReview>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderReview>>([]);

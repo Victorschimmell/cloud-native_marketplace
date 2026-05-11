@@ -91,6 +91,40 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task RecordReview_WhenCustomerAlreadyReviewedProductFromAnotherOrder_ReturnsConflict()
+    {
+        var scenario = await SeedDeliveredOrderItemAsync();
+        var secondScenario = await SeedDeliveredOrderItemAsync(
+            customerUserId: scenario.CustomerUserId,
+            productId: scenario.ProductId,
+            productName: "Repeated product review");
+        AuthenticateAs(scenario.CustomerUserId);
+
+        var firstResponse = await _client.PostAsJsonAsync(
+            "/api/reviews",
+            new RecordReviewRequest
+            {
+                OrderId = scenario.OrderId,
+                OrderItemId = scenario.OrderItemId,
+                ReviewScore = 5
+            },
+            TestContext.Current.CancellationToken);
+        var secondResponse = await _client.PostAsJsonAsync(
+            "/api/reviews",
+            new RecordReviewRequest
+            {
+                OrderId = secondScenario.OrderId,
+                OrderItemId = secondScenario.OrderItemId,
+                ReviewScore = 4
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, secondResponse.StatusCode);
+    }
+
+
+    [Fact]
     public async Task RecordReview_ForReturnedPurchasedOrderItem_ReturnsReview()
     {
         var scenario = await SeedDeliveredOrderItemAsync(OrderStatus.Returned, deliveredAt: DateTimeOffset.UtcNow.AddDays(-2));
@@ -195,18 +229,29 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     private async Task<ReviewScenario> SeedDeliveredOrderItemAsync(
         OrderStatus orderStatus = OrderStatus.Delivered,
         DateTimeOffset? deliveredAt = null,
-        string productName = "Reviewable product")
+        string productName = "Reviewable product",
+        Guid? customerUserId = null,
+        Guid? productId = null)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var customerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@customer.example");
-        var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
+        var customerUser = customerUserId.HasValue
+            ? await dbContext.UserAccounts.FindAsync([customerUserId.Value], TestContext.Current.CancellationToken)
+            : TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@customer.example");
+        Assert.NotNull(customerUser);
+
+        var customer = customerUserId.HasValue
+            ? dbContext.Customers.Single(customer => customer.UserId == customerUserId.Value)
+            : TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("review_category", "Review category");
-        var product = TestEntityFactory.CreateProduct(category.Id, productName);
+        var product = productId.HasValue
+            ? await dbContext.Products.FindAsync([productId.Value], TestContext.Current.CancellationToken)
+            : TestEntityFactory.CreateProduct(category.Id, productName);
+        Assert.NotNull(product);
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"REVIEW-{Guid.NewGuid():N}", 42m);
         var order = TestEntityFactory.CreateOrder(customer.Id, address.Id, $"ORDER-{Guid.NewGuid():N}", DateTimeOffset.UtcNow.AddDays(-4));
 
@@ -225,12 +270,21 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             FreightValue = 5m
         };
 
-        dbContext.UserAccounts.AddRange(customerUser, sellerUser);
-        dbContext.Customers.Add(customer);
+        if (!customerUserId.HasValue)
+        {
+            dbContext.UserAccounts.Add(customerUser);
+            dbContext.Customers.Add(customer);
+        }
+
+        dbContext.UserAccounts.Add(sellerUser);
         dbContext.Sellers.Add(seller);
         dbContext.Addresses.Add(address);
-        dbContext.ProductCategories.Add(category);
-        dbContext.Products.Add(product);
+        if (!productId.HasValue)
+        {
+            dbContext.ProductCategories.Add(category);
+            dbContext.Products.Add(product);
+        }
+
         dbContext.ProductListings.Add(listing);
         dbContext.Orders.Add(order);
         dbContext.OrderItems.Add(orderItem);

@@ -44,6 +44,18 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
             .AnyAsync(review => review.OrderId == orderId && review.OrderItemId == orderItemId, cancellationToken);
     }
 
+    public async Task<bool> ExistsForCustomerProductAsync(Guid customerId, Guid productId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrderReviews
+            .AnyAsync(
+                review =>
+                    review.Order != null &&
+                    review.Order.CustomerId == customerId &&
+                    review.OrderItem != null &&
+                    review.OrderItem.ProductId == productId,
+                cancellationToken);
+    }
+
     public Task AddAsync(OrderReview review, CancellationToken cancellationToken = default)
     {
         dbContext.OrderReviews.Add(review);

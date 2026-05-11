@@ -89,5 +89,6 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
                 .ThenInclude(i => i.Seller)
             .Include(o => o.Payments)
             .Include(o => o.Reviews)
+                .ThenInclude(r => r.OrderItem)
             .Include(o => o.Shipments);
 }

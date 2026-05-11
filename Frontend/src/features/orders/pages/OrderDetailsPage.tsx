@@ -58,6 +58,7 @@ export default function OrderDetailsPage() {
   const sellerSummary = useMemo(() => (order ? getSellerSummary(order) : ''), [order]);
   const approvalState = useMemo(() => (order ? getApprovalState(order) : 'Pending'), [order]);
   const reviewedItemIds = useMemo(() => new Set(order?.reviews.map((review) => review.orderItemId).filter(isNumber) ?? []), [order]);
+  const reviewedProductIds = useMemo(() => new Set(order?.reviews.map((review) => review.productId).filter(isString) ?? []), [order]);
   const canReviewOrder = Boolean(order && isReviewable(order));
 
   async function submitReview(orderItemId: number) {
@@ -147,7 +148,7 @@ export default function OrderDetailsPage() {
                     </div>
                     <div className="order-details__line-side">
                       <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
-                      {reviewedItemIds.has(item.orderItemId) ? (
+                      {reviewedItemIds.has(item.orderItemId) || reviewedProductIds.has(item.productId) ? (
                         <span className="order-details__review-state">Reviewed</span>
                       ) : canReviewOrder ? (
                         <button
@@ -358,4 +359,8 @@ function isReviewable(order: Order) {
 
 function isNumber(value: unknown): value is number {
   return typeof value === 'number';
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
 }

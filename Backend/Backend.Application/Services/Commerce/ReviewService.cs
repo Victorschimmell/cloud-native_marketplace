@@ -98,6 +98,12 @@ public sealed class ReviewService : IReviewService
             return Result<ReviewDto>.Conflict("This order item has already been reviewed.");
         }
 
+        if (order.Reviews.Any(review => review.OrderItem?.ProductId == orderItem.ProductId) ||
+            await _reviewRepository.ExistsForCustomerProductAsync(customer.Id, orderItem.ProductId, cancellationToken))
+        {
+            return Result<ReviewDto>.Conflict("This product has already been reviewed by this customer.");
+        }
+
         var review = new OrderReview
         {
             OrderId = order.Id,
