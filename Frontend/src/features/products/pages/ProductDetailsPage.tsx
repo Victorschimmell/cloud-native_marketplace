@@ -22,7 +22,7 @@ export default function ProductDetailsPage() {
 
   const listingId = searchParams.get('listingId');
   const { currency } = useCurrency();
-  const { isAuthenticated } = useAuth();
+  const { capabilities, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const priceFormatter = useMemo(
@@ -90,6 +90,12 @@ export default function ProductDetailsPage() {
       return;
     }
 
+    if (!capabilities.isCustomer) {
+      setCartMessageVariant('error');
+      setCartMessage('Only customer accounts can add products to the cart.');
+      return;
+    }
+
     try {
       setIsAdding(true);
       setCartMessage(null);
@@ -117,6 +123,7 @@ export default function ProductDetailsPage() {
   const title = product?.productName ?? 'Product Details';
   const summary = product?.categoryName ?? (isLoading ? 'Loading product...' : undefined);
   const isInStock = Boolean(product && product.stockQuantity > 0);
+  const canBuyProduct = !isAuthenticated || capabilities.isCustomer;
   const stockText = isInStock && product ? `${product.stockQuantity} in stock` : 'Out of stock';
 
   return (
@@ -189,7 +196,7 @@ export default function ProductDetailsPage() {
                 <label className="product-details-page__quantity">
                   Quantity
                   <input
-                    disabled={!isInStock}
+                    disabled={!isInStock || !canBuyProduct}
                     max={product.stockQuantity > 0 ? product.stockQuantity : undefined}
                     min="1"
                     onChange={(event) => updateQuantity(event.target.value)}
@@ -199,11 +206,11 @@ export default function ProductDetailsPage() {
                 </label>
                 <button
                   className={isAdding ? 'product-details-page__add-button--loading' : undefined}
-                  disabled={isAdding || !isInStock}
+                  disabled={isAdding || !isInStock || !canBuyProduct}
                   onClick={addToCart}
                   type="button"
                 >
-                  {isAdding ? 'Adding...' : isInStock ? 'Add to cart' : 'Out of stock'}
+                  {isAdding ? 'Adding...' : isInStock && canBuyProduct ? 'Add to cart' : isInStock ? 'Customer accounts only' : 'Out of stock'}
                 </button>
               </div>
 

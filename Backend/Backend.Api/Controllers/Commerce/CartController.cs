@@ -1,6 +1,7 @@
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Mappings.Commerce.Cart;
+using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -15,15 +16,21 @@ public class CartController : ApiControllerBase
 {
     private readonly ICartService _cartService;
     private readonly ICurrentUserProvider _currentUserProvider;
+    private readonly ICustomerRepository _customerRepository;
+    private readonly ISellerRepository _sellerRepository;
     private readonly ILogger<CartController> _logger;
 
     public CartController(
         ICartService cartService,
         ICurrentUserProvider currentUserProvider,
+        ICustomerRepository customerRepository,
+        ISellerRepository sellerRepository,
         ILogger<CartController> logger)
     {
         _cartService = cartService;
         _currentUserProvider = currentUserProvider;
+        _customerRepository = customerRepository;
+        _sellerRepository = sellerRepository;
         _logger = logger;
     }
 
@@ -33,6 +40,11 @@ public class CartController : ApiControllerBase
         if (!TryGetCurrentUserId(out var userId))
         {
             return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
+        {
+            return restriction;
         }
 
         var result = await _cartService.GetCartAsync(new App.GetCartRequest(cartId, userId, null), displayCurrency, cancellationToken);
@@ -47,6 +59,11 @@ public class CartController : ApiControllerBase
             return Unauthorized(new { Error = "Authenticated user id is missing." });
         }
 
+        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
+        {
+            return restriction;
+        }
+
         var result = await _cartService.GetCartAsync(new App.GetCartRequest(null, userId, null), displayCurrency, cancellationToken);
         return HandleResult(result, cart => cart.ToResponse());
     }
@@ -57,6 +74,11 @@ public class CartController : ApiControllerBase
         if (!TryGetCurrentUserId(out var userId))
         {
             return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
+        {
+            return restriction;
         }
 
         _logger.LogInformation(
@@ -77,6 +99,11 @@ public class CartController : ApiControllerBase
         if (!TryGetCurrentUserId(out var userId))
         {
             return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        if (await GetBuyerRestrictionAsync(userId, cancellationToken) is { } restriction)
+        {
+            return restriction;
         }
 
         _logger.LogInformation(
@@ -101,5 +128,22 @@ public class CartController : ApiControllerBase
 
         userId = Guid.Empty;
         return false;
+    }
+
+    private async Task<ActionResult?> GetBuyerRestrictionAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var seller = await _sellerRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (seller is not null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Seller accounts cannot use carts or buy products." });
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (customer is null)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only customer accounts can use carts." });
+        }
+
+        return null;
     }
 }
