@@ -25,40 +25,35 @@ namespace Backend.Infrastructure.Migrations
 
             migrationBuilder.Sql(
                 """
-                WITH ranked_reviews AS (
+                WITH product_counts AS (
                     SELECT
-                        r."Id",
-                        r."OrderId",
-                        ROW_NUMBER() OVER (
-                            PARTITION BY r."OrderId"
-                            ORDER BY r."ReviewCreationDateUtc", r."Id"
-                        ) AS rn
-                    FROM order_review r
-                    WHERE r."OrderItemId" IS NULL
+                        oi."OrderId",
+                        COUNT(DISTINCT oi."ProductId") AS distinct_product_count,
+                        MIN(oi."OrderItemId") AS first_order_item_id
+                    FROM order_item oi
+                    GROUP BY oi."OrderId"
                 ),
-                ranked_items AS (
+                single_product_orders AS (
                     SELECT
                         oi."OrderId",
                         oi."OrderItemId",
-                        oi."ProductId",
-                        ROW_NUMBER() OVER (
-                            PARTITION BY oi."OrderId"
-                            ORDER BY oi."OrderItemId"
-                        ) AS rn
-                    FROM order_item oi
+                        oi."ProductId"
+                    FROM product_counts pc
+                    JOIN order_item oi
+                        ON oi."OrderId" = pc."OrderId"
+                        AND oi."OrderItemId" = pc.first_order_item_id
+                    WHERE pc.distinct_product_count = 1
                 )
                 UPDATE order_review r
                 SET
-                    "OrderItemId" = ranked_items."OrderItemId",
+                    "OrderItemId" = single_product_orders."OrderItemId",
                     "CustomerId" = o."CustomerId",
-                    "ProductId" = ranked_items."ProductId"
-                FROM ranked_reviews
-                JOIN ranked_items
-                    ON ranked_items."OrderId" = ranked_reviews."OrderId"
-                    AND ranked_items.rn = ranked_reviews.rn
+                    "ProductId" = single_product_orders."ProductId"
+                FROM single_product_orders
                 JOIN "order" o
-                    ON o."Id" = ranked_reviews."OrderId"
-                WHERE r."Id" = ranked_reviews."Id";
+                    ON o."Id" = single_product_orders."OrderId"
+                WHERE r."OrderId" = single_product_orders."OrderId"
+                    AND r."OrderItemId" IS NULL;
                 """);
 
             migrationBuilder.Sql(

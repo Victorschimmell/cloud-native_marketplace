@@ -822,6 +822,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
 
         var reviewTargetsByOrderNumber = reviewTargets
             .GroupBy(target => target.OrderNumber, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Select(target => target.ProductId).Distinct().Count() == 1)
             .ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.OrdinalIgnoreCase);
 
         var existingReviewIds = await _dbContext.OrderReviews
