@@ -64,6 +64,7 @@ function SortableHeader({ label, onClick }: { label: string; onClick: () => void
     <th>
       <button
         type="button"
+        aria-label={`Sort by ${label}`}
         onClick={onClick}
         style={{
           background: 'none',
@@ -75,7 +76,7 @@ function SortableHeader({ label, onClick }: { label: string; onClick: () => void
           color: 'inherit',
         }}
       >
-        {label} {'↕'}
+        {label}
       </button>
     </th>
   );
@@ -109,8 +110,6 @@ function OrderRow({ order }: { order: SellerOrder }) {
   );
 }
 
-/* Helpers */
- 
 function sortOrders(orders: SellerOrder[], key: SortKey, direction: SortDirection): SellerOrder[] {
   const statusRank: Record<OrderStatus, number> = {
     Pending: 0,
