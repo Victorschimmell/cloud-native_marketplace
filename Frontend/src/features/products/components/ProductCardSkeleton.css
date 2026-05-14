@@ -33,6 +33,12 @@
   margin-top: 18px;
 }
 
+.product-card-skeleton__block--rating {
+  width: 48%;
+  height: 14px;
+  margin-top: 12px;
+}
+
 .product-card-skeleton__block--text {
   height: 14px;
   margin-top: 14px;

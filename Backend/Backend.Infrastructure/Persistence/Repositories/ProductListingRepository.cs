@@ -32,6 +32,8 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
             .AsNoTracking()
             .Include(l => l.Product)
                 .ThenInclude(p => p!.Category)
+            .Include(l => l.Product)
+                .ThenInclude(p => p!.Reviews)
             .Where(l =>
                 !l.IsDeleted &&
                 l.VisibilityStatus == ListingVisibilityStatus.Published &&

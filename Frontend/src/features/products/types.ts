@@ -10,6 +10,8 @@ export interface BrowseProduct {
   price: number;
   currencyCode: ProductCurrencyCode;
   stockQuantity: number;
+  averageReviewScore: number | null;
+  reviewCount: number;
   productPhotosQty: number;
   productWeightG: number;
   productLengthCm: number;

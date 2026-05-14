@@ -83,6 +83,8 @@ internal static class ApplicationMappings
             convertedPrice,
             currencyCode,
             listing.InventoryQuantity,
+            product.Reviews.Count > 0 ? product.Reviews.Average(review => review.ReviewScore) : null,
+            product.Reviews.Count,
             product.ProductPhotosQty,
             product.ProductWeightG,
             product.ProductLengthCm,

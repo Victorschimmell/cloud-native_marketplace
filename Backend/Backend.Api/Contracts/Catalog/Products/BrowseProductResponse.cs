@@ -11,6 +11,8 @@ public sealed record BrowseProductResponse
     public required decimal Price { get; init; }
     public required string CurrencyCode { get; init; }
     public required int StockQuantity { get; init; }
+    public required double? AverageReviewScore { get; init; }
+    public required int ReviewCount { get; init; }
     public required int ProductPhotosQty { get; init; }
     public required int ProductWeightG { get; init; }
     public required int ProductLengthCm { get; init; }
