@@ -8,6 +8,7 @@ public sealed record OrderSummaryModel
     public required Guid UserId { get; init; }
     public required string OrderNumber { get; init; }
     public required OrderStatus OrderStatus { get; init; }
+    public required string? OrderStatusDescription { get; init; }
     public required DateTimeOffset OrderPurchaseTimestampUtc { get; init; }
     public required DateTimeOffset? OrderApprovedAtUtc { get; init; }
     public required DateTimeOffset? OrderDeliveredCarrierDateUtc { get; init; }
