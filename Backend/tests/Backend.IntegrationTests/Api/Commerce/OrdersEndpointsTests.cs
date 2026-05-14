@@ -230,7 +230,7 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
             TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

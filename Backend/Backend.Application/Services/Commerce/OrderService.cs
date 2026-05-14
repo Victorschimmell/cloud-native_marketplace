@@ -63,6 +63,33 @@ public sealed class OrderService : IOrderService
         return Task.FromResult(Result<PagedResult<OrderDto>>.NotImplemented());
     }
 
+    public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
+    {
+        if (request.Page < 1 || request.PageSize < 1)
+        {
+            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
+        }
+
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<PagedResult<OrderSummaryDto>>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
+        var orders = await _orderRepository.GetByCustomerIdAsync(customer.Id, request.Page, request.PageSize, cancellationToken);
+        var mappedOrders = orders.Items
+            .Select(order => order.ToOrderSummaryDto(authenticatedUserId, currencyCode, priceConverter))
+            .ToArray();
+
+        return Result<PagedResult<OrderSummaryDto>>.Success(
+            new PagedResult<OrderSummaryDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
+    }
+
     public async Task<Result<PagedResult<OrderDto>>> GetByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
     {
         if (request.Page < 1 || request.PageSize < 1)

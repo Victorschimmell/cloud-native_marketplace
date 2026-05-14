@@ -35,14 +35,19 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        return await dbContext.Orders
-            .Where(o => o.CustomerId == customerId)
+        var query = dbContext.Orders
+            .Where(o => o.CustomerId == customerId);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orders = await query
             .OrderByDescending(o => o.OrderPurchaseTimestampUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return new PagedResult<Order>(orders, page, pageSize, totalCount);
     }
 
     public async Task<PagedResult<Order>> GetByCustomerIdWithDetailsAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)

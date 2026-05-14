@@ -70,7 +70,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet("{userId:guid}/orders")]
-    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersByCustomerAsync(
+    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersSummaryByCustomerAsync(
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
@@ -86,12 +86,12 @@ public class CustomersController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access orders for another customer." });
         }
 
-        var result = await _orderService.GetByCustomerUserAsync(userId, pageRequest.ToAppRequest(), currency, cancellationToken);
+        var result = await _orderService.GetSummaryByCustomerUserAsync(userId, pageRequest.ToAppRequest(), currency, cancellationToken);
         return HandleResult(
             result,
-            page => new PageResponse<OrderModel>
+            page => new PageResponse<OrderSummaryModel>
             {
-                Items = page.Items.Select(order => order.ToModel()).ToArray(),
+                Items = page.Items.Select(order => order.ToSummaryModel()).ToArray(),
                 Page = page.Page,
                 PageSize = page.PageSize,
                 TotalCount = page.TotalCount
