@@ -820,8 +820,6 @@ namespace Backend.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("\"OrderItemId\" IS NOT NULL");
 
-                    b.HasIndex("OrderId");
-
                     b.ToTable("order_review", (string)null);
                 });
 
