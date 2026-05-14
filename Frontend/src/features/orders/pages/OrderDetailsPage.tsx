@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
+import { ApiError } from '../../../shared/api/request';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { FormNotice, TextAreaField, TextField } from '../../../shared/forms';
 import { orderApi } from '../api/orderApi';
+import { ShipmentTrackingBox } from '../components';
 import type { Order } from '../types';
 import { formatDateTime, formatMoney, getOrderItemCount, getPaymentStatus, getStatusTone } from '../utils';
 import './OrderDetailsPage.css';
+
+const cancelAllowedStatuses = ['Pending', 'Approved', 'Processing'] as const;
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -21,6 +25,12 @@ export default function OrderDetailsPage() {
   const [reviewMessage, setReviewMessage] = useState('');
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+  const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnSubmittedReason, setReturnSubmittedReason] = useState<string | null>(null);
   const isConfirmed = searchParams.get('confirmed') === '1';
 
   useEffect(() => {
@@ -61,6 +71,32 @@ export default function OrderDetailsPage() {
   const reviewedProductIds = useMemo(() => new Set(order?.reviews.map((review) => review.productId).filter(isString) ?? []), [order]);
   const canReviewOrder = Boolean(order && isReviewable(order));
 
+  const canCancel = useMemo(
+    () => (order ? cancelAllowedStatuses.includes(order.orderStatus as (typeof cancelAllowedStatuses)[number]) : false),
+    [order],
+  );
+  const canReturn = useMemo(() => order?.orderStatus === 'Delivered', [order]);
+  const showShipments = useMemo(
+    () => Boolean(order && order.shipments.length > 0 && ['Shipped', 'Delivered'].includes(order.orderStatus)),
+    [order],
+  );
+  const cancelReasonLength = cancelReason.trim().length;
+  const returnReasonLength = returnReason.trim().length;
+  const cancelSummaryReason = useMemo(() => {
+    if (order?.orderStatus === 'Cancelled') {
+      return order.orderStatusDescription?.trim() ?? '';
+    }
+
+    return '';
+  }, [order]);
+  const returnSummaryReason = useMemo(() => {
+    if (order?.orderStatus === 'Returned') {
+      return order.orderStatusDescription?.trim() ?? '';
+    }
+
+    return returnSubmittedReason?.trim() ?? '';
+  }, [order, returnSubmittedReason]);
+
   async function submitReview(orderItemId: number) {
     if (!order) {
       return;
@@ -92,6 +128,55 @@ export default function OrderDetailsPage() {
     }
   }
 
+  const handleCancelSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!order) {
+      return;
+    }
+
+    const trimmedReason = cancelReason.trim();
+    if (!trimmedReason) {
+      setCancelError('Please provide a reason for cancellation.');
+      return;
+    }
+
+    try {
+      setIsCancelSubmitting(true);
+      setCancelError(null);
+      setCancelSuccess(null);
+
+      const response = await orderApi.cancelOrder(order.id, currency, trimmedReason);
+      setOrder(response);
+      setCancelReason('');
+      setCancelSuccess('Order cancelled successfully.');
+    } catch (requestError) {
+      setCancelError(`Cancel order failed: ${getErrorMessage(requestError)}`);
+    } finally {
+      setIsCancelSubmitting(false);
+    }
+  };
+
+  const handleReturnSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedReason = returnReason.trim();
+    if (!trimmedReason) {
+      return;
+    }
+
+    setReturnSubmittedReason(trimmedReason);
+    setReturnReason('');
+    setOrder((currentOrder) =>
+      currentOrder
+        ? {
+          ...currentOrder,
+          orderStatusDescription: trimmedReason,
+        }
+        : currentOrder,
+    );
+  };
+
   return (
     <PageSkeleton
       title={isConfirmed ? 'Thank you for your purchase' : 'Order Details'}
@@ -118,7 +203,7 @@ export default function OrderDetailsPage() {
               </div>
               <div className="order-details__badges">
                 <StatusBadge label={paymentStatus} />
-                <StatusBadge label={approvalState} />
+                <StatusBadge label={order.orderStatus} />
               </div>
             </section>
 
@@ -289,9 +374,111 @@ export default function OrderDetailsPage() {
               </dl>
             </section>
 
+            {showShipments ? (
+              <section className="order-details__section" aria-labelledby="order-shipments-title">
+                <div className="order-details__section-heading">
+                  <h2 id="order-shipments-title">Shipments</h2>
+                </div>
+                <div className="order-details__shipments">
+                  {order.shipments.map((shipment) => (
+                    <ShipmentTrackingBox key={shipment.id} shipment={shipment} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {cancelSummaryReason ? (
+              <section className="order-details__section" id="cancel" aria-labelledby="order-cancel-summary-title">
+                <div className="order-details__section-heading">
+                  <h2 id="order-cancel-summary-title">Cancel reason</h2>
+                </div>
+                <div className="order-details__reason-box">
+                  <p className="order-details__reason">{cancelSummaryReason}</p>
+                </div>
+              </section>
+            ) : canCancel ? (
+              <section className="order-details__section" id="cancel" aria-labelledby="order-cancel-title">
+                <div className="order-details__section-heading">
+                  <h2 id="order-cancel-title">Cancel order</h2>
+                </div>
+                <form className="order-details__form" onSubmit={handleCancelSubmit}>
+                  <label className="order-details__field">
+                    <span>Reason</span>
+                    <textarea
+                      maxLength={500}
+                      onChange={(event) => setCancelReason(event.target.value)}
+                      placeholder="Tell us why you need to cancel"
+                      value={cancelReason}
+                    />
+                    <div className="order-details__field-meta">
+                      <span>Max 500 characters.</span>
+                      <span>{cancelReasonLength}/500</span>
+                    </div>
+                  </label>
+                  {cancelError ? <p className="order-details__notice order-details__notice--error">{cancelError}</p> : null}
+                  {cancelSuccess ? (
+                    <p className="order-details__notice order-details__notice--success">{cancelSuccess}</p>
+                  ) : null}
+                  <div className="order-details__form-actions">
+                    <button
+                      className="order-details__action order-details__action--danger"
+                      disabled={isCancelSubmitting || cancelReasonLength === 0}
+                      type="submit"
+                    >
+                      {isCancelSubmitting ? 'Cancelling...' : 'Cancel order'}
+                    </button>
+                  </div>
+                </form>
+              </section>
+            ) : null}
+
+            {returnSummaryReason ? (
+              <section className="order-details__section" id="return" aria-labelledby="order-return-summary-title">
+                <div className="order-details__section-heading">
+                  <h2 id="order-return-summary-title">Return reason</h2>
+                </div>
+                <div className="order-details__reason-box">
+                  <p className="order-details__reason">{returnSummaryReason}</p>
+                </div>
+              </section>
+            ) : canReturn ? (
+              <section className="order-details__section" id="return" aria-labelledby="order-return-title">
+                <div className="order-details__section-heading">
+                  <h2 id="order-return-title">Request return</h2>
+                </div>
+                <form className="order-details__form" onSubmit={handleReturnSubmit}>
+                  <label className="order-details__field">
+                    <span>Reason</span>
+                    <textarea
+                      maxLength={500}
+                      onChange={(event) => setReturnReason(event.target.value)}
+                      placeholder="Tell us why you want to return this order"
+                      value={returnReason}
+                    />
+                    <div className="order-details__field-meta">
+                      <span>Max 500 characters.</span>
+                      <span>{returnReasonLength}/500</span>
+                    </div>
+                  </label>
+                  <div className="order-details__form-actions">
+                    <button
+                      className="order-details__action order-details__action--danger"
+                      disabled={returnReasonLength === 0}
+                      type="submit"
+                    >
+                      Request return
+                    </button>
+                  </div>
+                </form>
+              </section>
+            ) : null}
+
             <div className="order-details__actions">
               <Link className="order-details__primary-action" to="/products">
                 Continue shopping
+              </Link>
+              <Link className="order-details__secondary-action" to="/orders">
+                View orders
               </Link>
             </div>
           </>
@@ -299,6 +486,24 @@ export default function OrderDetailsPage() {
       </div>
     </PageSkeleton>
   );
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const payload = err.payload as Record<string, unknown>;
+    if (payload && typeof payload === 'object') {
+      if ('error' in payload) {
+        return String(payload.error);
+      }
+      if ('message' in payload) {
+        return String(payload.message);
+      }
+    }
+
+    return JSON.stringify(payload);
+  }
+
+  return err instanceof Error ? err.message : 'Unknown error';
 }
 
 function StatusItem({

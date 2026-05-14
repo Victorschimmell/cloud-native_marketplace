@@ -1,0 +1,73 @@
+.tracking-box {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #d7dde7;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 12px 14px;
+  color: #111827;
+  font-size: 13px;
+}
+
+.tracking-box__main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tracking-box__label {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tracking-box__carrier,
+.tracking-box__number {
+  display: block;
+}
+
+.tracking-box__carrier {
+  color: #111827;
+  font-weight: 700;
+}
+
+.tracking-box__number {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.tracking-box__note {
+  color: #4b5563;
+  font-size: 12px;
+}
+
+.tracking-box__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.tracking-box__status[data-tone='success'] {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.tracking-box__status[data-tone='danger'] {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.tracking-box__status[data-tone='info'] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
