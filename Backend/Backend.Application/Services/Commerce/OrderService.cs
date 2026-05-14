@@ -13,22 +13,26 @@ public sealed class OrderService : IOrderService
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOrderItemRepository orderItemRepository,
         ICustomerRepository customerRepository,
-        ICurrencyConversionService currencyConversionService)
+        ICurrencyConversionService currencyConversionService,
+        IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _customerRepository = customerRepository;
         _currencyConversionService = currencyConversionService;
+        _unitOfWork = unitOfWork;
     }
 
     public Task<Result<OrderDto>> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -161,7 +165,14 @@ public sealed class OrderService : IOrderService
         orders.OrderStatusDescription = request.Reason;
 
         await _orderRepository.UpdateAsync(orders, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Result<OrderDto>.Success(orders.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
+        var orderWithDetails = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
+        if (orderWithDetails is null)
+        {
+            return Result<OrderDto>.NotFound("Order was not found after update.");
+        }
+
+        return Result<OrderDto>.Success(orderWithDetails.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
     }
 }
