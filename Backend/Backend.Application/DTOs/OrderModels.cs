@@ -65,6 +65,7 @@ public sealed record OrderDto(
     Guid ShippingAddressId,
     string OrderNumber,
     OrderStatus OrderStatus,
+    string? OrderStatusDescription,
     DateTimeOffset OrderPurchaseTimestampUtc,
     DateTimeOffset? OrderApprovedAtUtc,
     DateTimeOffset? OrderDeliveredCarrierDateUtc,

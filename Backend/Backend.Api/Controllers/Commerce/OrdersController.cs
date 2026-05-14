@@ -58,9 +58,15 @@ public class OrdersController : ApiControllerBase
     }
 
     [HttpPost("{orderId:guid}/cancel")]
-    public async Task<ActionResult<OrderModel>> CancelAsync([NotEmptyGuid] Guid orderId, [FromBody] CancelOrderRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<OrderModel>> CancelAsync([NotEmptyGuid] Guid orderId, [FromBody] CancelOrderRequest request, [FromQuery] string? currency, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _orderService.CancelAsync(request.ToApplicationRequest(orderId), authenticatedUserId, currency, cancellationToken);
+        return HandleResult(result, order => order.ToModel());
     }
 
     [HttpGet("{orderId:guid}/reviews")]

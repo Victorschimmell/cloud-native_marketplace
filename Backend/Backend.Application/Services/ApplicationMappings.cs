@@ -218,6 +218,7 @@ internal static class ApplicationMappings
             order.ShippingAddressId,
             order.OrderNumber,
             order.OrderStatus,
+            order.OrderStatusDescription,
             order.OrderPurchaseTimestampUtc,
             order.OrderApprovedAtUtc,
             order.OrderDeliveredCarrierDateUtc,

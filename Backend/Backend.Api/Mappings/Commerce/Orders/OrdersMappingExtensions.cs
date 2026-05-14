@@ -51,4 +51,7 @@ public static class OrdersMappingExtensions
             CurrencyCode = item.CurrencyCode,
             ShippingLimitDateUtc = item.ShippingLimitDateUtc
         };
+
+    public static App.CancelOrderRequest ToApplicationRequest(this CancelOrderRequest request, Guid orderId) =>
+        new(orderId, request.Reason);
 }

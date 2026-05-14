@@ -3,6 +3,7 @@ using System;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260514115118_AddOrderStatusDescription")]
+    partial class AddOrderStatusDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -773,20 +776,11 @@ namespace Backend.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("OlistReviewId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("OrderItemId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("ReviewAnswerTimestampUtc")
@@ -810,15 +804,6 @@ namespace Backend.Infrastructure.Migrations
 
                     b.HasIndex("OlistReviewId")
                         .IsUnique();
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("CustomerId", "ProductId")
-                        .IsUnique();
-
-                    b.HasIndex("OrderId", "OrderItemId")
-                        .IsUnique()
-                        .HasFilter("\"OrderItemId\" IS NOT NULL");
 
                     b.HasIndex("OrderId");
 
@@ -1098,36 +1083,13 @@ namespace Backend.Infrastructure.Migrations
 
             modelBuilder.Entity("Backend.Domain.Entities.Orders.OrderReview", b =>
                 {
-                    b.HasOne("Backend.Domain.Entities.IdentityAccess.Customer", "Customer")
-                        .WithMany("Reviews")
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
                     b.HasOne("Backend.Domain.Entities.Orders.Order", "Order")
                         .WithMany("Reviews")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Backend.Domain.Entities.Catalog.Product", "Product")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Domain.Entities.Orders.OrderItem", "OrderItem")
-                        .WithMany("Reviews")
-                        .HasForeignKey("OrderId", "OrderItemId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("Customer");
-
                     b.Navigation("Order");
-
-                    b.Navigation("OrderItem");
-
-                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.Orders.Shipment", b =>
@@ -1163,8 +1125,6 @@ namespace Backend.Infrastructure.Migrations
                     b.Navigation("Listings");
 
                     b.Navigation("OrderItems");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.Catalog.ProductCategory", b =>
@@ -1182,8 +1142,6 @@ namespace Backend.Infrastructure.Migrations
             modelBuilder.Entity("Backend.Domain.Entities.IdentityAccess.Customer", b =>
                 {
                     b.Navigation("Orders");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.IdentityAccess.Seller", b =>
@@ -1240,11 +1198,6 @@ namespace Backend.Infrastructure.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("Shipments");
-                });
-
-            modelBuilder.Entity("Backend.Domain.Entities.Orders.OrderItem", b =>
-                {
-                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

@@ -4,6 +4,7 @@ using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Enums;
 namespace Backend.Application.Services;
 
 public sealed class OrderService : IOrderService
@@ -99,8 +100,41 @@ public sealed class OrderService : IOrderService
         return Task.FromResult(Result<OrderDto>.NotImplemented());
     }
 
-    public Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<OrderDto>.NotImplemented());
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var orders = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        if (orders is null)
+        {
+            return Result<OrderDto>.NotFound("Order was not found.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<OrderDto>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
+        if (orders.CustomerId != customer.Id)
+        {
+            return Result<OrderDto>.Forbidden("The authenticated user is not the owner of the order.");
+        }
+
+        var allowed = new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Approved, OrderStatus.Processing };
+        if (!allowed.Contains(orders.OrderStatus))
+        {
+            return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {orders.OrderStatus}.");
+        }
+
+        orders.OrderStatus = OrderStatus.Cancelled;
+        orders.OrderStatusDescription = request.Reason;
+
+        await _orderRepository.UpdateAsync(orders, cancellationToken);
+
+        return Result<OrderDto>.Success(orders.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
     }
 }
