@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { ProductCategory } from './placeholderData';
+import type { ProductCategory } from '../data/placeholderData';
 import './AddProductPage.css';
 
 const CATEGORIES: ProductCategory[] = ['Electronics', 'Clothing', 'Home', 'Books', 'Other'];

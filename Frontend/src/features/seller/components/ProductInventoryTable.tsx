@@ -1,4 +1,4 @@
-import type { SellerProduct } from './placeholderData';
+import type { SellerProduct } from '../data/placeholderData';
 
 interface ProductInventoryTableProps {
   products: SellerProduct[];

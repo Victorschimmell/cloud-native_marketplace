@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { OrderStatus, SellerOrder } from './placeholderData';
+import type { OrderStatus, SellerOrder } from '../data/placeholderData';
 
 interface OrdersTableProps {
   orders: SellerOrder[];

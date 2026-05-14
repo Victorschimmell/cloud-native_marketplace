@@ -16,15 +16,15 @@ import CustomerPage from '../pages/CustomerPage';
 import SellersPage from '../pages/SellersPage';
 import ReviewsPage from '../pages/ReviewsPage';
 import AnalyticsDashboardPage from '../pages/AnalyticsDashboardPage';
-import SellerProductsPage from '../pages/SellerProductsPage';
-import SellerOrdersPage from '../pages/SellerOrdersPage';
+import SellerProductsPage from '../features/seller/pages/SellerProductsPage';
+import SellerOrdersPage from '../features/seller/pages/SellerOrdersPage';
 import SellerOrderDetailsPage from '../pages/SellerOrderDetailsPage';
 import SellerVerificationPage from '../pages/SellerVerificationPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
-import AddProductPage from '../pages/seller/AddProductPage';
+import AddProductPage from '../features/seller/pages/AddProductPage';
 
 export const router = createBrowserRouter([
   {

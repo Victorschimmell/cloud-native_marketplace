@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
-import { placeholderOrders, placeholderProducts, placeholderStats } from './placeholderData';
+import { placeholderOrders, placeholderProducts, placeholderStats } from '../data/placeholderData';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
