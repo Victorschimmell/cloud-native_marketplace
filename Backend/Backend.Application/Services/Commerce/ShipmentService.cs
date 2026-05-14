@@ -3,6 +3,8 @@ using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 namespace Backend.Application.Services;
 
 public sealed class ShipmentService : IShipmentService
@@ -27,9 +29,44 @@ public sealed class ShipmentService : IShipmentService
         return Task.FromResult(Result<IReadOnlyList<ShipmentDto>>.NotImplemented());
     }
 
-    public Task<Result<ShipmentDto>> RecordShipmentAsync(RecordShipmentRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result> RecordShipmentAsync(RecordShipmentRequest request, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<ShipmentDto>.NotImplemented());
+        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return Result<ShipmentDto>.NotFound("Order was not found.");
+        }
+
+        if (order.OrderStatus == OrderStatus.Cancelled)
+        {
+            return Result<ShipmentDto>.ValidationFailure("Cannot record shipment for a cancelled order.");
+        }
+
+        var shipment = new Shipment
+        {
+            OrderId = request.OrderId,
+            SellerId = request.SellerId,
+            CarrierName = request.CarrierName,
+            TrackingNumber = request.TrackingNumber,
+            ShipmentStatus = request.ShipmentStatus
+        };
+
+        var now = _dateTimeProvider.UtcNow;
+        if (shipment.ShipmentStatus == ShipmentStatus.InTransit)
+        {
+            shipment.ShippedAtUtc = now;
+        }
+        else if (shipment.ShipmentStatus == ShipmentStatus.Delivered)
+        {
+            shipment.DeliveredAtUtc = now;
+        }
+        else if (shipment.ShipmentStatus == ShipmentStatus.Returned)
+        {
+            shipment.ReturnedAtUtc = now;
+        }
+
+        await _shipmentRepository.AddAsync(shipment, cancellationToken);
+        return Result.Success();
     }
 
     public Task<Result<ShipmentDto>> UpdateShipmentStatusAsync(UpdateShipmentStatusRequest request, CancellationToken cancellationToken = default)
