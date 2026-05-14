@@ -77,6 +77,7 @@ app.UseSerilogRequestLogging();
 if (app.Environment.IsDevelopment())
 {
     await app.Services.SeedAdminDataAsync(builder.Configuration);
+    await app.Services.SeedSellerDataAsync(builder.Configuration);
 
     app.MapOpenApi();
     app.MapScalarApiReference(options =>

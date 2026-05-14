@@ -38,5 +38,10 @@ export function canUseCapability(capabilities: AuthCapabilities, capability: Aut
 }
 
 export function canShowNavigationItem(capabilities: AuthCapabilities, item: NavigationItem) {
+  // Hide the marketplace-browsing items for Sellers and show only seller related items
+  if (capabilities.isSeller && (item.audience === 'public' || item.audience === 'customer')) {
+    return false;
+  }
+
   return item.audience === 'public' || canUseCapability(capabilities, item.audience);
 }
