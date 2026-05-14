@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import { useCurrency } from '../../../shared/currency/useCurrency';
@@ -15,6 +15,7 @@ const cancelAllowedStatuses = ['Pending', 'Approved', 'Processing'] as const;
 export default function OrderDetailsPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { currency } = useCurrency();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,6 +63,24 @@ export default function OrderDetailsPage() {
     void loadOrder();
     return () => abortController.abort();
   }, [currency, id]);
+
+  useEffect(() => {
+    if (!location.hash || isLoading) {
+      return;
+    }
+
+    const targetId = location.hash.replace('#', '').trim();
+    if (!targetId) {
+      return;
+    }
+
+    const element = document.getElementById(targetId);
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [isLoading, location.hash]);
 
   const paymentStatus = useMemo(() => (order ? getPaymentStatus(order) : 'Unpaid'), [order]);
   const itemCount = useMemo(() => (order ? getOrderItemCount(order) : 0), [order]);
