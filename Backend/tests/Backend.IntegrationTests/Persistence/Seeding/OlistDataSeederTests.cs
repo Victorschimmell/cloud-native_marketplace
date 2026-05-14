@@ -42,7 +42,7 @@ public sealed class OlistDataSeederTests
         Assert.Equal(3, await dbContext.Orders.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(5, await dbContext.OrderItems.CountAsync(TestContext.Current.CancellationToken));
         Assert.Equal(4, await dbContext.OrderPayments.CountAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(4, await dbContext.OrderReviews.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, await dbContext.OrderReviews.CountAsync(TestContext.Current.CancellationToken));
 
         var importedOrder = await dbContext.Orders.SingleAsync(order => order.OrderNumber == "order-1", TestContext.Current.CancellationToken);
         Assert.Equal(1149m, importedOrder.SubtotalAmount);
@@ -67,8 +67,14 @@ public sealed class OlistDataSeederTests
             .OrderBy(review => review.OlistReviewId)
             .ToListAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(2, importedReviews.Count);
+        var importedReview = Assert.Single(importedReviews);
         Assert.Equal("review-3", importedReviews[0].OlistReviewId);
-        Assert.Equal("review-4", importedReviews[1].OlistReviewId);
+        Assert.True(importedReview.OrderItemId > 0);
+        Assert.NotEqual(Guid.Empty, importedReview.CustomerId);
+        Assert.NotEqual(Guid.Empty, importedReview.ProductId);
+
+        Assert.False(await dbContext.OrderReviews.AnyAsync(
+            review => review.Order!.OrderNumber == "order-1",
+            TestContext.Current.CancellationToken));
     }
 }

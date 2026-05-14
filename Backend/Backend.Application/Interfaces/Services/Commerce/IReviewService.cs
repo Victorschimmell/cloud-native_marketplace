@@ -5,7 +5,7 @@ namespace Backend.Application.Interfaces.Services;
 
 public interface IReviewService
 {
-    Task<Result<IReadOnlyList<ReviewDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<ReviewDto>>> GetByOrderAsync(Guid orderId, Guid authenticatedUserId, CancellationToken cancellationToken = default);
     Task<Result<IReadOnlyList<ReviewDto>>> GetByProductAsync(Guid productId, CancellationToken cancellationToken = default);
-    Task<Result<ReviewDto>> CreateAsync(CreateReviewRequest request, CancellationToken cancellationToken = default);
+    Task<Result<ReviewDto>> CreateAsync(CreateReviewRequest request, Guid authenticatedUserId, CancellationToken cancellationToken = default);
 }

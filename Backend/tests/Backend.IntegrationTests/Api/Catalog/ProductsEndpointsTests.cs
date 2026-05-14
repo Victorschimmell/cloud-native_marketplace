@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
 using Backend.Api.Contracts.Common;
+using Backend.Domain.Entities.Orders;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,8 +25,12 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     [Fact]
     public async Task GetProducts_ReturnsBrowseProductsPage()
     {
+        // Arrange
+        var productName = $"Browse review summary {Guid.NewGuid():N}";
+        await SeedProductListingAsync(productName, $"BROWSE-{Guid.NewGuid():N}", 149.99m, [4, 5]);
+
         // Act
-        var response = await _client.GetAsync("/api/products", TestContext.Current.CancellationToken);
+        var response = await _client.GetAsync($"/api/products?search={Uri.EscapeDataString(productName)}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -36,6 +41,11 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.NotNull(products);
         Assert.Equal(1, products.Page);
         Assert.Equal(20, products.PageSize);
+
+        var product = Assert.Single(products.Items);
+        Assert.Equal(productName, product.ProductName);
+        Assert.Equal(2, product.ReviewCount);
+        Assert.Equal(4.5, product.AverageReviewScore);
     }
 
     [Fact]
@@ -152,17 +162,21 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetProductReviews_ReturnsNotImplemented()
+    public async Task GetProductReviews_ReturnsOk()
     {
         // Act
         var productId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/products/{productId}/reviews", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private async Task<(Guid ProductId, Guid ListingId)> SeedProductListingAsync(string productName, string sku, decimal price)
+    private async Task<(Guid ProductId, Guid ListingId)> SeedProductListingAsync(
+        string productName,
+        string sku,
+        decimal price,
+        IReadOnlyList<int>? reviewScores = null)
     {
         using var scope = _factory.Services.CreateScope();
 
@@ -178,6 +192,31 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         dbContext.ProductCategories.Add(category);
         dbContext.Products.Add(product);
         dbContext.ProductListings.Add(listing);
+
+        if (reviewScores is not null)
+        {
+            for (var index = 0; index < reviewScores.Count; index++)
+            {
+                var customerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@customer.example");
+                var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
+                var address = TestEntityFactory.CreateAddress();
+                var order = TestEntityFactory.CreateOrder(customer.Id, address.Id, $"ORDER-{Guid.NewGuid():N}", DateTimeOffset.UtcNow.AddDays(-index - 1));
+
+                dbContext.UserAccounts.Add(customerUser);
+                dbContext.Customers.Add(customer);
+                dbContext.Addresses.Add(address);
+                dbContext.Orders.Add(order);
+                dbContext.OrderReviews.Add(new OrderReview
+                {
+                    OrderId = order.Id,
+                    CustomerId = customer.Id,
+                    ProductId = product.Id,
+                    ReviewScore = reviewScores[index],
+                    ReviewCreationDateUtc = DateTimeOffset.UtcNow.AddDays(-index)
+                });
+            }
+        }
+
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return (product.Id, listing.Id);

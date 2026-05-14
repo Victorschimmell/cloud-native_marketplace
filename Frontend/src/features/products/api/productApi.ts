@@ -1,6 +1,6 @@
 import { request } from '../../../shared/api/request';
 import type { PageResponse } from '../../../shared/types/pagination';
-import type { BrowseProduct, Category, ProductCurrencyCode, ProductDetails, ProductSortOption } from '../types';
+import type { BrowseProduct, Category, ProductCurrencyCode, ProductDetails, ProductReview, ProductSortOption } from '../types';
 
 interface GetProductsOptions {
   categoryId?: string;
@@ -53,5 +53,9 @@ export const productApi = {
 
     const query = params.size > 0 ? `?${params}` : '';
     return request<ProductDetails>(`/api/products/${productId}${query}`, { signal });
+  },
+
+  getProductReviews: async (productId: string, signal?: AbortSignal) => {
+    return request<ProductReview[]>(`/api/products/${productId}/reviews`, { signal });
   },
 };

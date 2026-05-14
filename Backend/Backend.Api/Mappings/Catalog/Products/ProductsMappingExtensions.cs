@@ -42,6 +42,8 @@ public static class ProductsMappingExtensions
             Price = product.Price,
             CurrencyCode = product.CurrencyCode,
             StockQuantity = product.StockQuantity,
+            AverageReviewScore = product.AverageReviewScore,
+            ReviewCount = product.ReviewCount,
             ProductPhotosQty = product.ProductPhotosQty,
             ProductWeightG = product.ProductWeightG,
             ProductLengthCm = product.ProductLengthCm,

@@ -47,6 +47,20 @@ internal sealed class EfUnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
             return UniqueConstraintTarget.UserAccountEmail;
         }
 
+        if (constraintName?.Contains("order_review", StringComparison.OrdinalIgnoreCase) == true &&
+            constraintName.Contains("OrderId", StringComparison.OrdinalIgnoreCase) &&
+            constraintName.Contains("OrderItemId", StringComparison.OrdinalIgnoreCase))
+        {
+            return UniqueConstraintTarget.OrderReviewOrderItem;
+        }
+
+        if (constraintName?.Contains("order_review", StringComparison.OrdinalIgnoreCase) == true &&
+            constraintName.Contains("CustomerId", StringComparison.OrdinalIgnoreCase) &&
+            constraintName.Contains("ProductId", StringComparison.OrdinalIgnoreCase))
+        {
+            return UniqueConstraintTarget.OrderReviewCustomerProduct;
+        }
+
         return UniqueConstraintTarget.Unknown;
     }
 }

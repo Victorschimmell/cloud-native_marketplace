@@ -38,6 +38,9 @@ public sealed record CurrencyDto(
 public sealed record ReviewDto(
     Guid Id,
     Guid OrderId,
+    int? OrderItemId,
+    Guid ProductId,
+    string? ReviewerDisplayName,
     int ReviewScore,
     string? ReviewCommentTitle,
     string? ReviewCommentMessage,
@@ -94,6 +97,7 @@ public sealed record RecordPaymentRequest(
 
 public sealed record CreateReviewRequest(
     Guid OrderId,
+    int OrderItemId,
     int ReviewScore,
     string? ReviewCommentTitle,
     string? ReviewCommentMessage);

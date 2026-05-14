@@ -3,7 +3,9 @@ namespace Backend.Application.Common.Exceptions;
 public enum UniqueConstraintTarget
 {
     Unknown = 0,
-    UserAccountEmail = 1
+    UserAccountEmail = 1,
+    OrderReviewOrderItem = 2,
+    OrderReviewCustomerProduct = 3
 }
 
 public sealed class UniqueConstraintViolationException : Exception

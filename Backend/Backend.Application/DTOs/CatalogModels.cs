@@ -23,6 +23,8 @@ public sealed record BrowseProductDto(
     decimal Price,
     string CurrencyCode,
     int StockQuantity,
+    double? AverageReviewScore,
+    int ReviewCount,
     int ProductPhotosQty,
     int ProductWeightG,
     int ProductLengthCm,

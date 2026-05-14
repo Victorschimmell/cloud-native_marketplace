@@ -10,6 +10,10 @@ interface ProductCardProps {
 export default function ProductCard({ priceFormatter, product }: ProductCardProps) {
   const stockText = product.stockQuantity > 0 ? `${product.stockQuantity} in stock` : 'Out of stock';
   const stockModifier = product.stockQuantity === 0 ? ' product-card__stock--empty' : '';
+  const reviewLabel = product.reviewCount === 1 ? '1 review' : `${product.reviewCount.toLocaleString()} reviews`;
+  const ratingLabel = product.averageReviewScore === null
+    ? 'No reviews yet'
+    : `${product.averageReviewScore.toFixed(1)} out of 5 stars from ${reviewLabel}`;
 
   return (
     <Link
@@ -30,6 +34,18 @@ export default function ProductCard({ priceFormatter, product }: ProductCardProp
         {product.productName}
       </h2>
 
+      <div className="product-card__rating" aria-label={ratingLabel}>
+        <RatingStars rating={product.averageReviewScore ?? 0} />
+        {product.averageReviewScore === null ? (
+          <span className="product-card__rating-empty">No reviews yet</span>
+        ) : (
+          <>
+            <strong>{product.averageReviewScore.toFixed(1)}</strong>
+            <span>{reviewLabel}</span>
+          </>
+        )}
+      </div>
+
       <p className="product-card__description">
         {product.description}
       </p>
@@ -41,5 +57,29 @@ export default function ProductCard({ priceFormatter, product }: ProductCardProp
         </span>
       </div>
     </Link>
+  );
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  const roundedToHalf = Math.round(rating * 2) / 2;
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const starValue = index + 1;
+    if (roundedToHalf >= starValue) {
+      return 'product-card__star--filled';
+    }
+
+    if (roundedToHalf === starValue - 0.5) {
+      return 'product-card__star--half';
+    }
+
+    return '';
+  });
+
+  return (
+    <span className="product-card__stars" aria-hidden="true">
+      {stars.map((starClass, index) => (
+        <span className={`product-card__star ${starClass}`} key={index} />
+      ))}
+    </span>
   );
 }

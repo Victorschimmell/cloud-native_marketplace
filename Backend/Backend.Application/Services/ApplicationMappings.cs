@@ -83,6 +83,8 @@ internal static class ApplicationMappings
             convertedPrice,
             currencyCode,
             listing.InventoryQuantity,
+            product.Reviews.Count > 0 ? product.Reviews.Average(review => review.ReviewScore) : null,
+            product.Reviews.Count,
             product.ProductPhotosQty,
             product.ProductWeightG,
             product.ProductLengthCm,
@@ -185,6 +187,11 @@ internal static class ApplicationMappings
         new(
             review.Id,
             review.OrderId,
+            review.OrderItemId,
+            review.ProductId,
+            review.Customer is { } customer
+                ? $"{customer.FirstName} {customer.LastName}".Trim()
+                : null,
             review.ReviewScore,
             review.ReviewCommentTitle,
             review.ReviewCommentMessage,

@@ -4,6 +4,7 @@ using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Mappings.Catalog.Products;
 using Backend.Api.Mappings.Common;
+using Backend.Api.Mappings.Commerce.Reviews;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
@@ -99,6 +100,7 @@ public class ProductsController : ApiControllerBase
     [HttpGet("{productId:guid}/reviews")]
     public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> GetByProductAsync([NotEmptyGuid] Guid productId, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _reviewService.GetByProductAsync(productId, cancellationToken);
+        return HandleResult(result, reviews => reviews.Select(review => review.ToResponse()).ToArray());
     }
 }

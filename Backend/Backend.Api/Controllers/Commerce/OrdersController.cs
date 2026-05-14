@@ -4,6 +4,7 @@ using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Api.Contracts.Commerce.Shipments;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Mappings.Commerce.Orders;
+using Backend.Api.Mappings.Commerce.Reviews;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -65,7 +66,13 @@ public class OrdersController : ApiControllerBase
     [HttpGet("{orderId:guid}/reviews")]
     public async Task<ActionResult<IReadOnlyList<ReviewResponse>>> GetReviewsByOrderAsync([NotEmptyGuid] Guid orderId, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _reviewService.GetByOrderAsync(orderId, userId, cancellationToken);
+        return HandleResult(result, reviews => reviews.Select(review => review.ToResponse()).ToArray());
     }
 
     [HttpGet("{orderId:guid}/shipments")]
