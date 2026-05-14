@@ -1,5 +1,5 @@
-import PageSkeleton from '../components/PageSkeleton';
+import SellerDashboard from './seller/SellerDashboard';
 
 export default function SellerOrdersPage() {
-  return <PageSkeleton title="Seller Orders Overview Page" />;
+  return <SellerDashboard activeTab="orders" />;
 }

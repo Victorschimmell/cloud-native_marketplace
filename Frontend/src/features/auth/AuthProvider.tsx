@@ -26,6 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
           setStoredAuth(nextAuth);
           setAuthState(nextAuth);
+          // Return the resulting capabilities so the caller can pick a
+          // role appropriate page to render (similar to LoginPage).
+          return getCapabilities(response.user, response.profile);
         },
         logout: () => {
           clearStoredAuth();

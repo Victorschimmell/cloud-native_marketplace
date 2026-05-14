@@ -13,7 +13,9 @@ export interface AuthContextValue {
   profile: AuthProfile | null;
   capabilities: AuthCapabilities;
   isAuthenticated: boolean;
-  login: (request: LoginRequest) => Promise<void>;
+  // login resolves with the capabilities so there is distiction in the role
+  // for example (e.g. sellers → dashboard, customers → /products).
+  login: (request: LoginRequest) => Promise<AuthCapabilities>;
   logout: () => void;
   register: (request: RegisterRequest) => Promise<RegistrationResponse>;
 }

@@ -1,5 +1,5 @@
-import PageSkeleton from '../components/PageSkeleton';
+import SellerDashboard from './seller/SellerDashboard';
 
 export default function SellerProductsPage() {
-  return <PageSkeleton title="Seller Product Management Page" />;
+  return <SellerDashboard activeTab="products" />;
 }

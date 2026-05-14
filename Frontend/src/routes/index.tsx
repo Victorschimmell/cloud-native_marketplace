@@ -24,6 +24,7 @@ import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
+import AddProductPage from '../pages/seller/AddProductPage';
 
 export const router = createBrowserRouter([
   {
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute capability="verifiedSeller" />,
         children: [
           { path: 'seller/products', element: <SellerProductsPage /> },
+          { path: 'seller/products/new', element: <AddProductPage /> },
           { path: 'seller/orders', element: <SellerOrdersPage /> },
           { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
         ],

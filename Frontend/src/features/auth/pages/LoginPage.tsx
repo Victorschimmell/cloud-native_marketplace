@@ -5,6 +5,7 @@ import { ApiError } from '../../../shared/api/request';
 import { FormNotice, TextField } from '../../../shared/forms';
 import { useAuth } from '../useAuth';
 import { AuthPageFrame } from '../components/AuthPageFrame';
+import type { AuthCapabilities } from '../types';
 import './AuthPages.css';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,7 +20,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wasRegistered = searchParams.get('registered') === '1';
-  const returnTo = getSafeReturnTo(searchParams.get('returnTo'));
+  const explicitReturnTo = getSafeReturnTo(searchParams.get('returnTo'));
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,8 +36,8 @@ export default function LoginPage() {
     try {
       setIsSubmitting(true);
       setError(null);
-      await login({ email: trimmedEmail, password });
-      navigate(returnTo);
+      const capabilities = await login({ email: trimmedEmail, password });
+      navigate(explicitReturnTo ?? resolveLandingRoute(capabilities));
     } catch (requestError) {
       setError(requestError instanceof ApiError ? requestError.message : 'Could not log in right now.');
     } finally {
@@ -88,11 +89,26 @@ export default function LoginPage() {
   );
 }
 
-function getSafeReturnTo(value: string | null): string {
+// Allow only same-origin paths; null falls back to a role-based landing route.
+function getSafeReturnTo(value: string | null): string | null {
   if (value?.startsWith('/') && !value.startsWith('//')) {
     return value;
   }
 
+  return null;
+}
+
+// Default landing page per role. Admin is checked first so admin-sellers land in admin.
+function resolveLandingRoute(capabilities: AuthCapabilities): string {
+  if (capabilities.isAdmin) {
+    return '/admin/users';
+  }
+  if (capabilities.isVerifiedSeller) {
+    return '/seller/products';
+  }
+  if (capabilities.needsSellerVerification) {
+    return '/seller/verification';
+  }
   return '/products';
 }
 
