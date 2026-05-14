@@ -98,7 +98,9 @@ public sealed record OrderSummaryDto(
     decimal FreightAmount,
     decimal TotalAmount,
     string CurrencyCode,
-    Guid? PlacedFromCartId);
+    Guid? PlacedFromCartId,
+    IReadOnlyList<OrderItemDto> Items,
+    IReadOnlyList<ShipmentDto> Shipments);
 
 public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);
 

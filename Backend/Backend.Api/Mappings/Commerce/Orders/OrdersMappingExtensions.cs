@@ -48,7 +48,9 @@ public static class OrdersMappingExtensions
             SubtotalAmount = order.SubtotalAmount,
             FreightAmount = order.FreightAmount,
             TotalAmount = order.TotalAmount,
-            CurrencyCode = order.CurrencyCode
+            CurrencyCode = order.CurrencyCode,
+            Items = order.Items.Select(i => i.ToModel()).ToArray(),
+            Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
         };
 
     public static OrderItemModel ToModel(this App.OrderItemDto item) =>

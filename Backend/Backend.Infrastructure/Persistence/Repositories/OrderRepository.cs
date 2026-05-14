@@ -38,7 +38,10 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
     public async Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Orders
-            .Where(o => o.CustomerId == customerId);
+            .Where(o => o.CustomerId == customerId)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .Include(o => o.Shipments);
 
         var totalCount = await query.CountAsync(cancellationToken);
         var orders = await query

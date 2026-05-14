@@ -134,6 +134,8 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var order = Assert.Single(orders.Items);
         Assert.Equal(userId, order.UserId);
         Assert.Equal(115m, order.TotalAmount);
+        var item = Assert.Single(order.Items);
+        Assert.Equal("History product", item.ProductName);
     }
 
     [Fact]

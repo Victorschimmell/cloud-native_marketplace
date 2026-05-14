@@ -1,3 +1,5 @@
+using Backend.Api.Contracts.Commerce.Shipments;
+
 namespace Backend.Api.Contracts.Commerce.Orders;
 
 public sealed record OrderSummaryModel
@@ -15,4 +17,6 @@ public sealed record OrderSummaryModel
     public required decimal FreightAmount { get; init; }
     public required decimal TotalAmount { get; init; }
     public required string CurrencyCode { get; init; }
+    public required IReadOnlyList<OrderItemModel> Items { get; init; }
+    public required IReadOnlyList<ShipmentModel> Shipments { get; init; }
 }

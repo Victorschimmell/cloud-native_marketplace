@@ -70,7 +70,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet("{userId:guid}/orders")]
-    public async Task<ActionResult<PageResponse<OrderModel>>> GetOrdersSummaryByCustomerAsync(
+    public async Task<ActionResult<PageResponse<OrderSummaryModel>>> GetOrdersSummaryByCustomerAsync(
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,

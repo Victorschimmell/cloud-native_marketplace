@@ -252,7 +252,9 @@ internal static class ApplicationMappings
             priceConverter(order.FreightAmount),
             priceConverter(order.TotalAmount),
             currencyCode,
-            order.PlacedFromCartId);
+            order.PlacedFromCartId,
+            order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
+            order.Shipments.Select(ToShipmentDto).ToArray());
 
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(
