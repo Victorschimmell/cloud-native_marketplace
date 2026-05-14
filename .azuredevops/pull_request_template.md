@@ -1,4 +1,4 @@
-# Description fo Changes
+# Description of Changes
 - Text
 - Text
 
