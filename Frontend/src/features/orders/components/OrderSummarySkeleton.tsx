@@ -1,3 +1,5 @@
+import './OrderSummarySkeleton.css';
+
 export default function OrderSummarySkeleton() {
   return (
     <article className="orders-page__card orders-page__card--skeleton" aria-hidden="true">

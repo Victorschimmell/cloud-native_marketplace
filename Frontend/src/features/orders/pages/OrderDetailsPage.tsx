@@ -5,7 +5,7 @@ import { ApiError } from '../../../shared/api/request';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { FormNotice, TextAreaField, TextField } from '../../../shared/forms';
 import { orderApi } from '../api/orderApi';
-import { ShipmentTrackingBox } from '../components';
+import { ShipmentTrackingBox, OrderDetailsSkeleton } from '../components';
 import type { Order } from '../types';
 import { formatDateTime, formatMoney, getOrderItemCount, getPaymentStatus, getStatusTone } from '../utils';
 import './OrderDetailsPage.css';
@@ -183,7 +183,7 @@ export default function OrderDetailsPage() {
       titleId="order-details-title"
     >
       <div className="order-details">
-        {isLoading ? <p className="order-details__loading">Loading order...</p> : null}
+        {isLoading ? <OrderDetailsSkeleton /> : null}
         {error ? <p className="order-details__notice order-details__notice--error">{error}</p> : null}
 
         {order ? (
