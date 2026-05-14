@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { ProductCategory } from './placeholderData';
+import type { ProductCategory } from '../data/placeholderData';
 import './AddProductPage.css';
 
 const CATEGORIES: ProductCategory[] = ['Electronics', 'Clothing', 'Home', 'Books', 'Other'];
@@ -25,11 +25,11 @@ const INITIAL_STATE: ProductFormState = {
 
 /**
  * Add New Product
- * 
+ *
  * This might change later.
  * When the back-end is ready, replace the `console.log`
  * inside `handleSubmit` with a call to the seller products API and navigate
- * back to /seller/products on success. 
+ * back to /seller/products on success.
  */
 export default function AddProductPage() {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ export default function AddProductPage() {
       </header>
 
       <Link to="/seller/products" className="add-product__back">
-        ← Back to Dashboard
+        Back to Dashboard
       </Link>
 
       <div className="add-product__panel">

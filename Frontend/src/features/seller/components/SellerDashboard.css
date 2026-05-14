@@ -1,7 +1,3 @@
-/* Seller Dashboard Styling
-   ------------------------------------------------------------------
-   Here all styles are scoped under.seller-dashboard so they don't leak into the rest of the app.
-*/
 .seller-dashboard {
   --seller-border: #e5e7eb;
   --seller-text: #111827;
