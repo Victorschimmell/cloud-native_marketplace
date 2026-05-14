@@ -4,6 +4,7 @@ using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 namespace Backend.Application.Services;
 
@@ -13,6 +14,7 @@ public sealed class OrderService : IOrderService
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
+    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
@@ -20,18 +22,21 @@ public sealed class OrderService : IOrderService
         IOrderItemRepository orderItemRepository,
         ICustomerRepository customerRepository,
         ICurrencyConversionService currencyConversionService,
+        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
+        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _customerRepository = customerRepository;
         _currencyConversionService = currencyConversionService;
+        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
     }
 
@@ -138,8 +143,8 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
 
-        var orders = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
-        if (orders is null)
+        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        if (order is null)
         {
             return Result<OrderDto>.NotFound("Order was not found.");
         }
@@ -150,22 +155,30 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.NotFound("Customer profile was not found for the authenticated user.");
         }
 
-        if (orders.CustomerId != customer.Id)
+        if (order.CustomerId != customer.Id)
         {
             return Result<OrderDto>.Forbidden("The authenticated user is not the owner of the order.");
         }
 
         var allowed = new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Approved, OrderStatus.Processing };
-        if (!allowed.Contains(orders.OrderStatus))
+        if (!allowed.Contains(order.OrderStatus))
         {
-            return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {orders.OrderStatus}.");
+            return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {order.OrderStatus}.");
         }
 
-        orders.OrderStatus = OrderStatus.Cancelled;
-        orders.OrderStatusDescription = request.Reason;
+        order.OrderStatus = OrderStatus.Cancelled;
+        order.OrderStatusDescription = request.Reason;
 
-        await _orderRepository.UpdateAsync(orders, cancellationToken);
+        await _orderRepository.UpdateAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Cancelled,
+            TargetEntityType: nameof(Order),
+            TargetEntityId: order.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Order {order.Id} was cancelled by user {authenticatedUserId} for reason: {request.Reason}"
+        ), cancellationToken);
 
         var orderWithDetails = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
         if (orderWithDetails is null)
