@@ -146,8 +146,8 @@
 
 .orders-page__action--ghost:hover,
 .orders-page__action--ghost:focus-visible {
-  border-color: #2563eb;
-  color: #111827;
+  border-color: #94a3b8;
+  background: #f8fafc;
 }
 
 @media (max-width: 720px) {
