@@ -177,7 +177,7 @@ public sealed class OrderService : IOrderService
             TargetEntityType: nameof(Order),
             TargetEntityId: order.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Order {order.Id} was cancelled by user {authenticatedUserId} for reason: {request.Reason}"
+            Details: $"Order {order.Id} was cancelled by user {authenticatedUserId} for reason: \"{request.Reason}\""
         ), cancellationToken);
 
         var orderWithDetails = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);

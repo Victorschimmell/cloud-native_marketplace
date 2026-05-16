@@ -18,6 +18,8 @@ const actionLabels: Record<string, string> = {
   '8': 'Block',
   '9': 'Unblock',
   '10': 'Import',
+  '11': 'Cancelled',
+  '12': 'Refunded',
   Created: 'Created',
   Updated: 'Updated',
   Deleted: 'Deleted',
@@ -28,6 +30,8 @@ const actionLabels: Record<string, string> = {
   Block: 'Block',
   Unblock: 'Unblock',
   Import: 'Import',
+  Cancelled: 'Cancelled',
+  Refunded: 'Refunded',
 };
 
 const outcomeLabels: Record<string, string> = {
