@@ -36,7 +36,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+    let message = 'Something went wrong. Please try again. ${response}';
     const payload = await readErrorPayload(response);
 
     if (isValidationProblemDetails(payload)) {
@@ -80,12 +80,8 @@ function isValidationProblemDetails(payload: unknown): payload is ValidationProb
 }
 
 function getErrorMessage(body: ValidationProblemDetails, fallback: string) {
-  if (body.error) {
-    return body.error;
-  }
-
-  if (body.message) {
-    return body.message;
+  if (body.detail) {
+    return body.detail;
   }
 
   if (body.errors) {
@@ -98,5 +94,5 @@ function getErrorMessage(body: ValidationProblemDetails, fallback: string) {
     }
   }
 
-  return body.detail ?? body.title ?? fallback;
+  return body.error ?? body.message ?? body.title ?? fallback;
 }
