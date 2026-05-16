@@ -17,6 +17,7 @@ public static class OrdersMappingExtensions
             ShippingAddressId = order.ShippingAddressId,
             OrderNumber = order.OrderNumber,
             OrderStatus = (OrderStatus)order.OrderStatus,
+            OrderStatusDescription = order.OrderStatusDescription,
             OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
             OrderApprovedAtUtc = order.OrderApprovedAtUtc,
             OrderDeliveredCarrierDateUtc = order.OrderDeliveredCarrierDateUtc,
@@ -30,6 +31,27 @@ public static class OrdersMappingExtensions
             Items = order.Items.Select(i => i.ToModel()).ToArray(),
             Payments = order.Payments.Select(p => p.ToModel()).ToArray(),
             Reviews = order.Reviews.Select(r => r.ToModel()).ToArray(),
+            Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
+        };
+
+    public static OrderSummaryModel ToSummaryModel(this App.OrderSummaryDto order) =>
+        new()
+        {
+            Id = order.Id,
+            UserId = order.UserId,
+            OrderNumber = order.OrderNumber,
+            OrderStatus = (OrderStatus)order.OrderStatus,
+            OrderStatusDescription = order.OrderStatusDescription,
+            OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
+            OrderApprovedAtUtc = order.OrderApprovedAtUtc,
+            OrderDeliveredCarrierDateUtc = order.OrderDeliveredCarrierDateUtc,
+            OrderDeliveredCustomerDateUtc = order.OrderDeliveredCustomerDateUtc,
+            OrderEstimatedDeliveryDateUtc = order.OrderEstimatedDeliveryDateUtc,
+            SubtotalAmount = order.SubtotalAmount,
+            FreightAmount = order.FreightAmount,
+            TotalAmount = order.TotalAmount,
+            CurrencyCode = order.CurrencyCode,
+            Items = order.Items.Select(i => i.ToModel()).ToArray(),
             Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
         };
 
@@ -51,4 +73,7 @@ public static class OrdersMappingExtensions
             CurrencyCode = item.CurrencyCode,
             ShippingLimitDateUtc = item.ShippingLimitDateUtc
         };
+
+    public static App.CancelOrderRequest ToApplicationRequest(this CancelOrderRequest request, Guid orderId) =>
+        new(orderId, request.Reason);
 }

@@ -218,6 +218,7 @@ internal static class ApplicationMappings
             order.ShippingAddressId,
             order.OrderNumber,
             order.OrderStatus,
+            order.OrderStatusDescription,
             order.OrderPurchaseTimestampUtc,
             order.OrderApprovedAtUtc,
             order.OrderDeliveredCarrierDateUtc,
@@ -231,6 +232,28 @@ internal static class ApplicationMappings
             order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             order.Payments.Select(ToPaymentDto).ToArray(),
             order.Reviews.Select(ToReviewDto).ToArray(),
+            order.Shipments.Select(ToShipmentDto).ToArray());
+
+    public static OrderSummaryDto ToOrderSummaryDto(this Order order, Guid userId, string currencyCode, Func<decimal, decimal> priceConverter) =>
+        new(
+            order.Id,
+            order.CustomerId,
+            userId,
+            order.ShippingAddressId,
+            order.OrderNumber,
+            order.OrderStatus,
+            order.OrderStatusDescription,
+            order.OrderPurchaseTimestampUtc,
+            order.OrderApprovedAtUtc,
+            order.OrderDeliveredCarrierDateUtc,
+            order.OrderDeliveredCustomerDateUtc,
+            order.OrderEstimatedDeliveryDateUtc,
+            priceConverter(order.SubtotalAmount),
+            priceConverter(order.FreightAmount),
+            priceConverter(order.TotalAmount),
+            currencyCode,
+            order.PlacedFromCartId,
+            order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             order.Shipments.Select(ToShipmentDto).ToArray());
 
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>

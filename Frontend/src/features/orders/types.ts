@@ -74,6 +74,7 @@ export interface Order {
   shippingAddressId: string;
   orderNumber: string;
   orderStatus: OrderStatus;
+  orderStatusDescription?: string | null;
   orderPurchaseTimestampUtc: string;
   orderApprovedAtUtc?: string | null;
   orderDeliveredCarrierDateUtc?: string | null;
@@ -87,5 +88,23 @@ export interface Order {
   items: OrderItem[];
   payments: Payment[];
   reviews: Review[];
+  shipments: Shipment[];
+}
+
+export interface OrderSummary {
+  id: string;
+  userId: string;
+  orderNumber: string;
+  orderStatus: OrderStatus;
+  orderPurchaseTimestampUtc: string;
+  orderApprovedAtUtc?: string | null;
+  orderDeliveredCarrierDateUtc?: string | null;
+  orderDeliveredCustomerDateUtc?: string | null;
+  orderEstimatedDeliveryDateUtc?: string | null;
+  subtotalAmount: number;
+  freightAmount: number;
+  totalAmount: number;
+  currencyCode: CurrencyCode;
+  items: OrderItem[];
   shipments: Shipment[];
 }

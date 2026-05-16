@@ -1,0 +1,168 @@
+.orders-page__card {
+  display: grid;
+  gap: 16px;
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 22px;
+}
+
+.orders-page__card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.orders-page__card-main {
+  min-width: 0;
+}
+
+.orders-page__eyebrow {
+  margin: 0;
+  color: #1f2937;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.orders-page__card-date {
+  margin: 6px 0 0;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.orders-page__card-status {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.orders-page__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 11px;
+  white-space: nowrap;
+}
+
+.orders-page__status[data-tone='success'] {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.orders-page__status[data-tone='danger'] {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.orders-page__status[data-tone='info'] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.orders-page__items {
+  display: grid;
+  gap: 8px;
+}
+
+.orders-page__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.orders-page__item-name {
+  color: #111827;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.orders-page__item-price {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.orders-page__shipments {
+  display: grid;
+  gap: 10px;
+}
+
+.orders-page__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.orders-page__total {
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.orders-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.orders-page__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.orders-page__action--primary {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.orders-page__action--primary:hover,
+.orders-page__action--primary:focus-visible {
+  background: var(--primary-hover-color);
+}
+
+.orders-page__action--ghost {
+  border-color: #d1d5db;
+  background: #ffffff;
+  color: #111827;
+}
+
+.orders-page__action--ghost:hover,
+.orders-page__action--ghost:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+@media (max-width: 720px) {
+  .orders-page__card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .orders-page__card-status {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .orders-page__footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

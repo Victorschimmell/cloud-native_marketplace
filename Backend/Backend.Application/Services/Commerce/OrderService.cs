@@ -4,6 +4,8 @@ using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 namespace Backend.Application.Services;
 
 public sealed class OrderService : IOrderService
@@ -12,22 +14,30 @@ public sealed class OrderService : IOrderService
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOrderItemRepository orderItemRepository,
         ICustomerRepository customerRepository,
-        ICurrencyConversionService currencyConversionService)
+        ICurrencyConversionService currencyConversionService,
+        IAuditLogService auditLogService,
+        IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
+        ArgumentNullException.ThrowIfNull(auditLogService);
+        ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _customerRepository = customerRepository;
         _currencyConversionService = currencyConversionService;
+        _auditLogService = auditLogService;
+        _unitOfWork = unitOfWork;
     }
 
     public Task<Result<OrderDto>> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
@@ -60,6 +70,33 @@ public sealed class OrderService : IOrderService
     public Task<Result<PagedResult<OrderDto>>> GetByCustomerAsync(Guid customerId, PagedRequest request, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Result<PagedResult<OrderDto>>.NotImplemented());
+    }
+
+    public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
+    {
+        if (request.Page < 1 || request.PageSize < 1)
+        {
+            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
+        }
+
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<PagedResult<OrderSummaryDto>>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
+        var orders = await _orderRepository.GetByCustomerIdAsync(customer.Id, request.Page, request.PageSize, cancellationToken);
+        var mappedOrders = orders.Items
+            .Select(order => order.ToOrderSummaryDto(authenticatedUserId, currencyCode, priceConverter))
+            .ToArray();
+
+        return Result<PagedResult<OrderSummaryDto>>.Success(
+            new PagedResult<OrderSummaryDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
     }
 
     public async Task<Result<PagedResult<OrderDto>>> GetByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
@@ -99,8 +136,56 @@ public sealed class OrderService : IOrderService
         return Task.FromResult(Result<OrderDto>.NotImplemented());
     }
 
-    public Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Result<OrderDto>.NotImplemented());
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return Result<OrderDto>.NotFound("Order was not found.");
+        }
+
+        var customer = await _customerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (customer is null)
+        {
+            return Result<OrderDto>.NotFound("Customer profile was not found for the authenticated user.");
+        }
+
+        if (order.CustomerId != customer.Id)
+        {
+            return Result<OrderDto>.Forbidden("The authenticated user is not the owner of the order.");
+        }
+
+        var allowed = new List<OrderStatus> { OrderStatus.Pending, OrderStatus.Approved, OrderStatus.Processing };
+        if (!allowed.Contains(order.OrderStatus))
+        {
+            return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {order.OrderStatus}.");
+        }
+
+        order.OrderStatus = OrderStatus.Cancelled;
+        order.OrderStatusDescription = request.Reason;
+
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Cancelled,
+            TargetEntityType: nameof(Order),
+            TargetEntityId: order.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Order {order.Id} was cancelled by user {authenticatedUserId} for reason: \"{request.Reason}\""
+        ), cancellationToken);
+
+        var orderWithDetails = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
+        if (orderWithDetails is null)
+        {
+            return Result<OrderDto>.NotFound("Order was not found after update.");
+        }
+
+        return Result<OrderDto>.Success(orderWithDetails.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
     }
 }
