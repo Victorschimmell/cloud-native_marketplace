@@ -24,6 +24,8 @@ import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../features/admin/pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../features/admin/pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
+import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
+import AdminPaymentsPage from '../features/admin/pages/AdminPaymentsPage';
 import AddProductPage from '../features/seller/pages/AddProductPage';
 
 export const router = createBrowserRouter([
@@ -75,6 +77,8 @@ export const router = createBrowserRouter([
         children: [
           { path: 'analytics', element: <AnalyticsDashboardPage /> },
           { path: 'admin/users', element: <AdminUsersPage /> },
+          { path: 'admin/issues', element: <AdminReportIssuePage /> },
+          { path: 'admin/payments', element: <AdminPaymentsPage /> },
           { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
           { path: 'admin/audit', element: <AdminAuditPage /> },
         ],

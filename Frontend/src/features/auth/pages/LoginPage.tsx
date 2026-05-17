@@ -101,7 +101,7 @@ function getSafeReturnTo(value: string | null): string | null {
 // Default landing page per role. Admin is checked first so admin-sellers land in admin.
 function resolveLandingRoute(capabilities: AuthCapabilities): string {
   if (capabilities.isAdmin) {
-    return '/admin/users';
+    return '/analytics';
   }
   if (capabilities.isVerifiedSeller) {
     return '/seller/products';

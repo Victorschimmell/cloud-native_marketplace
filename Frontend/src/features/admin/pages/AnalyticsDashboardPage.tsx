@@ -1,5 +1,5 @@
-import PageSkeleton from '../../../components/PageSkeleton';
+import AdminDashboard from '../components/AdminDashboard';
 
 export default function AnalyticsDashboardPage() {
-  return <PageSkeleton title="Analytics Dashboard Page" />;
+  return <AdminDashboard />;
 }
