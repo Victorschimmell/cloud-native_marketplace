@@ -1,0 +1,152 @@
+# Runs on:
+#   - Every PR targeting master or release/v1.0.0 (failing test -> cannot complete PR)
+#   - Every push/merge to master or release/v1.0.0 (failing test -> merge not finalised)
+#
+# Docker images are pushed ONLY on push/merge to release/v1.0.0 (not on PR builds).
+
+trigger:
+  branches:
+    include:
+      # - master
+      - release/v1.0.0
+      # - feature/79-infrastructure-layer
+
+pr:
+  branches:
+    include:
+      # - master
+      - release/v1.0.0
+      # - feature/79-infrastructure-layer
+
+pool:
+  name: LocalAgentPool
+
+variables:
+  buildConfiguration: 'Release'
+  backendImageName: 'adminkusofteng2026/marketplace-platform-backend'
+  frontendImageName: 'adminkusofteng2026/marketplace-platform-frontend'
+  databaseImageName: 'adminkusofteng2026/marketplace-platform-database'
+  tag: '$(Build.BuildId)'
+
+steps:
+
+  # ── Backend ────────────────────────────────────────────────────────────────
+
+  # 1. SDK
+  - task: UseDotNet@2
+    displayName: 'Install .NET 10.x SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '10.x'
+
+  # 2. Restore dependencies
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore dependencies'
+    inputs:
+      command: 'restore'
+      projects: 'Marketplace.slnx'
+
+  # 3. Build all projects (incl. tests)
+  - task: DotNetCoreCLI@2
+    displayName: 'Build solution'
+    inputs:
+      command: 'build'
+      projects: 'Marketplace.slnx'
+      arguments: '--configuration $(buildConfiguration) --no-restore'
+
+  # 4. Unit tests  (no database used)
+  - task: DotNetCoreCLI@2
+    displayName: 'Run unit tests'
+    inputs:
+      command: 'test'
+      projects: 'Backend/tests/Backend.UnitTests/Backend.UnitTests.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+      publishTestResults: true
+
+  # 5. Integration tests  (uses Docker Compose test Postgres)
+  - task: DotNetCoreCLI@2
+    displayName: 'Run integration tests'
+    inputs:
+      command: 'test'
+      projects: 'Backend/tests/Backend.IntegrationTests/Backend.IntegrationTests.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+      publishTestResults: true
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+
+  # 6. Node.js runtime
+  - task: UseNode@1
+    displayName: 'Install Node.js LTS'
+    inputs:
+      version: '22.x'
+
+  # 7. Install npm dependencies
+  - task: Npm@1
+    displayName: 'Frontend: npm install'
+    inputs:
+      command: 'install'
+      workingDir: 'Frontend'
+
+  # 8. Lint (ESLint + TypeScript)
+  - task: Npm@1
+    displayName: 'Frontend: lint'
+    inputs:
+      command: 'custom'
+      workingDir: 'Frontend'
+      customCommand: 'run lint'
+
+  # 9. Build
+  - task: Npm@1
+    displayName: 'Frontend: build'
+    inputs:
+      command: 'custom'
+      workingDir: 'Frontend'
+      customCommand: 'run build'
+
+  # ── Docker ─────────────────────────────────────────────────────────────────
+
+  # 10. Backend Docker build + push
+  #     Condition: all previous steps passed, this is NOT a PR build,
+  #     and the run is for release/v1.0.0.
+  #     Build.Reason is 'PullRequest' for PR pipelines; 'IndividualCI' / 'BatchedCI' for merges.
+  #     This prevents pushing unreviewed images to DockerHub before the PR is merged.
+  - task: Docker@2
+    displayName: 'Build and Push Backend Docker image'
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    inputs:
+      containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
+      repository: '$(backendImageName)'
+      command: 'buildAndPush'
+      Dockerfile: 'Dockerfile'
+      buildContext: '.'
+      tags: |
+        $(tag)
+        latest
+
+  # 11. Frontend Docker build + push
+  - task: Docker@2
+    displayName: 'Build and Push Frontend Docker image'
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    inputs:
+      containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
+      repository: '$(frontendImageName)'
+      command: 'buildAndPush'
+      Dockerfile: 'Frontend/Dockerfile'
+      buildContext: 'Frontend'
+      tags: |
+        $(tag)
+        latest
+
+  # 12. Database Docker build + push
+  - task: Docker@2
+    displayName: 'Build and Push Database Docker image'
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['Build.SourceBranch'], 'refs/heads/release/v1.0.0'))
+    inputs:
+      containerRegistry: 'dockerhub-connection' # from AZ devops Project Settings>Service connections
+      repository: '$(databaseImageName)'
+      command: 'buildAndPush'
+      Dockerfile: 'Database/Dockerfile'
+      buildContext: 'Database'
+      tags: |
+        $(tag)
+        latest

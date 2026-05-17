@@ -1,0 +1,30 @@
+using Backend.Api.Contracts.Commerce.Payments;
+using Backend.Api.Contracts.Commerce.Reviews;
+using Backend.Api.Contracts.Commerce.Shipments;
+
+namespace Backend.Api.Contracts.Commerce.Orders;
+
+public sealed record OrderModel
+{
+    public required Guid Id { get; init; }
+    public required Guid CustomerId { get; init; }
+    public required Guid UserId { get; init; }
+    public required Guid ShippingAddressId { get; init; }
+    public required string OrderNumber { get; init; }
+    public required OrderStatus OrderStatus { get; init; }
+    public required string? OrderStatusDescription { get; init; }
+    public required DateTimeOffset OrderPurchaseTimestampUtc { get; init; }
+    public required DateTimeOffset? OrderApprovedAtUtc { get; init; }
+    public required DateTimeOffset? OrderDeliveredCarrierDateUtc { get; init; }
+    public required DateTimeOffset? OrderDeliveredCustomerDateUtc { get; init; }
+    public required DateTimeOffset? OrderEstimatedDeliveryDateUtc { get; init; }
+    public required decimal SubtotalAmount { get; init; }
+    public required decimal FreightAmount { get; init; }
+    public required decimal TotalAmount { get; init; }
+    public required string CurrencyCode { get; init; }
+    public required Guid? PlacedFromCartId { get; init; }
+    public required IReadOnlyList<OrderItemModel> Items { get; init; }
+    public required IReadOnlyList<PaymentModel> Payments { get; init; }
+    public required IReadOnlyList<ReviewModel> Reviews { get; init; }
+    public required IReadOnlyList<ShipmentModel> Shipments { get; init; }
+}

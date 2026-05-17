@@ -1,0 +1,5 @@
+review_id,order_id,review_score,review_comment_title,review_comment_message,review_creation_date,review_answer_timestamp
+review-1,order-1,5,Excellent,"Great, works ""very"" well",2018-08-12 00:00:00,2018-08-13 00:00:00
+review-2,order-2,4,Good,Fast shipping,2018-09-05 00:00:00,2018-09-06 00:00:00
+review-3,order-3,5,Perfect,Would buy again,2018-10-07 00:00:00,2018-10-08 00:00:00
+review-4,order-3,3,Okay,Second follow-up review,2018-10-09 00:00:00,2018-10-10 00:00:00

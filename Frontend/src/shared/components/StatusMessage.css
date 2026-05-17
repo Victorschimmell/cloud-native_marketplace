@@ -1,0 +1,17 @@
+.status-message {
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.status-message--info {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+}
+
+.status-message--error {
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}

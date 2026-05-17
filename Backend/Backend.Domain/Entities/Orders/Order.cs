@@ -1,0 +1,38 @@
+using Backend.Domain.Base;
+using Backend.Domain.Entities.Location;
+using Backend.Domain.Enums;
+
+namespace Backend.Domain.Entities.Orders;
+
+public sealed class Order : AggregateRoot<Guid>
+{
+    public Order()
+    {
+        Id = Guid.NewGuid();
+    }
+
+    public Guid CustomerId { get; set; }
+    public Guid ShippingAddressId { get; set; }
+    public OrderStatus OrderStatus { get; set; }
+    public string? OrderStatusDescription { get; set; }
+    public DateTimeOffset OrderPurchaseTimestampUtc { get; set; }
+    public DateTimeOffset? OrderApprovedAtUtc { get; set; }
+    public DateTimeOffset? OrderDeliveredCarrierDateUtc { get; set; }
+    public DateTimeOffset? OrderDeliveredCustomerDateUtc { get; set; }
+    public DateTimeOffset? OrderEstimatedDeliveryDateUtc { get; set; }
+    public decimal SubtotalAmount { get; set; }
+    public decimal FreightAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public Guid? PlacedFromCartId { get; set; }
+    public required string OrderNumber { get; set; }
+
+    public IdentityAccess.Customer? Customer { get; set; }
+    public Address? ShippingAddress { get; set; }
+    public Carts.ShoppingCart? PlacedFromCart { get; set; }
+    public ICollection<OrderItem> Items { get; } = [];
+    public ICollection<OrderPayment> Payments { get; } = [];
+    public ICollection<OrderReview> Reviews { get; } = [];
+    public ICollection<Shipment> Shipments { get; } = [];
+}
+
+

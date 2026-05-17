@@ -1,0 +1,116 @@
+using System.Diagnostics;
+using Npgsql;
+
+namespace Backend.IntegrationTests.TestSupport;
+
+/// <summary>
+/// xUnit collection fixture that spins up the Docker Compose postgres service before the
+/// test suite runs and tears it down once the suite finishes, whether
+/// tests pass or fail.
+/// </summary>
+public sealed class PostgresDockerFixture : IAsyncLifetime
+{
+    private string _composeRoot = string.Empty;
+    private string _composeProjectName = string.Empty;
+
+    public async ValueTask InitializeAsync()
+    {
+        _composeRoot = FindComposeRoot();
+        _composeProjectName = $"marketplace-tests-{Guid.NewGuid():N}";
+        await RunComposeAsync("up -d postgres");
+        await WaitForPostgresAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await RunComposeAsync("down -v");
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    private static string FindComposeRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (dir is not null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "docker-compose.test.yml")))
+                return dir.FullName;
+
+            dir = dir.Parent;
+        }
+
+        throw new InvalidOperationException(
+            "docker-compose.test.yml not found in any parent directory of the test output directory."
+        );
+    }
+
+    private async Task RunComposeAsync(string args)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = $"compose -f docker-compose.test.yml -p {_composeProjectName} {args}",
+                WorkingDirectory = _composeRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            }
+        };
+
+        process.OutputDataReceived += (_, eventArgs) =>
+        {
+            if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+            {
+                Console.WriteLine(eventArgs.Data);
+            }
+        };
+        process.ErrorDataReceived += (_, eventArgs) =>
+        {
+            if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+            {
+                Console.Error.WriteLine(eventArgs.Data);
+            }
+        };
+
+        Console.WriteLine($"Running docker compose {args} for integration tests.");
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"'docker compose {args}' exited with code {process.ExitCode}.");
+        }
+    }
+
+    private static async Task WaitForPostgresAsync()
+    {
+        var connectionString =
+            Environment.GetEnvironmentVariable("SeedTests__AdminConnectionString")
+            ?? "Host=localhost;Port=5434;Database=postgres;Username=postgres;Password=postgres;Pooling=false";
+
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            try
+            {
+                await using var connection = new NpgsqlConnection(connectionString);
+                await connection.OpenAsync();
+                return;
+            }
+            catch
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        throw new InvalidOperationException(
+            "Postgres container did not become reachable within 30 seconds.");
+    }
+}
+
+[CollectionDefinition("PostgresDocker")]
+public sealed class PostgresDockerCollection : ICollectionFixture<PostgresDockerFixture> { }

@@ -1,0 +1,137 @@
+.audit-log-table__scroll {
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow-x: auto;
+}
+
+.audit-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.audit-log-table__head {
+  background: #f9fafb;
+}
+
+.audit-log-table__row--head .audit-log-table__cell {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.audit-log-table__cell {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  vertical-align: top;
+  color: #111827;
+  font-size: 13px;
+}
+
+.audit-log-table__row:last-child .audit-log-table__cell {
+  border-bottom: 0;
+}
+
+.audit-log-table__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.audit-log-table__pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.audit-log-table__pill--success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.audit-log-table__pill--error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.audit-log-table__pill--warning {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.audit-log-table__pill--muted {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.audit-log-table__entity,
+.audit-log-table__actor {
+  display: grid;
+  gap: 4px;
+}
+
+.audit-log-table__entity-type,
+.audit-log-table__actor-id {
+  font-weight: 600;
+  color: #111827;
+}
+
+.audit-log-table__entity-id,
+.audit-log-table__actor-ip {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.audit-log-table__details {
+  color: #374151;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.audit-log-table__time {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.audit-log-table__skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f3f4f6 0%, #e5e7eb 50%, #f3f4f6 100%);
+  background-size: 200% 100%;
+  animation: audit-log-skeleton 1.6s ease-in-out infinite;
+}
+
+@keyframes audit-log-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .audit-log-table {
+    min-width: 760px;
+  }
+}

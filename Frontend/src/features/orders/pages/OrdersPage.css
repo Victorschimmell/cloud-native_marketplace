@@ -1,0 +1,19 @@
+.orders-page {
+  display: grid;
+  gap: 20px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.orders-page__list {
+  display: grid;
+  gap: 18px;
+}
+
+.orders-page__loading {
+  margin: 0;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+
