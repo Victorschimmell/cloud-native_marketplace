@@ -42,9 +42,24 @@ export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps
             <tr>
               <th>Order ID</th>
               <th>Customer</th>
-              <SortableHeader label="Date" onClick={() => handleSort('date')} />
-              <SortableHeader label="Total" onClick={() => handleSort('total')} />
-              <SortableHeader label="Status" onClick={() => handleSort('status')} />
+              <SortableHeader
+                direction={sortDirection}
+                isActive={sortKey === 'date'}
+                label="Date"
+                onClick={() => handleSort('date')}
+              />
+              <SortableHeader
+                direction={sortDirection}
+                isActive={sortKey === 'total'}
+                label="Total"
+                onClick={() => handleSort('total')}
+              />
+              <SortableHeader
+                direction={sortDirection}
+                isActive={sortKey === 'status'}
+                label="Status"
+                onClick={() => handleSort('status')}
+              />
               <th>Tracking</th>
               <th>Actions</th>
             </tr>
@@ -60,24 +75,33 @@ export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps
   );
 }
 
-function SortableHeader({ label, onClick }: { label: string; onClick: () => void }) {
+function SortableHeader({
+  direction,
+  isActive,
+  label,
+  onClick,
+}: {
+  direction: SortDirection;
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  const ariaSort = isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none';
+
   return (
-    <th>
+    <th aria-sort={ariaSort}>
       <button
         type="button"
         aria-label={`Sort by ${label}`}
         onClick={onClick}
-        style={{
-          background: 'none',
-          border: 'none',
-          padding: 0,
-          font: 'inherit',
-          fontWeight: 700,
-          cursor: 'pointer',
-          color: 'inherit',
-        }}
+        className="seller-dashboard__sort-button"
       >
         {label}
+        {isActive ? (
+          <span className="seller-dashboard__sort-indicator" aria-hidden="true">
+            {direction === 'asc' ? 'Asc' : 'Desc'}
+          </span>
+        ) : null}
       </button>
     </th>
   );
@@ -86,20 +110,20 @@ function SortableHeader({ label, onClick }: { label: string; onClick: () => void
 function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatter: Intl.NumberFormat }) {
   return (
     <tr>
-      <td><strong>{order.id}</strong></td>
-      <td>
+      <td data-label="Order ID"><strong>{order.id}</strong></td>
+      <td data-label="Customer">
         <p className="seller-dashboard__customer-name">{order.customerName}</p>
         <p className="seller-dashboard__customer-email">{order.customerEmail}</p>
       </td>
-      <td>{formatDate(order.date)}</td>
-      <td className="seller-dashboard__price">{priceFormatter.format(order.total)}</td>
-      <td>
+      <td data-label="Date">{formatDate(order.date)}</td>
+      <td className="seller-dashboard__price" data-label="Total">{priceFormatter.format(order.total)}</td>
+      <td data-label="Status">
         <span className={`seller-dashboard__status seller-dashboard__status--${order.status.toLowerCase()}`}>
           {order.status}
         </span>
       </td>
-      <td>{order.tracking ?? '-'}</td>
-      <td>
+      <td data-label="Tracking">{order.tracking ?? '-'}</td>
+      <td data-label="Actions">
         <Link
           to={`/seller/orders/${order.id}`}
           className="seller-dashboard__action seller-dashboard__action--view"

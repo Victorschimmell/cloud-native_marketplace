@@ -50,7 +50,7 @@ function ProductRow({ priceFormatter, product }: { priceFormatter: Intl.NumberFo
 
   return (
     <tr>
-      <td>
+      <td data-label="Product">
         <div className="seller-dashboard__product-cell">
           <img
             className="seller-dashboard__product-image"
@@ -60,19 +60,19 @@ function ProductRow({ priceFormatter, product }: { priceFormatter: Intl.NumberFo
           <span>{product.name}</span>
         </div>
       </td>
-      <td>{product.category}</td>
-      <td className="seller-dashboard__price">{priceFormatter.format(product.price)}</td>
-      <td>
+      <td data-label="Category">{product.category}</td>
+      <td className="seller-dashboard__price" data-label="Price">{priceFormatter.format(product.price)}</td>
+      <td data-label="Stock">
         <span
           className={`seller-dashboard__stock seller-dashboard__stock--${product.inStock ? 'in' : 'out'}`}
         >
           {product.inStock ? 'In Stock' : 'Out of Stock'}
         </span>
       </td>
-      <td>
+      <td data-label="Rating">
         {product.rating.toFixed(1)} ({product.ratingCount})
       </td>
-      <td>
+      <td data-label="Actions">
         <div className="seller-dashboard__row-actions">
           <button
             type="button"

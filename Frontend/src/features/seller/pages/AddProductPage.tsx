@@ -1,7 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
-import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import type { ProductCategory } from '../data/placeholderData';
 import './AddProductPage.css';
@@ -38,14 +37,6 @@ export default function AddProductPage() {
   const navigate = useNavigate();
   const { currency } = useCurrency();
   const [form, setForm] = useState<ProductFormState>(INITIAL_STATE);
-  const pricePlaceholder = useMemo(
-    () => new Intl.NumberFormat(getCurrencyLocale(currency), {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      useGrouping: false,
-    }).format(0),
-    [currency],
-  );
 
   function updateField<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -113,7 +104,7 @@ export default function AddProductPage() {
                   step="0.01"
                   min="0"
                   required
-                  placeholder={pricePlaceholder}
+                  placeholder="0.00"
                   value={form.price}
                   onChange={(event) => updateField('price', event.target.value)}
                 />
