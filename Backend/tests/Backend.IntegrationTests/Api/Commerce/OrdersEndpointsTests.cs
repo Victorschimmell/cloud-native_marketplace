@@ -183,7 +183,7 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(
             "Order cannot be cancelled in its current status of Shipped.",
-            responseJson.RootElement.GetProperty("error").GetString());
+            responseJson.RootElement.GetProperty("detail").GetString());
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(
             "Currency must be one of BRL, USD, or DKK.",
-            responseJson.RootElement.GetProperty("error").GetString());
+            responseJson.RootElement.GetProperty("detail").GetString());
     }
 
     private async Task<(Guid UserId, Guid OrderId)> SeedOrderAsync(
