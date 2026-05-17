@@ -1,10 +1,11 @@
 import type { SellerProduct } from '../data/placeholderData';
 
 interface ProductInventoryTableProps {
+  priceFormatter: Intl.NumberFormat;
   products: SellerProduct[];
 }
 
-export default function ProductInventoryTable({ products }: ProductInventoryTableProps) {
+export default function ProductInventoryTable({ priceFormatter, products }: ProductInventoryTableProps) {
   return (
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
@@ -12,7 +13,7 @@ export default function ProductInventoryTable({ products }: ProductInventoryTabl
       </div>
 
       {products.length === 0 ? (
-        <p className="seller-dashboard__empty">No products yet. Click "+ Add Product" to create one.</p>
+        <p className="seller-dashboard__empty">No products yet. Add a product to create one.</p>
       ) : (
         <table className="seller-dashboard__table">
           <thead>
@@ -27,7 +28,7 @@ export default function ProductInventoryTable({ products }: ProductInventoryTabl
           </thead>
           <tbody>
             {products.map((product) => (
-              <ProductRow key={product.id} product={product} />
+              <ProductRow key={product.id} priceFormatter={priceFormatter} product={product} />
             ))}
           </tbody>
         </table>
@@ -36,7 +37,7 @@ export default function ProductInventoryTable({ products }: ProductInventoryTabl
   );
 }
 
-function ProductRow({ product }: { product: SellerProduct }) {
+function ProductRow({ priceFormatter, product }: { priceFormatter: Intl.NumberFormat; product: SellerProduct }) {
   // No Operation Handlers for now , will be wired to the API later.
   function handleEdit() {
     console.log('Edit product', product.id);
@@ -59,7 +60,7 @@ function ProductRow({ product }: { product: SellerProduct }) {
         </div>
       </td>
       <td>{product.category}</td>
-      <td className="seller-dashboard__price">${product.price.toFixed(2)}</td>
+      <td className="seller-dashboard__price">{priceFormatter.format(product.price)}</td>
       <td>
         <span
           className={`seller-dashboard__stock seller-dashboard__stock--${product.inStock ? 'in' : 'out'}`}

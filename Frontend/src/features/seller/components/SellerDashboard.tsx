@@ -1,5 +1,9 @@
-import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import PageSkeleton from '../../../components/PageSkeleton';
+import { getCurrencyLocale } from '../../../shared/currency/currency';
+import { useCurrency } from '../../../shared/currency/useCurrency';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
 import { placeholderOrders, placeholderProducts, placeholderStats } from '../data/placeholderData';
@@ -19,65 +23,46 @@ interface SellerDashboardProps {
  * own URL). Replace placeholder arrays when the back-end is ready with real API calls.
  */
 export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
-  return (
-    <section className="seller-dashboard">
-      <DashboardHeader />
-      <StatsRow />
-      <TabBar activeTab={activeTab} />
-
-      {activeTab === 'products' ? (
-        <ProductInventoryTable products={placeholderProducts} />
-      ) : (
-        <OrdersTable orders={placeholderOrders} />
-      )}
-    </section>
+  const { currency } = useCurrency();
+  const priceFormatter = useMemo(
+    () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
+    [currency],
   );
-}
+  const summary = activeTab === 'products'
+    ? 'Manage product inventory and seller performance.'
+    : 'Review incoming orders and fulfillment status.';
 
-/* Header */
-
-function DashboardHeader() {
   return (
-    <header className="seller-dashboard__header">
-      <h1 className="seller-dashboard__title">
-        <StoreIcon />
-        Seller Dashboard
-      </h1>
-      <Link to="/seller/products/new" className="seller-dashboard__add-button">
-        + Add Product
-      </Link>
-    </header>
-  );
-}
+    <PageSkeleton summary={summary} title="Seller Dashboard" titleId="seller-dashboard-title">
+      <section className="seller-dashboard" aria-labelledby="seller-dashboard-title">
+        <div className="seller-dashboard__actions">
+          <Link to="/seller/products/new" className="seller-dashboard__primary-action">
+            Add Product
+          </Link>
+        </div>
 
-function StoreIcon() {
-  return (
-    <svg
-      className="seller-dashboard__title-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 9l1-5h16l1 5" />
-      <path d="M4 9v11h16V9" />
-      <path d="M9 22V12h6v10" />
-    </svg>
+        <StatsRow priceFormatter={priceFormatter} />
+        <TabBar activeTab={activeTab} />
+
+        {activeTab === 'products' ? (
+          <ProductInventoryTable priceFormatter={priceFormatter} products={placeholderProducts} />
+        ) : (
+          <OrdersTable orders={placeholderOrders} priceFormatter={priceFormatter} />
+        )}
+      </section>
+    </PageSkeleton>
   );
 }
 
 /* Stats */
 
-function StatsRow() {
+function StatsRow({ priceFormatter }: { priceFormatter: Intl.NumberFormat }) {
   const stats = placeholderStats;
 
   return (
     <div className="seller-dashboard__stats">
       <StatCard label="Total Products" value={stats.totalProducts.toString()} />
-      <StatCard label="Total Revenue" value={`$${stats.totalRevenue.toLocaleString()}`} />
+      <StatCard label="Total Revenue" value={priceFormatter.format(stats.totalRevenue)} />
       <StatCard label="Total Orders" value={stats.totalOrders.toString()} />
       <StatCard label="Active Orders" value={stats.activeOrders.toString()} />
     </div>

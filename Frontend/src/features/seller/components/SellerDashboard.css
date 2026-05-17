@@ -11,60 +11,29 @@
   gap: 24px;
 }
 
-/* ---------- Header bar ---------- */
-
-.seller-dashboard__header {
-  background:
-    linear-gradient(135deg, rgba(219, 234, 254, 0.96), rgba(224, 242, 254, 0.8) 52%, rgba(236, 253, 245, 0.88)),
-    var(--seller-accent-soft);
-  border: 1px solid var(--seller-accent-border);
-  color: var(--seller-text);
-  border-radius: 10px;
-  padding: 20px 28px;
+.seller-dashboard__actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+  justify-content: flex-start;
 }
 
-.seller-dashboard__title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--seller-text);
-}
-
-.seller-dashboard__title-icon {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  color: var(--primary-color);
-}
-
-.seller-dashboard__add-button {
-  background: var(--primary-color);
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 18px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
+.seller-dashboard__primary-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  justify-content: center;
+  min-height: 46px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 0 18px;
+  text-decoration: none;
 }
 
-.seller-dashboard__add-button:hover {
+.seller-dashboard__primary-action:hover,
+.seller-dashboard__primary-action:focus-visible {
   background: var(--primary-hover-color);
-  box-shadow: 0 10px 18px rgba(30, 64, 175, 0.2);
-  transform: translateY(-1px);
 }
 
 /* ---------- Stats row ---------- */
@@ -309,10 +278,8 @@
 }
 
 @media (max-width: 600px) {
-  .seller-dashboard__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .seller-dashboard__primary-action {
+    width: 100%;
   }
 
   .seller-dashboard__stats {

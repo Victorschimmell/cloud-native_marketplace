@@ -4,12 +4,13 @@ import type { OrderStatus, SellerOrder } from '../data/placeholderData';
 
 interface OrdersTableProps {
   orders: SellerOrder[];
+  priceFormatter: Intl.NumberFormat;
 }
 
 type SortKey = 'date' | 'total' | 'status';
 type SortDirection = 'asc' | 'desc';
 
-export default function OrdersTable({ orders }: OrdersTableProps) {
+export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -50,7 +51,7 @@ export default function OrdersTable({ orders }: OrdersTableProps) {
           </thead>
           <tbody>
             {sortedOrders.map((order) => (
-              <OrderRow key={order.id} order={order} />
+              <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
             ))}
           </tbody>
         </table>
@@ -82,7 +83,7 @@ function SortableHeader({ label, onClick }: { label: string; onClick: () => void
   );
 }
 
-function OrderRow({ order }: { order: SellerOrder }) {
+function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatter: Intl.NumberFormat }) {
   return (
     <tr>
       <td><strong>{order.id}</strong></td>
@@ -91,7 +92,7 @@ function OrderRow({ order }: { order: SellerOrder }) {
         <p className="seller-dashboard__customer-email">{order.customerEmail}</p>
       </td>
       <td>{formatDate(order.date)}</td>
-      <td className="seller-dashboard__price">${order.total.toFixed(2)}</td>
+      <td className="seller-dashboard__price">{priceFormatter.format(order.total)}</td>
       <td>
         <span className={`seller-dashboard__status seller-dashboard__status--${order.status.toLowerCase()}`}>
           {order.status}
