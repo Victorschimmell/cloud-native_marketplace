@@ -10,6 +10,7 @@ export default function ProductInventoryTable({ priceFormatter, products }: Prod
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
         <h2 className="seller-dashboard__panel-title">Product Inventory</h2>
+        <p className="seller-dashboard__panel-subtitle">Review product status, stock and pricing</p>
       </div>
 
       {products.length === 0 ? (

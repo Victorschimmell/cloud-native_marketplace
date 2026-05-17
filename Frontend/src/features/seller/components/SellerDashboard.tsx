@@ -28,12 +28,12 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
     [currency],
   );
-  const summary = activeTab === 'products'
-    ? 'Manage product inventory and seller performance.'
-    : 'Review incoming orders and fulfillment status.';
-
   return (
-    <PageSkeleton summary={summary} title="Seller Dashboard" titleId="seller-dashboard-title">
+    <PageSkeleton
+      summary="Manage product inventory, seller performance and fulfillment activity."
+      title="Seller Dashboard"
+      titleId="seller-dashboard-title"
+    >
       <section className="seller-dashboard" aria-labelledby="seller-dashboard-title">
         <div className="seller-dashboard__actions">
           <Link to="/seller/products/new" className="seller-dashboard__primary-action">
