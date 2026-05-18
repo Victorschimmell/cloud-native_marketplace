@@ -104,7 +104,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task CreateProduct_ReturnsNotImplemented()
+    public async Task CreateProduct_WithoutAuth_ReturnsUnauthorized()
     {
         // Arrange
         var createRequest = new CreateProductRequest
@@ -112,6 +112,8 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             ProductName = "Test Product",
             CategoryId = Guid.NewGuid(),
             Description = "Test Description",
+            Price = 9.99m,
+            InStock = true,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,
@@ -123,11 +125,11 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PostAsJsonAsync("/api/products", createRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateProduct_ReturnsNotImplemented()
+    public async Task UpdateProduct_WithoutAuth_ReturnsUnauthorized()
     {
         // Arrange
         var productId = Guid.NewGuid();
@@ -136,6 +138,8 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             ProductName = "Updated Product",
             CategoryId = Guid.NewGuid(),
             Description = "Updated Description",
+            Price = 19.99m,
+            InventoryQuantity = 10,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,
@@ -147,18 +151,18 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var response = await _client.PutAsJsonAsync($"/api/products/{productId}", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task DeleteProduct_ReturnsNotImplemented()
+    public async Task DeleteProduct_WithoutAuth_ReturnsUnauthorized()
     {
         // Act
         var productId = Guid.NewGuid();
         var response = await _client.DeleteAsync($"/api/products/{productId}", TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

@@ -105,11 +105,14 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
     {
         // Arrange
         var productName = new string('a', 501); // Invalid: exceeds MaxLength(500)
+        await AuthenticateAsRegisteredCustomerAsync();
         var createRequest = new CreateProductRequest
         {
             ProductName = productName,
             CategoryId = Guid.NewGuid(),
             Description = "Test Description",
+            Price = 9.99m,
+            InStock = true,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,
