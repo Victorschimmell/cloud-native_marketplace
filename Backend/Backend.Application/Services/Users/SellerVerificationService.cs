@@ -49,6 +49,14 @@ public sealed class SellerVerificationService : ISellerVerificationService
         var seller = await _sellerRepository.GetByIdAsync(request.SellerId, cancellationToken);
         if (seller is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: request.SellerId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Verification submission failed: seller not found."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.NotFound("Seller not found.");
         }
 
@@ -83,35 +91,85 @@ public sealed class SellerVerificationService : ISellerVerificationService
 
     public async Task<Result<SellerVerificationResponse>> VerifySellerAsync(VerifySellerRequest request, CancellationToken cancellationToken = default)
     {
+        var attemptedAction = request.Approve ? AuditActionType.Approve : AuditActionType.Reject;
+
         if (!_currentUserProvider.IsAdmin)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: request.VerificationRequestId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to review seller verification request."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.Forbidden("Only admins can review seller verification requests.");
         }
 
         var verificationRequest = await _verificationRequestRepository.GetByIdAsync(request.VerificationRequestId, cancellationToken);
         if (verificationRequest is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: request.VerificationRequestId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Verification review failed: request not found."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.NotFound("Verification request not found.");
         }
 
         if (verificationRequest.SellerId != request.SellerId)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: $"Verification review failed: request belongs to seller {verificationRequest.SellerId}, not {request.SellerId}."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.ValidationFailure("Verification request does not belong to the specified seller.");
         }
 
         if (verificationRequest.Status is SellerVerificationRequestStatus.Approved or SellerVerificationRequestStatus.Rejected)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: $"Verification review failed: request already {verificationRequest.Status}."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.Conflict("Verification request has already been reviewed.");
         }
 
         var seller = await _sellerRepository.GetByIdAsync(verificationRequest.SellerId, cancellationToken);
         if (seller is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Verification review failed: seller not found."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.NotFound("Seller not found.");
         }
 
         if (!request.Approve && string.IsNullOrWhiteSpace(request.RejectionReason))
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: attemptedAction,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: verificationRequest.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Verification rejection failed: rejection reason missing."
+            ), cancellationToken);
+
             return Result<SellerVerificationResponse>.ValidationFailure("RejectionReason is required when rejecting a verification request.");
         }
 
@@ -139,13 +197,12 @@ public sealed class SellerVerificationService : ISellerVerificationService
         await _sellerRepository.UpdateAsync(seller, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var auditAction = request.Approve ? AuditActionType.Approve : AuditActionType.Reject;
         var auditDetails = request.Approve
             ? $"Seller {seller.Id} verification request {verificationRequest.Id} approved."
             : $"Seller {seller.Id} verification request {verificationRequest.Id} rejected. Reason: {request.RejectionReason}";
 
         await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
-            ActionType: auditAction,
+            ActionType: attemptedAction,
             TargetEntityType: nameof(SellerVerificationRequest),
             TargetEntityId: verificationRequest.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
@@ -170,6 +227,14 @@ public sealed class SellerVerificationService : ISellerVerificationService
         var seller = await _sellerRepository.GetByIdAsync(sellerId, cancellationToken);
         if (seller is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(Seller),
+                TargetEntityId: sellerId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Lookup of verification requests failed: seller not found."
+            ), cancellationToken);
+
             return Result<IReadOnlyList<SellerVerificationRequestDto>>.NotFound("Seller not found.");
         }
 

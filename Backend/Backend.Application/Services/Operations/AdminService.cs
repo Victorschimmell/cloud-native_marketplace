@@ -40,17 +40,41 @@ public sealed class AdminService : IAdminService
     {
         if (!_currentUserProvider.IsAdmin)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Block,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: request.UserId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to block user."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.Forbidden("Only admins can block users.");
         }
 
         var user = await _userAccountRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Block,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: request.UserId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Block failed: user not found."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.NotFound("User not found.");
         }
 
         if (user.IsBlocked)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Block,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: user.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Block failed: user is already blocked."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.Conflict("User is already blocked.");
         }
 
@@ -82,17 +106,41 @@ public sealed class AdminService : IAdminService
     {
         if (!_currentUserProvider.IsAdmin)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Unblock,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: request.UserId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to unblock user."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.Forbidden("Only admins can unblock users.");
         }
 
         var user = await _userAccountRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Unblock,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: request.UserId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Unblock failed: user not found."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.NotFound("User not found.");
         }
 
         if (!user.IsBlocked)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Unblock,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: user.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Unblock failed: user is not currently blocked."
+            ), cancellationToken);
+
             return Result<AdminOperationResponse>.Conflict("User is not currently blocked.");
         }
 

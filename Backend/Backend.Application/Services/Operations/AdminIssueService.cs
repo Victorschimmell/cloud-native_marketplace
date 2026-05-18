@@ -40,16 +40,40 @@ public sealed class AdminIssueService : IAdminIssueService
     {
         if (!_currentUserProvider.IsAdmin || _currentUserProvider.UserId is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: "new",
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to create an issue."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.Forbidden("Only admins can create issues.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Title))
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: "new",
+                Outcome: AuditOutcome.Failed,
+                Details: "Issue creation failed: title is required."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.ValidationFailure("Title is required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Description))
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: "new",
+                Outcome: AuditOutcome.Failed,
+                Details: "Issue creation failed: description is required."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.ValidationFailure("Description is required.");
         }
 
@@ -81,17 +105,41 @@ public sealed class AdminIssueService : IAdminIssueService
     {
         if (!_currentUserProvider.IsAdmin || _currentUserProvider.UserId is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: request.IssueId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to resolve an issue."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.Forbidden("Only admins can resolve issues.");
         }
 
         var issue = await _issueRepository.GetByIdAsync(request.IssueId, cancellationToken);
         if (issue is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: request.IssueId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Resolve failed: issue not found."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.NotFound("Issue not found.");
         }
 
         if (issue.Status == IssueStatus.Resolved)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: issue.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Resolve failed: issue is already resolved."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.Conflict("Issue is already resolved.");
         }
 
@@ -118,17 +166,41 @@ public sealed class AdminIssueService : IAdminIssueService
     {
         if (!_currentUserProvider.IsAdmin)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: request.IssueId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Non-admin attempted to assign an issue."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.Forbidden("Only admins can assign issues.");
         }
 
         var issue = await _issueRepository.GetByIdAsync(request.IssueId, cancellationToken);
         if (issue is null)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: request.IssueId.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Assign failed: issue not found."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.NotFound("Issue not found.");
         }
 
         if (issue.Status == IssueStatus.Resolved)
         {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: issue.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Assign failed: resolved issues cannot be reassigned."
+            ), cancellationToken);
+
             return Result<AdminIssueDto>.Conflict("Resolved issues cannot be reassigned.");
         }
 
