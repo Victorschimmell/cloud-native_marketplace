@@ -6,14 +6,14 @@ interface UsersTableProps {
   onManage: (user: AdminUser) => void;
 }
 
-// Users table on the User Management page for Admin.
+// Users table on the User Management page. Filters and selection live in the parent.
 export default function UsersTable({ users, onManage }: UsersTableProps) {
   if (users.length === 0) {
-    return <p className="admin-dashboard__panel-empty">No users match the current filters.</p>;
+    return <p className="admin-users-page__empty">No users match the current filters.</p>;
   }
 
   return (
-    <table className="admin-dashboard__table">
+    <table className="admin-users-page__table">
       <thead>
         <tr>
           <th>User</th>
@@ -36,15 +36,15 @@ function UserRow({ user, onManage }: { user: AdminUser; onManage: (user: AdminUs
   return (
     <tr>
       <td>
-        <div className="admin-dashboard__user-cell">
-          <p className="admin-dashboard__user-name">{user.name}</p>
-          <p className="admin-dashboard__user-email">{user.email}</p>
-          {user.company ? <p className="admin-dashboard__user-company">{user.company}</p> : null}
+        <div className="admin-users-page__user-cell">
+          <p className="admin-users-page__user-name">{user.name}</p>
+          <p className="admin-users-page__user-email">{user.email}</p>
+          {user.company ? <p className="admin-users-page__user-company">{user.company}</p> : null}
         </div>
       </td>
       <td>{user.role}</td>
       <td>
-        <span className={`admin-dashboard__badge admin-dashboard__badge--${badgeKey(user.status)}`}>
+        <span className={`admin-users-page__badge admin-users-page__badge--${badgeKey(user.status)}`}>
           {user.status}
         </span>
       </td>
@@ -52,7 +52,7 @@ function UserRow({ user, onManage }: { user: AdminUser; onManage: (user: AdminUs
       <td>
         <button
           type="button"
-          className="admin-dashboard__action admin-dashboard__action--view"
+          className="admin-users-page__action"
           onClick={() => onManage(user)}
         >
           Manage

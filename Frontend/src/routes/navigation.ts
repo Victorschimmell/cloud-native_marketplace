@@ -15,7 +15,7 @@ export const primaryNavigationItems: NavigationItem[] = [
   { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
   { label: 'Seller Products', to: '/seller/products', audience: 'verifiedSeller' },
   { label: 'Seller Orders', to: '/seller/orders', audience: 'verifiedSeller' },
-  { label: 'Admin Dashboard', to: '/analytics', audience: 'admin' },
+  { label: 'Admin Dashboard', to: '/admin/dashboard', audience: 'admin' },
   { label: 'Admin Users', to: '/admin/users', audience: 'admin' },
   { label: 'Audit Logs', to: '/admin/audit', audience: 'admin' },
 ];

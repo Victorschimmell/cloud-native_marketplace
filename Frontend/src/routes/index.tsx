@@ -75,7 +75,7 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute capability="admin" />,
         children: [
-          { path: 'analytics', element: <AnalyticsDashboardPage /> },
+          { path: 'admin/dashboard', element: <AnalyticsDashboardPage /> },
           { path: 'admin/users', element: <AdminUsersPage /> },
           { path: 'admin/issues', element: <AdminReportIssuePage /> },
           { path: 'admin/payments', element: <AdminPaymentsPage /> },

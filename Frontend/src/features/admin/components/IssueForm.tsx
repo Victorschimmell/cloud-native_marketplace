@@ -31,13 +31,13 @@ export default function IssueForm({ onSubmit }: IssueFormProps) {
   }
 
   return (
-    <div className="admin-dashboard__panel">
-      <div className="admin-dashboard__panel-header">
-        <h2 className="admin-dashboard__panel-title">Create New Issue</h2>
+    <div className="admin-issues-page__panel">
+      <div className="admin-issues-page__panel-header">
+        <h2 className="admin-issues-page__panel-title">Create New Issue</h2>
       </div>
 
-      <form className="admin-dashboard__form" onSubmit={handleSubmit}>
-        <div className="admin-dashboard__form-field">
+      <form className="admin-issues-page__form" onSubmit={handleSubmit}>
+        <div className="admin-issues-page__form-field">
           <label htmlFor="issue-title">Issue Title *</label>
           <input
             id="issue-title"
@@ -49,7 +49,7 @@ export default function IssueForm({ onSubmit }: IssueFormProps) {
           />
         </div>
 
-        <div className="admin-dashboard__form-field">
+        <div className="admin-issues-page__form-field">
           <label htmlFor="issue-description">Description *</label>
           <textarea
             id="issue-description"
@@ -60,7 +60,7 @@ export default function IssueForm({ onSubmit }: IssueFormProps) {
           />
         </div>
 
-        <div className="admin-dashboard__form-field">
+        <div className="admin-issues-page__form-field">
           <label htmlFor="issue-type">Issue Type *</label>
           <select
             id="issue-type"
@@ -75,7 +75,7 @@ export default function IssueForm({ onSubmit }: IssueFormProps) {
           </select>
         </div>
 
-        <div className="admin-dashboard__form-field">
+        <div className="admin-issues-page__form-field">
           <label htmlFor="issue-priority">Priority *</label>
           <select
             id="issue-priority"
@@ -90,7 +90,7 @@ export default function IssueForm({ onSubmit }: IssueFormProps) {
           </select>
         </div>
 
-        <button type="submit" className="admin-dashboard__form-submit">
+        <button type="submit" className="admin-issues-page__form-submit">
           Submit Issue
         </button>
       </form>

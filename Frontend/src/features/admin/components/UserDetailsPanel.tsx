@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { AdminUser } from '../data/placeholderData';
 
 interface UserDetailsPanelProps {
@@ -5,29 +6,29 @@ interface UserDetailsPanelProps {
   user: AdminUser | null;
 }
 
-// Right-side panel on the User Management page. Empty while no user is selected.
+// Right-side panel on the User Management page. Empty hint until a user is selected.
 export default function UserDetailsPanel({ user }: UserDetailsPanelProps) {
   if (!user) {
     return (
-      <div className="admin-dashboard__detail">
+      <div className="admin-users-page__detail-empty">
         Select a user to view details and manage their account
       </div>
     );
   }
 
   return (
-    <div className="admin-dashboard__panel">
-      <div className="admin-dashboard__panel-header">
-        <h2 className="admin-dashboard__panel-title">{user.name}</h2>
+    <div className="admin-users-page__panel">
+      <div className="admin-users-page__panel-header">
+        <h2 className="admin-users-page__panel-title">{user.name}</h2>
       </div>
-      <div style={{ padding: '20px 24px', display: 'grid', gap: 10, fontSize: 14 }}>
+      <div className="admin-users-page__detail-body">
         <DetailRow label="Email" value={user.email} />
         {user.company ? <DetailRow label="Company" value={user.company} /> : null}
         <DetailRow label="Role" value={user.role} />
         <DetailRow
           label="Status"
           value={
-            <span className={`admin-dashboard__badge admin-dashboard__badge--${user.status.replace(/\s+/g, '-')}`}>
+            <span className={`admin-users-page__badge admin-users-page__badge--${user.status.replace(/\s+/g, '-')}`}>
               {user.status}
             </span>
           }
@@ -38,10 +39,10 @@ export default function UserDetailsPanel({ user }: UserDetailsPanelProps) {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-      <span style={{ color: '#6b7280', fontWeight: 600 }}>{label}</span>
+    <div className="admin-users-page__detail-row">
+      <span className="admin-users-page__detail-label">{label}</span>
       <span>{value}</span>
     </div>
   );
