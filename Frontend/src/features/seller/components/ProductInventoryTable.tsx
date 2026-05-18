@@ -1,11 +1,14 @@
-import type { SellerProduct } from '../data/placeholderData';
+import type { SellerListing } from '../api/sellerApi';
+import { sellerApi } from '../api/sellerApi';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductInventoryTableProps {
   priceFormatter: Intl.NumberFormat;
-  products: SellerProduct[];
+  products: SellerListing[];
+  onDeleteListing: (listingId: string) => void;
 }
 
-export default function ProductInventoryTable({ priceFormatter, products }: ProductInventoryTableProps) {
+export default function ProductInventoryTable({ priceFormatter, products, onDeleteListing }: ProductInventoryTableProps) {
   return (
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
@@ -23,13 +26,13 @@ export default function ProductInventoryTable({ priceFormatter, products }: Prod
               <th>Category</th>
               <th>Price</th>
               <th>Stock</th>
-              <th>Rating</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {products.map((product) => (
-              <ProductRow key={product.id} priceFormatter={priceFormatter} product={product} />
+              <ProductRow key={product.listingId} priceFormatter={priceFormatter} product={product} onDeleteListing={onDeleteListing} />
             ))}
           </tbody>
         </table>
@@ -38,40 +41,32 @@ export default function ProductInventoryTable({ priceFormatter, products }: Prod
   );
 }
 
-function ProductRow({ priceFormatter, product }: { priceFormatter: Intl.NumberFormat; product: SellerProduct }) {
-  // No Operation Handlers for now , will be wired to the API later.
+function ProductRow({ priceFormatter, product, onDeleteListing }: { priceFormatter: Intl.NumberFormat; product: SellerListing; onDeleteListing: (listingId: string) => void }) {
+  const navigate = useNavigate();
+
   function handleEdit() {
-    console.log('Edit product', product.id);
+    navigate(`/seller/products/${product.listingId}/edit`, { state: { listing: product } });
   }
 
-  function handleDelete() {
-    console.log('Delete product', product.id);
+  async function handleDelete() {
+    if (!window.confirm(`Are you sure you want to delete "${product.productName}"? This cannot be undone.`)) return;
+    try {
+      await sellerApi.deleteProduct(product.productId);
+      onDeleteListing(product.listingId);
+    } catch {
+      alert('Failed to delete product. Please try again.');
+    }
   }
 
   return (
     <tr>
       <td data-label="Product">
-        <div className="seller-dashboard__product-cell">
-          <img
-            className="seller-dashboard__product-image"
-            src={product.imageUrl}
-            alt=""
-          />
-          <span>{product.name}</span>
-        </div>
+        <span>{product.productName}</span>
       </td>
-      <td data-label="Category">{product.category}</td>
-      <td className="seller-dashboard__price" data-label="Price">{priceFormatter.format(product.price)}</td>
-      <td data-label="Stock">
-        <span
-          className={`seller-dashboard__stock seller-dashboard__stock--${product.inStock ? 'in' : 'out'}`}
-        >
-          {product.inStock ? 'In Stock' : 'Out of Stock'}
-        </span>
-      </td>
-      <td data-label="Rating">
-        {product.rating.toFixed(1)} ({product.ratingCount})
-      </td>
+      <td data-label="Category">{product.categoryName ?? '—'}</td>
+      <td className="seller-dashboard__price" data-label="Price">{priceFormatter.format(product.listingPrice)}</td>
+      <td data-label="Stock">{product.inventoryQuantity}</td>
+      <td data-label="Status">{product.visibilityStatus}</td>
       <td data-label="Actions">
         <div className="seller-dashboard__row-actions">
           <button
@@ -93,3 +88,4 @@ function ProductRow({ priceFormatter, product }: { priceFormatter: Intl.NumberFo
     </tr>
   );
 }
+

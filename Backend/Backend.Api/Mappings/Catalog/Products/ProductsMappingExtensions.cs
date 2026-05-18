@@ -69,4 +69,51 @@ public static class ProductsMappingExtensions
             ProductWidthCm = product.ProductWidthCm
         };
     }
+
+    public static App.CreateProductRequest ToDto(this CreateProductRequest request)
+    {
+        return new App.CreateProductRequest(
+            CategoryId: request.CategoryId,
+            ProductName: request.ProductName,
+            Description: request.Description,
+            ProductPhotosQty: request.ProductPhotosQty,
+            ProductWeightG: request.ProductWeightG,
+            ProductLengthCm: request.ProductLengthCm,
+            ProductHeightCm: request.ProductHeightCm,
+            ProductWidthCm: request.ProductWidthCm,
+            Price: request.Price,
+            InventoryQuantity: request.InStock ? 1 : 0);
+    }
+
+    public static App.UpdateProductRequest ToDto(this UpdateProductRequest request, Guid productId)
+    {
+        return new App.UpdateProductRequest(
+            ProductId: productId,
+            CategoryId: request.CategoryId,
+            ProductName: request.ProductName,
+            Description: request.Description,
+            ProductPhotosQty: request.ProductPhotosQty,
+            ProductWeightG: request.ProductWeightG,
+            ProductLengthCm: request.ProductLengthCm,
+            ProductHeightCm: request.ProductHeightCm,
+            ProductWidthCm: request.ProductWidthCm,
+            Price: request.Price,
+            InventoryQuantity: request.InventoryQuantity);
+    }
+
+    public static SellerListingResponse ToResponse(this App.SellerListingDto listing)
+    {
+        return new SellerListingResponse
+        {
+            ListingId = listing.ListingId,
+            ProductId = listing.ProductId,
+            CategoryId = listing.CategoryId,
+            ProductName = listing.ProductName,
+            Description = listing.Description,
+            CategoryName = listing.CategoryName,
+            ListingPrice = listing.ListingPrice,
+            InventoryQuantity = listing.InventoryQuantity,
+            VisibilityStatus = listing.VisibilityStatus,
+        };
+    }
 }

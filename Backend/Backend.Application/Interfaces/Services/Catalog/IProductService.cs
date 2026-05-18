@@ -13,4 +13,5 @@ public interface IProductService
     Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default);
     Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(CancellationToken cancellationToken = default);
 }

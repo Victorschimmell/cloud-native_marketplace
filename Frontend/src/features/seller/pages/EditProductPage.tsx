@@ -1,10 +1,11 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { productApi } from '../../products/api/productApi';
 import { sellerApi } from '../api/sellerApi';
 import type { Category } from '../../products/types';
+import type { SellerListing } from '../api/sellerApi';
 import './AddProductPage.css';
 
 interface ProductFormState {
@@ -12,23 +13,23 @@ interface ProductFormState {
   description: string;
   price: string;
   categoryId: string;
-  imageUrl: string;
-  inStock: boolean;
+  inventoryQuantity: string;
 }
 
-const INITIAL_STATE: ProductFormState = {
-  name: '',
-  description: '',
-  price: '',
-  categoryId: '',
-  imageUrl: '',
-  inStock: true,
-};
-
-export default function AddProductPage() {
+export default function EditProductPage() {
   const navigate = useNavigate();
+  const { state } = useLocation() as { state: { listing: SellerListing } | null };
   const { currency } = useCurrency();
-  const [form, setForm] = useState<ProductFormState>(INITIAL_STATE);
+
+  const listing = state?.listing;
+
+  const [form, setForm] = useState<ProductFormState>({
+    name: listing?.productName ?? '',
+    description: listing?.description ?? '',
+    price: String(listing?.listingPrice ?? ''),
+    categoryId: listing?.categoryId ?? '',
+    inventoryQuantity: String(listing?.inventoryQuantity ?? 0),
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -44,29 +45,37 @@ export default function AddProductPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!listing) return;
     setSubmitError(null);
     try {
-      await sellerApi.createProduct({
+      await sellerApi.updateProduct(listing.productId, {
         categoryId: form.categoryId,
         productName: form.name,
         description: form.description,
         price: parseFloat(form.price),
-        inStock: form.inStock,
+        inventoryQuantity: parseInt(form.inventoryQuantity, 10),
       });
       navigate('/seller/products');
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to create product.');
+      setSubmitError(error instanceof Error ? error.message : 'Failed to update product.');
     }
   }
 
+  if (!listing) {
+    return (
+      <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="">
+        <section className="add-product">
+          <p>Product not found. <Link to="/seller/products">Back to products</Link></p>
+        </section>
+      </PageSkeleton>
+    );
+  }
+
   return (
-    <PageSkeleton
-      summary="Create a product listing for your seller catalog."
-      title="Add New Product"
-      titleId="add-product-page-title"
-    >
-      <section className="add-product" aria-labelledby="add-product-page-title">
-        <div className="add-product__navigation">
+    <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="Update your product listing details.">
+      <section className="add-product" aria-labelledby="edit-product-page-title">
+        <div className="add-product__header">
+          <h1 className="add-product__title">Edit Product</h1>
           <Link to="/seller/products" className="add-product__back">
             Back to Dashboard
           </Link>
@@ -144,30 +153,23 @@ export default function AddProductPage() {
 
             <label className="add-product__field">
               <span className="add-product__field-label">
-                Product Image URL <span className="add-product__required">*</span>
+                Inventory Quantity <span className="add-product__required">*</span>
               </span>
               <input
                 className="add-product__input"
-                type="url"
+                type="number"
+                min="0"
+                step="1"
                 required
-                placeholder="https://example.com/image.jpg"
-                value={form.imageUrl}
-                onChange={(event) => updateField('imageUrl', event.target.value)}
+                placeholder="0"
+                value={form.inventoryQuantity}
+                onChange={(event) => updateField('inventoryQuantity', event.target.value)}
               />
-            </label>
-
-            <label className="add-product__checkbox">
-              <input
-                type="checkbox"
-                checked={form.inStock}
-                onChange={(event) => updateField('inStock', event.target.checked)}
-              />
-              Product is in stock
             </label>
 
             <div className="add-product__actions">
               <button type="submit" className="add-product__submit">
-                Add Product
+                Save Changes
               </button>
               <Link to="/seller/products" className="add-product__cancel">
                 Cancel

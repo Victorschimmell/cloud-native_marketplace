@@ -99,6 +99,8 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
+            .Include(l => l.Product)
+            .ThenInclude(p => p!.Category)
             .Where(l => l.SellerId == sellerId && !l.IsDeleted)
             .OrderBy(l => l.CreatedAtUtc)
             .Skip((page - 1) * pageSize)

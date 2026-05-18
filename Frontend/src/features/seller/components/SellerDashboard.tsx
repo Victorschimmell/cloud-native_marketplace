@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
-import { placeholderOrders, placeholderProducts, placeholderStats } from '../data/placeholderData';
+import { sellerApi, type SellerListing } from '../api/sellerApi';
+import { placeholderOrders, placeholderStats } from '../data/placeholderData';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
@@ -28,6 +29,14 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
     [currency],
   );
+  const [listings, setListings] = useState<SellerListing[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    sellerApi.getMyListings(controller.signal).then(setListings).catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   return (
     <PageSkeleton
       summary="Manage product inventory, seller performance and fulfillment activity."
@@ -45,7 +54,11 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         <TabBar activeTab={activeTab} />
 
         {activeTab === 'products' ? (
-          <ProductInventoryTable priceFormatter={priceFormatter} products={placeholderProducts} />
+          <ProductInventoryTable
+            priceFormatter={priceFormatter}
+            products={listings}
+            onDeleteListing={(listingId) => setListings((prev) => prev.filter((l) => l.listingId !== listingId))}
+          />
         ) : (
           <OrdersTable orders={placeholderOrders} priceFormatter={priceFormatter} />
         )}

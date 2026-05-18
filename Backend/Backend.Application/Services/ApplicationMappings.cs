@@ -69,6 +69,21 @@ internal static class ApplicationMappings
             product.ProductHeightCm,
             product.ProductWidthCm);
 
+    public static SellerListingDto ToSellerListingDto(this ProductListing listing)
+    {
+        var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
+        return new SellerListingDto(
+            listing.Id,
+            listing.ProductId,
+            product.CategoryId,
+            product.ProductName,
+            product.Description,
+            product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
+            listing.ListingPrice,
+            listing.InventoryQuantity,
+            listing.VisibilityStatus.ToString());
+    }
+
     public static BrowseProductDto ToBrowseDto(this ProductListing listing, string currencyCode, decimal convertedPrice)
     {
         var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");

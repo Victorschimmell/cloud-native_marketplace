@@ -68,7 +68,9 @@ public sealed record CreateProductRequest(
     int ProductWeightG,
     int ProductLengthCm,
     int ProductHeightCm,
-    int ProductWidthCm);
+    int ProductWidthCm,
+    decimal Price,
+    int InventoryQuantity);
 
 public sealed record UpdateProductRequest(
     Guid ProductId,
@@ -79,8 +81,21 @@ public sealed record UpdateProductRequest(
     int ProductWeightG,
     int ProductLengthCm,
     int ProductHeightCm,
-    int ProductWidthCm);
+    int ProductWidthCm,
+    decimal Price,
+    int InventoryQuantity);
 
 public sealed record CreateCategoryRequest(string CategoryNamePt, string? CategoryNameEn);
 
 public sealed record UpdateCategoryRequest(Guid CategoryId, string CategoryNamePt, string? CategoryNameEn);
+
+public sealed record SellerListingDto(
+    Guid ListingId,
+    Guid ProductId,
+    Guid CategoryId,
+    string ProductName,
+    string Description,
+    string? CategoryName,
+    decimal ListingPrice,
+    int InventoryQuantity,
+    string VisibilityStatus);

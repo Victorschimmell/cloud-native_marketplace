@@ -11,9 +11,11 @@ public sealed record UpdateProductRequest
     [MaxLength(500)]
     public required string ProductName { get; init; }
     public required string Description { get; init; }
-    public required int ProductPhotosQty { get; init; }
-    public required int ProductWeightG { get; init; }
-    public required int ProductLengthCm { get; init; }
-    public required int ProductHeightCm { get; init; }
-    public required int ProductWidthCm { get; init; }
+    public required decimal Price { get; init; }
+    public required int InventoryQuantity { get; init; }
+    public int ProductPhotosQty { get; init; } = 0;
+    public int ProductWeightG { get; init; } = 0;
+    public int ProductLengthCm { get; init; } = 0;
+    public int ProductHeightCm { get; init; } = 0;
+    public int ProductWidthCm { get; init; } = 0;
 }
