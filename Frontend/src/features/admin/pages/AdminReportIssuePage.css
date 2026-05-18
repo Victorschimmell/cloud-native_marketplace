@@ -1,0 +1,186 @@
+.admin-issues-page {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.admin-issues-page__panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-issues-page__panel-header {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 24px;
+}
+
+.admin-issues-page__panel-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.admin-issues-page__panel-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.admin-issues-page__empty {
+  padding: 24px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.admin-issues-page__form {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+
+.admin-issues-page__form-field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.admin-issues-page__form-field label {
+  font-weight: 600;
+  color: #111827;
+}
+
+.admin-issues-page__form-field input,
+.admin-issues-page__form-field select,
+.admin-issues-page__form-field textarea {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font: inherit;
+  background: #f9fafb;
+}
+
+.admin-issues-page__form-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.admin-issues-page__form-submit {
+  background: #1e40af;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-issues-page__form-submit:hover {
+  background: #1d4ed8;
+}
+
+.admin-issues-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-issues-page__list-item {
+  padding: 18px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-issues-page__list-item:last-child {
+  border-bottom: none;
+}
+
+.admin-issues-page__list-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-issues-page__list-primary {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.admin-issues-page__list-secondary {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.admin-issues-page__list-meta {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.admin-issues-page__actions {
+  display: inline-flex;
+  gap: 16px;
+}
+
+.admin-issues-page__action {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.admin-issues-page__action--view {
+  color: #1e40af;
+}
+
+.admin-issues-page__action--assign {
+  color: #6366f1;
+}
+
+.admin-issues-page__action--resolve {
+  color: #16a34a;
+}
+
+.admin-issues-page__badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.admin-issues-page__badge--high,
+.admin-issues-page__badge--open {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.admin-issues-page__badge--medium,
+.admin-issues-page__badge--in-progress {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-issues-page__badge--low,
+.admin-issues-page__badge--resolved {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+@media (max-width: 1000px) {
+  .admin-issues-page {
+    grid-template-columns: 1fr;
+  }
+}
