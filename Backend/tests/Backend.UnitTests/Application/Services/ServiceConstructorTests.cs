@@ -36,7 +36,7 @@ public sealed class ServiceConstructorTests
         _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
         _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeAddressRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new AddressService(new FakeAddressRepository(), new FakeCustomerRepository(), new FakeUnitOfWork());
-        _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider());
+        _ = new AnalyticsService(new FakeOrderRepository(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
         _ = new AuthService(new FakeUserAccountRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakePasswordHasher(), new FakeAuthTokenGenerator(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new RegistrationService(
             new FakeUserAccountRepository(),
@@ -48,8 +48,8 @@ public sealed class ServiceConstructorTests
             new FakeDateTimeProvider(),
             new FakeAuditLogService(),
             new FakeUnitOfWork());
-        _ = new AdminService(new FakeUserAccountRepository(), new FakeAuditLogRepository());
-        _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider());
+        _ = new AdminService(new FakeUserAccountRepository(), new FakeAuditLogRepository(), new FakeAuditLogService(), new FakeCurrentUserProvider(), new FakeUnitOfWork());
+        _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new ShipmentService(new FakeShipmentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new AuditLogService(new FakeAuditLogRepository(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
     }

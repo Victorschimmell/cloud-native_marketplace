@@ -258,4 +258,24 @@ internal static class ApplicationMappings
             request.ReviewedByUserId,
             request.ReviewedAtUtc,
             request.RejectionReason);
+
+    public static AdminIssueDto ToAdminIssueDto(this AdminIssue issue)
+    {
+        var reportedByDisplay = issue.ReportedByUser?.Email.Value;
+        return new AdminIssueDto(
+            issue.Id,
+            issue.Title,
+            issue.Description,
+            issue.Type,
+            issue.Priority,
+            issue.Status,
+            issue.ReportedByUserId,
+            reportedByDisplay,
+            issue.AssignedToUserId,
+            issue.ResolvedByUserId,
+            issue.ResolvedAtUtc,
+            issue.Resolution,
+            issue.CreatedAtUtc,
+            issue.UpdatedAtUtc);
+    }
 }

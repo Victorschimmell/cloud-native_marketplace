@@ -1,6 +1,7 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Models;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,6 +59,50 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
             .ToListAsync(cancellationToken);
 
         return new PagedResult<Order>(orders, page, pageSize, totalCount);
+    }
+
+    public async Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Orders.AsQueryable();
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(o => o.OrderPurchaseTimestampUtc >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(o => o.OrderPurchaseTimestampUtc <= toUtc.Value);
+        }
+
+        // Only count orders that produced revenue: anything past Pending counts.
+        query = query.Where(o => o.OrderStatus != OrderStatus.Cancelled && o.OrderStatus != OrderStatus.Returned);
+
+        var orderCount = await query.CountAsync(cancellationToken);
+        var totalSales = orderCount == 0 ? 0m : await query.SumAsync(o => o.TotalAmount, cancellationToken);
+
+        return new SalesAggregate(orderCount, totalSales);
+    }
+
+    public async Task<OrderStatusAggregate> GetOrderStatusAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.Orders.AsQueryable();
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(o => o.OrderPurchaseTimestampUtc >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(o => o.OrderPurchaseTimestampUtc <= toUtc.Value);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var cancelled = await query.CountAsync(o => o.OrderStatus == OrderStatus.Cancelled, cancellationToken);
+        var completed = await query.CountAsync(o => o.OrderStatus == OrderStatus.Delivered, cancellationToken);
+
+        return new OrderStatusAggregate(total, cancelled, completed);
     }
 
     public Task AddAsync(Order order, CancellationToken cancellationToken = default)

@@ -124,6 +124,8 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
+    public Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new SalesAggregate(0, 0m));
+    public Task<OrderStatusAggregate> GetOrderStatusAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new OrderStatusAggregate(0, 0, 0));
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -227,6 +229,7 @@ internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificat
         return Task.CompletedTask;
     }
     public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
+    public Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Request is null ? 0 : 1);
     public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Request is not null && Request.Id == id ? Request : null);
     public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Request is not null && Request.SellerId == sellerId ? [Request] : []);
     public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
