@@ -26,7 +26,7 @@ public sealed record CreateAdminIssueRequest(
 
 public sealed record ResolveAdminIssueRequest(Guid IssueId, string? Resolution);
 
-public sealed record AssignAdminIssueRequest(Guid IssueId, Guid AssigneeUserId);
+public sealed record AssignAdminIssueRequest(Guid IssueId);
 
 public sealed record GetAdminIssuesRequest(
     IssueStatus? Status,

@@ -15,9 +15,6 @@ public static class IssueMappingExtensions
     public static App.ResolveAdminIssueRequest ToApplicationRequest(this ResolveIssueRequest request, Guid issueId) =>
         new(issueId, request.Resolution);
 
-    public static App.AssignAdminIssueRequest ToApplicationRequest(this AssignIssueRequest request, Guid issueId) =>
-        new(issueId, request.AssigneeUserId);
-
     public static App.GetAdminIssuesRequest ToApplicationRequest(this GetIssuesRequest request, int page, int pageSize) =>
         new(
             request.Status.HasValue ? (Backend.Domain.Enums.IssueStatus)request.Status.Value : null,

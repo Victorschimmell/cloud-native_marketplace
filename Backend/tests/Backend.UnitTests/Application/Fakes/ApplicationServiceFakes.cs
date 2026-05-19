@@ -10,6 +10,7 @@ using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 
 namespace Backend.UnitTests.Application.Fakes;
 
@@ -158,6 +159,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
     public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>([]);
+    public Task<PagedResult<OrderPayment>> GetRecentAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<OrderPayment>([], page, pageSize, 0));
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -198,6 +200,15 @@ internal sealed class FakeAuditLogService : IAuditLogService
     public Task<Result<PagedResult<AuditLogEntryDto>>> GetByActorUserAsync(Guid actorUserId, PagedRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PagedResult<AuditLogEntryDto>>.NotImplemented());
     public Task<Result<IReadOnlyList<AuditLogEntryDto>>> GetByTargetEntityAsync(string entityType, string entityId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<AuditLogEntryDto>>.NotImplemented());
     public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result.NotImplemented());
+}
+
+internal sealed class FakeAdminIssueRepository : IAdminIssueRepository
+{
+    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AdminIssue?>(null);
+    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AdminIssue>([], page, pageSize, 0));
+    public Task<int> CountByStatusAsync(IssueStatus status, CancellationToken cancellationToken = default) => Task.FromResult(0);
+    public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateAsync(AdminIssue issue, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
 internal sealed class FakeAuditLogRepository : IAuditLogRepository
@@ -254,6 +265,8 @@ internal sealed class FakeUserAccountRepository : IUserAccountRepository
     }
     public Task DeleteAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<UserAccount>>([]);
+    public Task<PagedResult<UserAccount>> GetByFilterAsync(AdminUserRoleFilter role, AdminUserStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<UserAccount>([], page, pageSize, 0));
+    public Task<int> CountActiveAsync(CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && !UserAccount.IsBlocked ? 1 : 0);
     public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && string.Equals(UserAccount.Email.Value, email, StringComparison.OrdinalIgnoreCase) ? UserAccount : null);
     public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && UserAccount.Id == id ? UserAccount : null);
     public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default)

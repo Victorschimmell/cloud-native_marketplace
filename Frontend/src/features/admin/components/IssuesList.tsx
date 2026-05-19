@@ -2,10 +2,22 @@ import type { AdminIssue } from '../data/placeholderData';
 
 interface IssuesListProps {
   issues: AdminIssue[];
+  isLoading?: boolean;
+  pendingId?: string | null;
+  onView?: (issueId: string) => void;
+  onAssign?: (issueId: string) => void;
+  onResolve?: (issueId: string) => void;
 }
 
 // Full list of issues on the Report Issue page with View/Assign/Resolve buttons.
-export default function IssuesList({ issues }: IssuesListProps) {
+export default function IssuesList({
+  issues,
+  isLoading = false,
+  pendingId = null,
+  onView,
+  onAssign,
+  onResolve,
+}: IssuesListProps) {
   return (
     <div className="admin-issues-page__panel">
       <div className="admin-issues-page__panel-header">
@@ -13,12 +25,21 @@ export default function IssuesList({ issues }: IssuesListProps) {
         <p className="admin-issues-page__panel-subtitle">Visible to all administrators</p>
       </div>
 
-      {issues.length === 0 ? (
+      {isLoading ? (
+        <p className="admin-issues-page__empty">Loading issues...</p>
+      ) : issues.length === 0 ? (
         <p className="admin-issues-page__empty">No issues reported yet.</p>
       ) : (
         <ul className="admin-issues-page__list">
           {issues.map((issue) => (
-            <IssueRow key={issue.id} issue={issue} />
+            <IssueRow
+              key={issue.id}
+              issue={issue}
+              isPending={pendingId === issue.id}
+              onView={onView}
+              onAssign={onAssign}
+              onResolve={onResolve}
+            />
           ))}
         </ul>
       )}
@@ -26,20 +47,15 @@ export default function IssuesList({ issues }: IssuesListProps) {
   );
 }
 
-function IssueRow({ issue }: { issue: AdminIssue }) {
-  // Logging stubs for now - real API calls go here later.
-  function handleView() {
-    console.log('View issue', issue.id);
-  }
+interface IssueRowProps {
+  issue: AdminIssue;
+  isPending: boolean;
+  onView?: (issueId: string) => void;
+  onAssign?: (issueId: string) => void;
+  onResolve?: (issueId: string) => void;
+}
 
-  function handleAssign() {
-    console.log('Assign issue', issue.id);
-  }
-
-  function handleResolve() {
-    console.log('Resolve issue', issue.id);
-  }
-
+function IssueRow({ issue, isPending, onView, onAssign, onResolve }: IssueRowProps) {
   const isResolved = issue.status === 'resolved';
 
   return (
@@ -65,7 +81,8 @@ function IssueRow({ issue }: { issue: AdminIssue }) {
         <button
           type="button"
           className="admin-issues-page__action admin-issues-page__action--view"
-          onClick={handleView}
+          onClick={() => onView?.(issue.id)}
+          disabled={isPending}
         >
           View
         </button>
@@ -74,16 +91,18 @@ function IssueRow({ issue }: { issue: AdminIssue }) {
             <button
               type="button"
               className="admin-issues-page__action admin-issues-page__action--assign"
-              onClick={handleAssign}
+              onClick={() => onAssign?.(issue.id)}
+              disabled={isPending}
             >
               Assign
             </button>
             <button
               type="button"
               className="admin-issues-page__action admin-issues-page__action--resolve"
-              onClick={handleResolve}
+              onClick={() => onResolve?.(issue.id)}
+              disabled={isPending}
             >
-              Resolve
+              {isPending ? 'Working...' : 'Resolve'}
             </button>
           </>
         )}

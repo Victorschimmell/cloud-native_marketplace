@@ -83,7 +83,7 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
             query = query.Where(o => o.OrderPurchaseTimestampUtc <= toUtc.Value);
         }
 
-        // Only count orders that produced revenue: anything past Pending counts.
+        // Revenue includes any placed order that wasn't cancelled or returned.
         query = query.Where(o => o.OrderStatus != OrderStatus.Cancelled && o.OrderStatus != OrderStatus.Returned);
 
         var orderCount = await query.CountAsync(cancellationToken);

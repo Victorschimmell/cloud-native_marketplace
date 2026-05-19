@@ -164,7 +164,7 @@ public sealed class AdminIssueService : IAdminIssueService
 
     public async Task<Result<AdminIssueDto>> AssignAsync(AssignAdminIssueRequest request, CancellationToken cancellationToken = default)
     {
-        if (!_currentUserProvider.IsAdmin)
+        if (!_currentUserProvider.IsAdmin || _currentUserProvider.UserId is null)
         {
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Updated,
@@ -204,7 +204,9 @@ public sealed class AdminIssueService : IAdminIssueService
             return Result<AdminIssueDto>.Conflict("Resolved issues cannot be reassigned.");
         }
 
-        issue.AssignedToUserId = request.AssigneeUserId;
+        // Issues are always assigned to the logged-in admin (assign-to-self).
+        var assigneeUserId = _currentUserProvider.UserId.Value;
+        issue.AssignedToUserId = assigneeUserId;
         issue.Status = IssueStatus.InProgress;
 
         await _issueRepository.UpdateAsync(issue, cancellationToken);
@@ -215,7 +217,7 @@ public sealed class AdminIssueService : IAdminIssueService
             TargetEntityType: nameof(AdminIssue),
             TargetEntityId: issue.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Issue '{issue.Title}' assigned to user {request.AssigneeUserId}."
+            Details: $"Issue '{issue.Title}' assigned to user {assigneeUserId}."
         ), cancellationToken);
 
         return Result<AdminIssueDto>.Success(issue.ToAdminIssueDto());

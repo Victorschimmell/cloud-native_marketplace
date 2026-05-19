@@ -1,20 +1,18 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import {
-  placeholderIssues,
-  placeholderPayments,
-  placeholderStats,
-  type AdminIssue,
-  type RecentPayment,
-} from '../data/placeholderData';
+  adminApi,
+  type AdminPaymentResponse,
+  type DashboardStatsResponse,
+  type IssueResponse,
+} from '../api/adminApi';
 import './AnalyticsDashboardPage.css';
 
 // Admin dashboard. Stats row on top, then the Recent Payments and Open Issues panels.
-// Placeholder data for now - swap for API calls once the back-end story is ready.
 export default function AnalyticsDashboardPage() {
   const { currency } = useCurrency();
   const priceFormatter = useMemo(
@@ -22,29 +20,70 @@ export default function AnalyticsDashboardPage() {
     [currency],
   );
 
+  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+  const [payments, setPayments] = useState<AdminPaymentResponse[]>([]);
+  const [openIssues, setOpenIssues] = useState<IssueResponse[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    async function load() {
+      setError(null);
+      try {
+        const [statsResponse, paymentsResponse, issuesResponse] = await Promise.all([
+          adminApi.getDashboardStats(currency, abortController.signal),
+          adminApi.listPayments(currency, 1, 5, abortController.signal),
+          adminApi.listIssues(1, 5, { status: 'Open', signal: abortController.signal }),
+        ]);
+        setStats(statsResponse);
+        setPayments(paymentsResponse.items);
+        setOpenIssues(issuesResponse.items);
+      } catch (requestError) {
+        if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+          return;
+        }
+        setError('Could not load dashboard data.');
+      }
+    }
+
+    void load();
+    return () => abortController.abort();
+  }, [currency]);
+
   return (
     <PageSkeleton title="Admin Dashboard" summary="Analytics overview, recent payments and open issues at a glance.">
       <div className="admin-dashboard-page">
-        <StatsRow priceFormatter={priceFormatter} />
+        <StatsRow stats={stats} priceFormatter={priceFormatter} />
+
+        {error ? <p className="admin-dashboard-page__panel-empty">{error}</p> : null}
 
         <div className="admin-dashboard-page__columns">
-          <RecentPaymentsPanel payments={placeholderPayments} />
-          <OpenIssuesPanel issues={placeholderIssues} />
+          <RecentPaymentsPanel payments={payments} priceFormatter={priceFormatter} />
+          <OpenIssuesPanel issues={openIssues} />
         </div>
       </div>
     </PageSkeleton>
   );
 }
 
-function StatsRow({ priceFormatter }: { priceFormatter: Intl.NumberFormat }) {
-  const stats = placeholderStats;
+function StatsRow({ stats, priceFormatter }: { stats: DashboardStatsResponse | null; priceFormatter: Intl.NumberFormat }) {
+  const activeUsers = stats?.activeUsers ?? 0;
+  const ordersPerDay = stats?.ordersInLast24Hours ?? 0;
+  const revenue = stats?.totalRevenue ?? 0;
+  const openIssues = stats?.openIssues ?? 0;
 
   return (
     <div className="admin-dashboard-page__stats">
-      <StatCard label="Active Users" value={stats.activeUsers.toLocaleString()} meta={`+${stats.activeUsersChange}%`} />
-      <StatCard label="Requests/Day" value={stats.requestsPerDay.toLocaleString()} meta={`+${stats.requestsPerDayChange}%`} />
-      <StatCard label="Total Revenue" value={priceFormatter.format(stats.totalRevenue)} meta={`+${stats.totalRevenueChange}%`} />
-      <StatCard label="Open Issues" value={stats.openIssues.toString()} meta="Needs attention" isWarning />
+      <StatCard label="Active Users" value={activeUsers.toLocaleString()} />
+      <StatCard label="Orders/Day" value={ordersPerDay.toLocaleString()} />
+      <StatCard label="Total Revenue" value={priceFormatter.format(revenue)} />
+      <StatCard
+        label="Open Issues"
+        value={openIssues.toString()}
+        meta={openIssues > 0 ? 'Needs attention' : 'All clear'}
+        isWarning={openIssues > 0}
+      />
     </div>
   );
 }
@@ -61,7 +100,7 @@ function StatCard({ label, value, meta, isWarning = false }: { label: string; va
   );
 }
 
-function RecentPaymentsPanel({ payments }: { payments: RecentPayment[] }) {
+function RecentPaymentsPanel({ payments, priceFormatter }: { payments: AdminPaymentResponse[]; priceFormatter: Intl.NumberFormat }) {
   return (
     <div className="admin-dashboard-page__panel">
       <div className="admin-dashboard-page__panel-header">
@@ -74,7 +113,7 @@ function RecentPaymentsPanel({ payments }: { payments: RecentPayment[] }) {
       ) : (
         <ul className="admin-dashboard-page__list">
           {payments.map((payment) => (
-            <li key={payment.id} className="admin-dashboard-page__list-item">
+            <li key={`${payment.orderId}-${payment.paymentSequential}`} className="admin-dashboard-page__list-item">
               <div className="admin-dashboard-page__list-row">
                 <p className="admin-dashboard-page__list-primary">{payment.id}</p>
                 <span className={`admin-dashboard-page__badge admin-dashboard-page__badge--${payment.status}`}>
@@ -84,7 +123,7 @@ function RecentPaymentsPanel({ payments }: { payments: RecentPayment[] }) {
               <p className="admin-dashboard-page__list-secondary">{payment.customerName}</p>
               <div className="admin-dashboard-page__list-row">
                 <p className="admin-dashboard-page__list-meta">{formatDate(payment.date)}</p>
-                <span className="admin-dashboard-page__list-amount">{payment.amount.toFixed(2)}</span>
+                <span className="admin-dashboard-page__list-amount">{priceFormatter.format(payment.amount)}</span>
               </div>
             </li>
           ))}
@@ -94,9 +133,7 @@ function RecentPaymentsPanel({ payments }: { payments: RecentPayment[] }) {
   );
 }
 
-function OpenIssuesPanel({ issues }: { issues: AdminIssue[] }) {
-  const openIssues = issues.filter((issue) => issue.status !== 'resolved');
-
+function OpenIssuesPanel({ issues }: { issues: IssueResponse[] }) {
   return (
     <div className="admin-dashboard-page__panel">
       <div className="admin-dashboard-page__panel-header">
@@ -104,20 +141,20 @@ function OpenIssuesPanel({ issues }: { issues: AdminIssue[] }) {
         <Link to="/admin/issues" className="admin-dashboard-page__panel-link">View All</Link>
       </div>
 
-      {openIssues.length === 0 ? (
+      {issues.length === 0 ? (
         <p className="admin-dashboard-page__panel-empty">No open issues.</p>
       ) : (
         <ul className="admin-dashboard-page__list">
-          {openIssues.map((issue) => (
+          {issues.map((issue) => (
             <li key={issue.id} className="admin-dashboard-page__list-item">
               <div className="admin-dashboard-page__list-row">
                 <p className="admin-dashboard-page__list-primary">{issue.title}</p>
-                <span className={`admin-dashboard-page__badge admin-dashboard-page__badge--${issue.priority}`}>
-                  {issue.priority}
+                <span className={`admin-dashboard-page__badge admin-dashboard-page__badge--${issue.priority.toLowerCase()}`}>
+                  {issue.priority.toLowerCase()}
                 </span>
               </div>
               <p className="admin-dashboard-page__list-secondary">{issue.description}</p>
-              <p className="admin-dashboard-page__list-meta">{formatDate(issue.date)} - {issue.type}</p>
+              <p className="admin-dashboard-page__list-meta">{formatDate(issue.createdAtUtc)} - {formatIssueType(issue.type)}</p>
             </li>
           ))}
         </ul>
@@ -128,4 +165,8 @@ function OpenIssuesPanel({ issues }: { issues: AdminIssue[] }) {
 
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('en-GB');
+}
+
+function formatIssueType(type: string): string {
+  return type.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
 }

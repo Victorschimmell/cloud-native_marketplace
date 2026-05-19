@@ -6,6 +6,7 @@ using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Controllers.Operations;
 
@@ -92,7 +93,6 @@ public class AdminIssuesController : ApiControllerBase
     [HttpPost("{issueId:guid}/assign")]
     public async Task<ActionResult<IssueResponse>> AssignIssue(
         [FromRoute][NotEmptyGuid] Guid issueId,
-        [FromBody] AssignIssueRequest request,
         CancellationToken cancellationToken)
     {
         if (!_currentUserProvider.IsAdmin)
@@ -100,7 +100,7 @@ public class AdminIssuesController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can assign issues." });
         }
 
-        var applicationRequest = request.ToApplicationRequest(issueId);
+        var applicationRequest = new App.AssignAdminIssueRequest(issueId);
         var result = await _issueService.AssignAsync(applicationRequest, cancellationToken);
         return HandleResult(result, dto => dto.ToResponse());
     }
