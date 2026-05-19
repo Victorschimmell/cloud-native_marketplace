@@ -6,18 +6,16 @@ interface IssuesListProps {
   isLoading?: boolean;
   pendingId?: string | null;
   pagination?: ReactNode;
-  onView?: (issueId: string) => void;
   onAssign?: (issueId: string) => void;
   onResolve?: (issueId: string) => void;
 }
 
-// Full list of issues on the Report Issue page with View/Assign/Resolve buttons.
+// Full list of issues on the Report Issue page with status-driven actions.
 export default function IssuesList({
   issues,
   isLoading = false,
   pendingId = null,
   pagination = null,
-  onView,
   onAssign,
   onResolve,
 }: IssuesListProps) {
@@ -33,31 +31,32 @@ export default function IssuesList({
       ) : issues.length === 0 ? (
         <p className="admin-issues-page__empty">No issues reported yet.</p>
       ) : (
-        <table className="admin-issues-page__table">
-          <thead>
-            <tr>
-              <th>Issue</th>
-              <th>Type</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Reported by</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {issues.map((issue) => (
-              <IssueRow
-                key={issue.id}
-                issue={issue}
-                isPending={pendingId === issue.id}
-                onView={onView}
-                onAssign={onAssign}
-                onResolve={onResolve}
-              />
-            ))}
-          </tbody>
-        </table>
+        <div className="admin-issues-page__table-wrap">
+          <table className="admin-issues-page__table">
+            <thead>
+              <tr>
+                <th>Issue</th>
+                <th>Type</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Reported by</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {issues.map((issue) => (
+                <IssueRow
+                  key={issue.id}
+                  issue={issue}
+                  isPending={pendingId === issue.id}
+                  onAssign={onAssign}
+                  onResolve={onResolve}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {pagination}
@@ -68,13 +67,13 @@ export default function IssuesList({
 interface IssueRowProps {
   issue: AdminIssue;
   isPending: boolean;
-  onView?: (issueId: string) => void;
   onAssign?: (issueId: string) => void;
   onResolve?: (issueId: string) => void;
 }
 
-function IssueRow({ issue, isPending, onView, onAssign, onResolve }: IssueRowProps) {
-  const isResolved = issue.status === 'resolved';
+function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
+  const isOpen = issue.status === 'open';
+  const isAssigned = issue.status === 'in progress';
 
   return (
     <tr>
@@ -99,34 +98,29 @@ function IssueRow({ issue, isPending, onView, onAssign, onResolve }: IssueRowPro
       <td>{formatDate(issue.date)}</td>
       <td>
         <div className="admin-issues-page__actions">
-          <button
-            type="button"
-            className="admin-issues-page__action admin-issues-page__action--view"
-            onClick={() => onView?.(issue.id)}
-            disabled={isPending}
-          >
-            View
-          </button>
-          {!isResolved && (
-            <>
-              <button
-                type="button"
-                className="admin-issues-page__action admin-issues-page__action--assign"
-                onClick={() => onAssign?.(issue.id)}
-                disabled={isPending}
-              >
-                Assign
-              </button>
-              <button
-                type="button"
-                className="admin-issues-page__action admin-issues-page__action--resolve"
-                onClick={() => onResolve?.(issue.id)}
-                disabled={isPending}
-              >
-                {isPending ? 'Working...' : 'Resolve'}
-              </button>
-            </>
-          )}
+          {isOpen ? (
+            <button
+              type="button"
+              className="admin-issues-page__action admin-issues-page__action--assign"
+              onClick={() => onAssign?.(issue.id)}
+              disabled={isPending}
+            >
+              {isPending ? 'Working...' : 'Assign me'}
+            </button>
+          ) : null}
+          {isAssigned ? (
+            <button
+              type="button"
+              className="admin-issues-page__action admin-issues-page__action--resolve"
+              onClick={() => onResolve?.(issue.id)}
+              disabled={isPending}
+            >
+              {isPending ? 'Working...' : 'Resolve'}
+            </button>
+          ) : null}
+          {!isOpen && !isAssigned ? (
+            <span className="admin-issues-page__no-action">No actions</span>
+          ) : null}
         </div>
       </td>
     </tr>

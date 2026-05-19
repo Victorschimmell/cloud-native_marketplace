@@ -1,21 +1,27 @@
 .admin-issues-page {
+  --admin-border: #e5e7eb;
+  --admin-text: #111827;
+  --admin-muted: #6b7280;
+  --admin-bg-soft: #f9fafb;
+
+  color: var(--admin-text);
   display: grid;
-  grid-template-columns: minmax(280px, 380px) 1fr;
   gap: 24px;
-  align-items: start;
+  max-width: 1160px;
 }
 
 .admin-issues-page__panel {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .admin-issues-page__panel-header {
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
+  background: var(--admin-bg-soft);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 18px 24px;
 }
 
 .admin-issues-page__panel-title {
@@ -27,20 +33,93 @@
 .admin-issues-page__panel-subtitle {
   margin: 4px 0 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--admin-muted);
 }
 
 .admin-issues-page__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
-  color: #6b7280;
+  color: var(--admin-muted);
   font-size: 14px;
+}
+
+.admin-issues-page__empty--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.admin-issues-page__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.admin-issues-page__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--admin-text);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.admin-issues-page__back:hover,
+.admin-issues-page__back:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.admin-issues-page__primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  border: 1px solid var(--primary-color);
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 0 18px;
+  text-decoration: none;
+}
+
+.admin-issues-page__primary-action:hover,
+.admin-issues-page__primary-action:focus-visible {
+  background: var(--primary-hover-color);
+}
+
+.admin-issues-page__form-panel {
+  background: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 28px;
+}
+
+.admin-issues-page__form-title {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 700;
 }
 
 .admin-issues-page__form {
   display: grid;
-  gap: 14px;
-  padding: 24px;
+  gap: 18px;
+}
+
+.admin-issues-page__form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
 }
 
 .admin-issues-page__form-field {
@@ -57,26 +136,55 @@
 .admin-issues-page__form-field input,
 .admin-issues-page__form-field select,
 .admin-issues-page__form-field textarea {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--admin-border);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 11px 12px;
   font: inherit;
-  background: #f9fafb;
+  background: var(--admin-bg-soft);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-issues-page__form-field input:focus,
+.admin-issues-page__form-field select:focus,
+.admin-issues-page__form-field textarea:focus {
+  outline: 0;
+  border-color: var(--primary-color);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
 }
 
 .admin-issues-page__form-field textarea {
-  min-height: 80px;
+  min-height: 120px;
   resize: vertical;
+}
+
+.admin-issues-page__form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.admin-issues-page__form-submit,
+.admin-issues-page__form-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 0 18px;
+  text-decoration: none;
 }
 
 .admin-issues-page__form-submit {
   background: #1e40af;
   color: #ffffff;
-  border: none;
-  border-radius: 6px;
-  padding: 12px 16px;
+  border-color: #1e40af;
   font: inherit;
-  font-weight: 700;
   cursor: pointer;
 }
 
@@ -84,26 +192,76 @@
   background: #1d4ed8;
 }
 
+.admin-issues-page__form-submit:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}
+
+.admin-issues-page__form-cancel {
+  background: #ffffff;
+  color: var(--admin-text);
+  border-color: var(--admin-border);
+}
+
+.admin-issues-page__form-cancel:hover,
+.admin-issues-page__form-cancel:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.admin-issues-page__table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .admin-issues-page__table {
+  table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 840px;
+}
+
+.admin-issues-page__table th:nth-child(1) {
+  width: 28%;
+}
+
+.admin-issues-page__table th:nth-child(2) {
+  width: 14%;
+}
+
+.admin-issues-page__table th:nth-child(3),
+.admin-issues-page__table th:nth-child(4) {
+  width: 10%;
+}
+
+.admin-issues-page__table th:nth-child(5) {
+  width: 20%;
+}
+
+.admin-issues-page__table th:nth-child(6) {
+  width: 10%;
+}
+
+.admin-issues-page__table th:nth-child(7) {
+  width: 8%;
 }
 
 .admin-issues-page__table thead th {
   text-align: left;
   background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  color: #111827;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text);
   font-weight: 700;
-  padding: 12px 24px;
+  padding: 12px 18px;
   white-space: nowrap;
 }
 
 .admin-issues-page__table tbody td {
-  padding: 14px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--admin-border);
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .admin-issues-page__table tbody tr:last-child td {
@@ -113,7 +271,7 @@
 .admin-issues-page__issue-cell {
   display: grid;
   gap: 2px;
-  min-width: 260px;
+  min-width: 0;
 }
 
 .admin-issues-page__issue-title {
@@ -123,9 +281,8 @@
 
 .admin-issues-page__issue-description {
   margin: 0;
-  max-width: 460px;
   overflow: hidden;
-  color: #6b7280;
+  color: var(--admin-muted);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -146,16 +303,17 @@
   font-weight: 600;
 }
 
-.admin-issues-page__action--view {
-  color: #1e40af;
-}
-
 .admin-issues-page__action--assign {
   color: #6366f1;
 }
 
 .admin-issues-page__action--resolve {
   color: #16a34a;
+}
+
+.admin-issues-page__no-action {
+  color: var(--admin-muted);
+  font-size: 13px;
 }
 
 .admin-issues-page__badge {
@@ -167,10 +325,14 @@
   text-transform: lowercase;
 }
 
-.admin-issues-page__badge--high,
-.admin-issues-page__badge--open {
+.admin-issues-page__badge--high {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.admin-issues-page__badge--open {
+  background: #f3f4f6;
+  color: #4b5563;
 }
 
 .admin-issues-page__badge--medium,
@@ -179,20 +341,59 @@
   color: #92400e;
 }
 
-.admin-issues-page__badge--low,
-.admin-issues-page__badge--resolved {
+.admin-issues-page__badge--low {
   background: #dbeafe;
   color: #1e40af;
 }
 
+.admin-issues-page__badge--resolved {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .admin-issues-page .pagination {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--admin-border);
   margin-top: 0;
   padding: 16px 24px;
 }
 
-@media (max-width: 1000px) {
-  .admin-issues-page {
+.admin-issue-create-page {
+  --admin-border: #e5e7eb;
+  --admin-text: #111827;
+  --admin-muted: #6b7280;
+  --admin-bg-soft: #f9fafb;
+
+  color: var(--admin-text);
+  display: grid;
+  gap: 24px;
+  max-width: 1152px;
+}
+
+.admin-issue-create-page .admin-issues-page__toolbar {
+  justify-content: flex-start;
+}
+
+@media (max-width: 680px) {
+  .admin-issues-page__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-issues-page__back,
+  .admin-issues-page__primary-action {
+    width: 100%;
+  }
+
+  .admin-issues-page__table {
+    min-width: 840px;
+  }
+
+  .admin-issues-page__form-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-issues-page__form-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

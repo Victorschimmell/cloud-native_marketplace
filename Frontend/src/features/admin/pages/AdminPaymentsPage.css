@@ -3,6 +3,32 @@
   gap: 24px;
 }
 
+.admin-payments-page__navigation {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-payments-page__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.admin-payments-page__back:hover,
+.admin-payments-page__back:focus-visible {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
 .admin-payments-page__panel {
   background: #ffffff;
   border: 1px solid #e5e7eb;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
@@ -74,6 +75,12 @@ export default function AdminPaymentsPage() {
   return (
     <PageSkeleton title="Payments" summary="Every payment recorded on the platform.">
       <div className="admin-payments-page">
+        <div className="admin-payments-page__navigation">
+          <Link to="/admin/dashboard" className="admin-payments-page__back">
+            Back to Dashboard
+          </Link>
+        </div>
+
         <div className="admin-payments-page__panel">
           <div className="admin-payments-page__panel-header">
             <h2 className="admin-payments-page__panel-title">All Payments</h2>

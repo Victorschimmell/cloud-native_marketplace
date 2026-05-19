@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import Pagination from '../../../shared/components/Pagination';
-import IssueForm from '../components/IssueForm';
 import IssuesList from '../components/IssuesList';
 import { adminApi } from '../api/adminApi';
-import { toAdminIssue, toCreateIssuePayload } from '../api/issueMapping';
+import { toAdminIssue } from '../api/issueMapping';
 import type { AdminIssue } from '../data/placeholderData';
 import './AdminReportIssuePage.css';
 
@@ -49,20 +49,6 @@ export default function AdminReportIssuePage() {
     return () => abortController.abort();
   }, [loadIssues, page]);
 
-  async function handleSubmit(newIssue: Omit<AdminIssue, 'id' | 'status' | 'reportedBy' | 'date'>) {
-    setError(null);
-    try {
-      await adminApi.createIssue(toCreateIssuePayload(newIssue));
-      if (page === 1) {
-        await loadIssues(1);
-      } else {
-        setPage(1);
-      }
-    } catch (requestError) {
-      setError(`Could not create issue: ${getErrorMessage(requestError)}`);
-    }
-  }
-
   async function handleResolve(issueId: string) {
     setError(null);
     setPendingId(issueId);
@@ -98,54 +84,36 @@ export default function AdminReportIssuePage() {
     setPage((currentPage) => Math.min(totalPages, currentPage + 1));
   }
 
-  async function handleView(issueId: string) {
-    setError(null);
-    try {
-      const issue = await adminApi.getIssue(issueId);
-      const lines = [
-        `Title: ${issue.title}`,
-        `Status: ${issue.status}`,
-        `Priority: ${issue.priority}`,
-        `Type: ${issue.type}`,
-        `Reported by: ${issue.reportedByDisplay ?? issue.reportedByUserId}`,
-        `Created: ${new Date(issue.createdAtUtc).toLocaleString('en-GB')}`,
-        issue.assignedToUserId ? `Assigned to: ${issue.assignedToUserId}` : null,
-        issue.resolvedAtUtc ? `Resolved: ${new Date(issue.resolvedAtUtc).toLocaleString('en-GB')}` : null,
-        issue.resolution ? `Resolution: ${issue.resolution}` : null,
-        '',
-        issue.description,
-      ].filter(Boolean);
-      window.alert(lines.join('\n'));
-    } catch (requestError) {
-      setError(`Could not load issue: ${getErrorMessage(requestError)}`);
-    }
-  }
-
   return (
-    <PageSkeleton title="Report Issue" summary="File a new issue or browse the ones already reported.">
+    <PageSkeleton title="Issues" summary="Browse, assign and resolve administrator issues.">
       <div className="admin-issues-page">
-        <IssueForm onSubmit={handleSubmit} />
-        <div>
-          {error ? <p className="admin-issues-page__empty">{error}</p> : null}
-          <IssuesList
-            issues={issues}
-            isLoading={isLoading}
-            pagination={!error ? (
-              <Pagination
-                currentPage={page}
-                disabled={isLoading}
-                label="Issues pagination"
-                onNext={goToNextPage}
-                onPrevious={goToPreviousPage}
-                totalPages={totalPages}
-              />
-            ) : null}
-            pendingId={pendingId}
-            onView={handleView}
-            onAssign={handleAssign}
-            onResolve={handleResolve}
-          />
+        <div className="admin-issues-page__toolbar">
+          <Link to="/admin/dashboard" className="admin-issues-page__back">
+            Back to Dashboard
+          </Link>
+          <Link to="/admin/issues/new" className="admin-issues-page__primary-action">
+            Create New Issue
+          </Link>
         </div>
+
+        {error ? <p className="admin-issues-page__empty admin-issues-page__empty--error">{error}</p> : null}
+        <IssuesList
+          issues={issues}
+          isLoading={isLoading}
+          pagination={!error ? (
+            <Pagination
+              currentPage={page}
+              disabled={isLoading}
+              label="Issues pagination"
+              onNext={goToNextPage}
+              onPrevious={goToPreviousPage}
+              totalPages={totalPages}
+            />
+          ) : null}
+          pendingId={pendingId}
+          onAssign={handleAssign}
+          onResolve={handleResolve}
+        />
       </div>
     </PageSkeleton>
   );
