@@ -46,7 +46,6 @@ export default function EditProductPage() {
   useEffect(() => {
     if (state?.listing || !listingId) return;
     const controller = new AbortController();
-    setLoadingListing(true);
     sellerApi
       .getMyListings(controller.signal)
       .then((listings) => {
