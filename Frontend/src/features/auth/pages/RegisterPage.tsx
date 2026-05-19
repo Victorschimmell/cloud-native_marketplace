@@ -9,7 +9,7 @@ import { AuthPageFrame } from '../components/AuthPageFrame';
 import type { AccountType } from '../types';
 import './AuthPages.css';
 
-const phonePattern = String.raw`\+?[0-9][0-9\s().-]{6,24}(?:\s?(?:x|ext\.?)\s?[0-9]{1,6})?`;
+const phonePattern = String.raw`\+?[0-9]{7,25}`;
 const phoneValidationMessage = 'Use a valid phone number, for example +4512345678.';
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = new RegExp(`^${phonePattern}$`);
@@ -42,7 +42,7 @@ export default function RegisterPage() {
       lastName: lastName.trim(),
       password,
       payoutInformation: payoutInformation.trim(),
-      phone: phone.trim(),
+      phone: normalizePhoneInput(phone),
       registrationNumber: registrationNumber.trim(),
     };
     const validationError = validateRegisterForm(formValues);
@@ -135,7 +135,9 @@ export default function RegisterPage() {
                 inputMode="tel"
                 invalid={hasAttemptedSubmit && (!phone.trim() || !phoneRegex.test(phone.trim()))}
                 label="Phone"
-                onChange={(event) => setPhone(event.target.value)}
+                maxLength={26}
+                onChange={(event) => setPhone(normalizePhoneInput(event.target.value))}
+                pattern={phonePattern}
                 placeholder="+4512345678"
                 type="tel"
                 value={phone}
@@ -188,6 +190,13 @@ interface RegisterFormValues {
   payoutInformation: string;
   phone: string;
   registrationNumber: string;
+}
+
+function normalizePhoneInput(value: string): string {
+  const hasLeadingPlus = value.trimStart().startsWith('+');
+  const digits = value.replace(/\D/g, '');
+
+  return hasLeadingPlus ? `+${digits}` : digits;
 }
 
 function validateRegisterForm(values: RegisterFormValues): string | null {
