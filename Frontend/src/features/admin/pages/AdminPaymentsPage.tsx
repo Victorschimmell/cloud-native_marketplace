@@ -4,18 +4,13 @@ import PageSkeleton from '../../../components/PageSkeleton';
 import Pagination from '../../../shared/components/Pagination';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
-import { adminApi, type AdminPaymentResponse, type AdminPaymentStatusApi } from '../api/adminApi';
-import type { PaymentStatus } from '../data/placeholderData';
+import { adminApi, type AdminPaymentResponse } from '../api/adminApi';
 import './AdminPaymentsPage.css';
-
-// "All" means no filter; the real statuses come from PaymentStatus.
-type StatusFilter = PaymentStatus | 'All';
 
 const paymentsPageSize = 10;
 
 // Full payments list, opened from "View All" on the dashboard.
 export default function AdminPaymentsPage() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [payments, setPayments] = useState<AdminPaymentResponse[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -36,7 +31,6 @@ export default function AdminPaymentsPage() {
       setError(null);
       try {
         const response = await adminApi.listPayments(currency, page, paymentsPageSize, {
-          status: statusToApi(statusFilter),
           signal: abortController.signal,
         });
         setPayments(response.items);
@@ -57,12 +51,7 @@ export default function AdminPaymentsPage() {
 
     void load();
     return () => abortController.abort();
-  }, [currency, page, statusFilter]);
-
-  function handleStatusFilterChange(nextStatus: StatusFilter) {
-    setStatusFilter(nextStatus);
-    setPage(1);
-  }
+  }, [currency, page]);
 
   function goToPreviousPage() {
     setPage((currentPage) => Math.max(1, currentPage - 1));
@@ -84,20 +73,7 @@ export default function AdminPaymentsPage() {
         <div className="admin-payments-page__panel">
           <div className="admin-payments-page__panel-header">
             <h2 className="admin-payments-page__panel-title">All Payments</h2>
-            <div className="admin-payments-page__filters">
-              <label className="admin-payments-page__filter">
-                Status:
-                <select
-                  value={statusFilter}
-                  onChange={(event) => handleStatusFilterChange(event.target.value as StatusFilter)}
-                >
-                  <option value="All">All</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                  <option value="failed">Failed</option>
-                </select>
-              </label>
-            </div>
+            <p className="admin-payments-page__panel-subtitle">Visible to all administrators</p>
           </div>
 
           {error ? (
@@ -152,17 +128,4 @@ export default function AdminPaymentsPage() {
 
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('en-GB');
-}
-
-function statusToApi(status: StatusFilter): AdminPaymentStatusApi {
-  switch (status) {
-    case 'completed':
-      return 'Completed';
-    case 'pending':
-      return 'Pending';
-    case 'failed':
-      return 'Failed';
-    default:
-      return 'Any';
-  }
 }

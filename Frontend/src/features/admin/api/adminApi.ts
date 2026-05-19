@@ -48,10 +48,7 @@ export interface AdminPaymentResponse {
   status: 'completed' | 'pending' | 'failed';
 }
 
-export type AdminPaymentStatusApi = 'Any' | 'Completed' | 'Pending' | 'Failed';
-
 interface ListPaymentsOptions {
-  status?: AdminPaymentStatusApi;
   signal?: AbortSignal;
 }
 
@@ -136,7 +133,6 @@ export const adminApi = {
       pageSize: pageSize.toString(),
       currency,
     });
-    if (options?.status && options.status !== 'Any') params.set('status', options.status);
 
     return request<PageResponse<AdminPaymentResponse>>(`/api/admin/payments?${params}`, {
       signal: options?.signal,

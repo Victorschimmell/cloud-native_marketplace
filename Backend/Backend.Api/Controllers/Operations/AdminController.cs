@@ -8,6 +8,7 @@ using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
+using ApplicationRepositories = Backend.Application.Abstractions.Repositories;
 
 namespace Backend.Api.Controllers.Operations;
 
@@ -149,7 +150,7 @@ public class AdminController : ApiControllerBase
             pageRequest.Page,
             pageRequest.PageSize,
             currency,
-            (Application.Abstractions.Repositories.AdminPaymentStatusFilter)filters.Status);
+            ParsePaymentStatusFilter(filters.Status));
         var result = await _adminService.GetPaymentsAsync(applicationRequest, cancellationToken);
         return HandleResult(result, page => new PageResponse<AdminPaymentResponse>
         {
@@ -158,6 +159,23 @@ public class AdminController : ApiControllerBase
             PageSize = page.PageSize,
             TotalCount = page.TotalCount
         });
+    }
+
+    private static ApplicationRepositories.AdminPaymentStatusFilter ParsePaymentStatusFilter(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return ApplicationRepositories.AdminPaymentStatusFilter.Any;
+        }
+
+        return status.Trim().ToLowerInvariant() switch
+        {
+            "all" or "any" => ApplicationRepositories.AdminPaymentStatusFilter.Any,
+            "completed" => ApplicationRepositories.AdminPaymentStatusFilter.Completed,
+            "pending" => ApplicationRepositories.AdminPaymentStatusFilter.Pending,
+            "failed" => ApplicationRepositories.AdminPaymentStatusFilter.Failed,
+            _ => ApplicationRepositories.AdminPaymentStatusFilter.Any
+        };
     }
 
     [HttpGet("dashboard/stats")]
