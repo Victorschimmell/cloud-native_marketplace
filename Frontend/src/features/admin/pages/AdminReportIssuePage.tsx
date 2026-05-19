@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
+import Pagination from '../../../shared/components/Pagination';
 import IssueForm from '../components/IssueForm';
 import IssuesList from '../components/IssuesList';
 import { adminApi } from '../api/adminApi';
@@ -8,24 +9,33 @@ import { toAdminIssue, toCreateIssuePayload } from '../api/issueMapping';
 import type { AdminIssue } from '../data/placeholderData';
 import './AdminReportIssuePage.css';
 
+const issuesPageSize = 10;
+
 // Report Issue page. Reached from the Open Issues "View All" link on the dashboard.
 export default function AdminReportIssuePage() {
   const [issues, setIssues] = useState<AdminIssue[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  const loadIssues = useCallback(async (signal?: AbortSignal) => {
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / issuesPageSize)), [totalCount]);
+
+  const loadIssues = useCallback(async (targetPage: number, signal?: AbortSignal) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await adminApi.listIssues(1, 100, { signal });
+      const response = await adminApi.listIssues(targetPage, issuesPageSize, { signal });
       setIssues(response.items.map(toAdminIssue));
+      setTotalCount(response.totalCount);
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === 'AbortError') {
         return;
       }
       setError(`Could not load issues: ${getErrorMessage(requestError)}`);
+      setIssues([]);
+      setTotalCount(0);
     } finally {
       if (!signal?.aborted) {
         setIsLoading(false);
@@ -35,15 +45,19 @@ export default function AdminReportIssuePage() {
 
   useEffect(() => {
     const abortController = new AbortController();
-    void loadIssues(abortController.signal);
+    void loadIssues(page, abortController.signal);
     return () => abortController.abort();
-  }, [loadIssues]);
+  }, [loadIssues, page]);
 
   async function handleSubmit(newIssue: Omit<AdminIssue, 'id' | 'status' | 'reportedBy' | 'date'>) {
     setError(null);
     try {
-      const created = await adminApi.createIssue(toCreateIssuePayload(newIssue));
-      setIssues((current) => [toAdminIssue(created), ...current]);
+      await adminApi.createIssue(toCreateIssuePayload(newIssue));
+      if (page === 1) {
+        await loadIssues(1);
+      } else {
+        setPage(1);
+      }
     } catch (requestError) {
       setError(`Could not create issue: ${getErrorMessage(requestError)}`);
     }
@@ -74,6 +88,14 @@ export default function AdminReportIssuePage() {
     } finally {
       setPendingId(null);
     }
+  }
+
+  function goToPreviousPage() {
+    setPage((currentPage) => Math.max(1, currentPage - 1));
+  }
+
+  function goToNextPage() {
+    setPage((currentPage) => Math.min(totalPages, currentPage + 1));
   }
 
   async function handleView(issueId: string) {
@@ -108,6 +130,16 @@ export default function AdminReportIssuePage() {
           <IssuesList
             issues={issues}
             isLoading={isLoading}
+            pagination={!error ? (
+              <Pagination
+                currentPage={page}
+                disabled={isLoading}
+                label="Issues pagination"
+                onNext={goToNextPage}
+                onPrevious={goToPreviousPage}
+                totalPages={totalPages}
+              />
+            ) : null}
             pendingId={pendingId}
             onView={handleView}
             onAssign={handleAssign}

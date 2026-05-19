@@ -48,6 +48,13 @@ export interface AdminPaymentResponse {
   status: 'completed' | 'pending' | 'failed';
 }
 
+export type AdminPaymentStatusApi = 'Any' | 'Completed' | 'Pending' | 'Failed';
+
+interface ListPaymentsOptions {
+  status?: AdminPaymentStatusApi;
+  signal?: AbortSignal;
+}
+
 // ── Issues ──────────────────────────────────────────────────────────
 
 export type IssueTypeApi = 'UserBehavior' | 'Payment' | 'WorkloadAnomaly' | 'System' | 'Other';
@@ -123,13 +130,17 @@ export const adminApi = {
     });
   },
 
-  listPayments: async (currency: CurrencyCode, page = 1, pageSize = 50, signal?: AbortSignal) => {
+  listPayments: async (currency: CurrencyCode, page = 1, pageSize = 50, options?: ListPaymentsOptions) => {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
       currency,
     });
-    return request<PageResponse<AdminPaymentResponse>>(`/api/admin/payments?${params}`, { signal });
+    if (options?.status && options.status !== 'Any') params.set('status', options.status);
+
+    return request<PageResponse<AdminPaymentResponse>>(`/api/admin/payments?${params}`, {
+      signal: options?.signal,
+    });
   },
 
   listIssues: async (page = 1, pageSize = 50, options?: ListIssuesOptions) => {

@@ -159,7 +159,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
     public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>([]);
-    public Task<PagedResult<OrderPayment>> GetRecentAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<OrderPayment>([], page, pageSize, 0));
+    public Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<OrderPayment>([], page, pageSize, 0));
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 

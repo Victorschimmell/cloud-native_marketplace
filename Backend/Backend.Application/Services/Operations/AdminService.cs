@@ -243,7 +243,7 @@ public sealed class AdminService : IAdminService
             return Result<PagedResult<AdminPaymentDto>>.ValidationFailure($"Unsupported currency '{request.Currency}'.");
         }
 
-        var page = await _paymentRepository.GetRecentAsync(request.Page, request.PageSize, cancellationToken);
+        var page = await _paymentRepository.GetRecentAsync(request.Status, request.Page, request.PageSize, cancellationToken);
         var items = page.Items.Select(p => ToAdminPaymentDto(p, currencyCode, convert)).ToList();
         return Result<PagedResult<AdminPaymentDto>>.Success(new PagedResult<AdminPaymentDto>(items, page.Page, page.PageSize, page.TotalCount));
     }

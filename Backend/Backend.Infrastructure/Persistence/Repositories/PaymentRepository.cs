@@ -26,12 +26,20 @@ internal sealed class PaymentRepository(ApplicationDbContext dbContext, IDateTim
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<OrderPayment>> GetRecentAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = dbContext.OrderPayments
             .Include(p => p.Order)
                 .ThenInclude(o => o!.Customer)
             .AsQueryable();
+
+        query = status switch
+        {
+            AdminPaymentStatusFilter.Completed => query.Where(p => p.PaymentStatus == PaymentStatus.Paid || p.PaymentStatus == PaymentStatus.Refunded),
+            AdminPaymentStatusFilter.Pending => query.Where(p => p.PaymentStatus == PaymentStatus.Pending || p.PaymentStatus == PaymentStatus.Authorized),
+            AdminPaymentStatusFilter.Failed => query.Where(p => p.PaymentStatus == PaymentStatus.Failed || p.PaymentStatus == PaymentStatus.Cancelled),
+            _ => query
+        };
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query

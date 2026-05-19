@@ -84,51 +84,57 @@
   background: #1d4ed8;
 }
 
-.admin-issues-page__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.admin-issues-page__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 }
 
-.admin-issues-page__list-item {
-  padding: 18px 24px;
+.admin-issues-page__table thead th {
+  text-align: left;
+  background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
-  display: grid;
-  gap: 8px;
+  color: #111827;
+  font-weight: 700;
+  padding: 12px 24px;
+  white-space: nowrap;
 }
 
-.admin-issues-page__list-item:last-child {
+.admin-issues-page__table tbody td {
+  padding: 14px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.admin-issues-page__table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.admin-issues-page__list-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+.admin-issues-page__issue-cell {
+  display: grid;
+  gap: 2px;
+  min-width: 260px;
 }
 
-.admin-issues-page__list-primary {
+.admin-issues-page__issue-title {
   margin: 0;
-  font-weight: 700;
-  font-size: 15px;
+  font-weight: 600;
 }
 
-.admin-issues-page__list-secondary {
+.admin-issues-page__issue-description {
   margin: 0;
-  font-size: 14px;
+  max-width: 460px;
+  overflow: hidden;
   color: #6b7280;
-}
-
-.admin-issues-page__list-meta {
-  margin: 0;
   font-size: 13px;
-  color: #6b7280;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-issues-page__actions {
   display: inline-flex;
-  gap: 16px;
+  gap: 12px;
+  white-space: nowrap;
 }
 
 .admin-issues-page__action {
@@ -177,6 +183,12 @@
 .admin-issues-page__badge--resolved {
   background: #dbeafe;
   color: #1e40af;
+}
+
+.admin-issues-page .pagination {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0;
+  padding: 16px 24px;
 }
 
 @media (max-width: 1000px) {

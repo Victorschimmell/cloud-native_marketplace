@@ -55,7 +55,11 @@ public sealed record AdminPaymentDto(
     string CurrencyCode,
     string Status);
 
-public sealed record GetAdminPaymentsRequest(int Page = 1, int PageSize = 50, string? Currency = null);
+public sealed record GetAdminPaymentsRequest(
+    int Page = 1,
+    int PageSize = 50,
+    string? Currency = null,
+    AdminPaymentStatusFilter Status = AdminPaymentStatusFilter.Any);
 
 public sealed record DashboardStatsDto(
     int ActiveUsers,

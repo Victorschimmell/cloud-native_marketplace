@@ -101,3 +101,9 @@
   background: #fee2e2;
   color: #991b1b;
 }
+
+.admin-payments-page .pagination {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0;
+  padding: 16px 24px;
+}

@@ -135,6 +135,7 @@ public class AdminController : ApiControllerBase
 
     [HttpGet("payments")]
     public async Task<ActionResult<PageResponse<AdminPaymentResponse>>> GetPayments(
+        [FromQuery] GetAdminPaymentsRequest filters,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
         CancellationToken cancellationToken)
@@ -144,7 +145,11 @@ public class AdminController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can list payments." });
         }
 
-        var applicationRequest = new App.GetAdminPaymentsRequest(pageRequest.Page, pageRequest.PageSize, currency);
+        var applicationRequest = new App.GetAdminPaymentsRequest(
+            pageRequest.Page,
+            pageRequest.PageSize,
+            currency,
+            (Application.Abstractions.Repositories.AdminPaymentStatusFilter)filters.Status);
         var result = await _adminService.GetPaymentsAsync(applicationRequest, cancellationToken);
         return HandleResult(result, page => new PageResponse<AdminPaymentResponse>
         {

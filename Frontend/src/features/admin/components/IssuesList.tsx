@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
 import type { AdminIssue } from '../data/placeholderData';
 
 interface IssuesListProps {
   issues: AdminIssue[];
   isLoading?: boolean;
   pendingId?: string | null;
+  pagination?: ReactNode;
   onView?: (issueId: string) => void;
   onAssign?: (issueId: string) => void;
   onResolve?: (issueId: string) => void;
@@ -14,6 +16,7 @@ export default function IssuesList({
   issues,
   isLoading = false,
   pendingId = null,
+  pagination = null,
   onView,
   onAssign,
   onResolve,
@@ -30,19 +33,34 @@ export default function IssuesList({
       ) : issues.length === 0 ? (
         <p className="admin-issues-page__empty">No issues reported yet.</p>
       ) : (
-        <ul className="admin-issues-page__list">
-          {issues.map((issue) => (
-            <IssueRow
-              key={issue.id}
-              issue={issue}
-              isPending={pendingId === issue.id}
-              onView={onView}
-              onAssign={onAssign}
-              onResolve={onResolve}
-            />
-          ))}
-        </ul>
+        <table className="admin-issues-page__table">
+          <thead>
+            <tr>
+              <th>Issue</th>
+              <th>Type</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Reported by</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {issues.map((issue) => (
+              <IssueRow
+                key={issue.id}
+                issue={issue}
+                isPending={pendingId === issue.id}
+                onView={onView}
+                onAssign={onAssign}
+                onResolve={onResolve}
+              />
+            ))}
+          </tbody>
+        </table>
       )}
+
+      {pagination}
     </div>
   );
 }
@@ -59,55 +77,59 @@ function IssueRow({ issue, isPending, onView, onAssign, onResolve }: IssueRowPro
   const isResolved = issue.status === 'resolved';
 
   return (
-    <li className="admin-issues-page__list-item">
-      <div className="admin-issues-page__list-row">
-        <p className="admin-issues-page__list-primary">{issue.title}</p>
-        <div className="admin-issues-page__actions">
-          <span className={`admin-issues-page__badge admin-issues-page__badge--${issue.priority}`}>
-            {issue.priority}
-          </span>
-          <span className={`admin-issues-page__badge admin-issues-page__badge--${badgeKey(issue.status)}`}>
-            {issue.status}
-          </span>
+    <tr>
+      <td>
+        <div className="admin-issues-page__issue-cell">
+          <p className="admin-issues-page__issue-title">{issue.title}</p>
+          <p className="admin-issues-page__issue-description">{issue.description}</p>
         </div>
-      </div>
-
-      <p className="admin-issues-page__list-secondary">{issue.description}</p>
-      <p className="admin-issues-page__list-meta">
-        {issue.type} - {issue.reportedBy} - {formatDate(issue.date)}
-      </p>
-
-      <div className="admin-issues-page__actions">
-        <button
-          type="button"
-          className="admin-issues-page__action admin-issues-page__action--view"
-          onClick={() => onView?.(issue.id)}
-          disabled={isPending}
-        >
-          View
-        </button>
-        {!isResolved && (
-          <>
-            <button
-              type="button"
-              className="admin-issues-page__action admin-issues-page__action--assign"
-              onClick={() => onAssign?.(issue.id)}
-              disabled={isPending}
-            >
-              Assign
-            </button>
-            <button
-              type="button"
-              className="admin-issues-page__action admin-issues-page__action--resolve"
-              onClick={() => onResolve?.(issue.id)}
-              disabled={isPending}
-            >
-              {isPending ? 'Working...' : 'Resolve'}
-            </button>
-          </>
-        )}
-      </div>
-    </li>
+      </td>
+      <td>{issue.type}</td>
+      <td>
+        <span className={`admin-issues-page__badge admin-issues-page__badge--${issue.priority}`}>
+          {issue.priority}
+        </span>
+      </td>
+      <td>
+        <span className={`admin-issues-page__badge admin-issues-page__badge--${badgeKey(issue.status)}`}>
+          {issue.status}
+        </span>
+      </td>
+      <td>{issue.reportedBy}</td>
+      <td>{formatDate(issue.date)}</td>
+      <td>
+        <div className="admin-issues-page__actions">
+          <button
+            type="button"
+            className="admin-issues-page__action admin-issues-page__action--view"
+            onClick={() => onView?.(issue.id)}
+            disabled={isPending}
+          >
+            View
+          </button>
+          {!isResolved && (
+            <>
+              <button
+                type="button"
+                className="admin-issues-page__action admin-issues-page__action--assign"
+                onClick={() => onAssign?.(issue.id)}
+                disabled={isPending}
+              >
+                Assign
+              </button>
+              <button
+                type="button"
+                className="admin-issues-page__action admin-issues-page__action--resolve"
+                onClick={() => onResolve?.(issue.id)}
+                disabled={isPending}
+              >
+                {isPending ? 'Working...' : 'Resolve'}
+              </button>
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }
 

@@ -33,7 +33,7 @@ export default function AnalyticsDashboardPage() {
       try {
         const [statsResponse, paymentsResponse, issuesResponse] = await Promise.all([
           adminApi.getDashboardStats(currency, abortController.signal),
-          adminApi.listPayments(currency, 1, 5, abortController.signal),
+          adminApi.listPayments(currency, 1, 5, { signal: abortController.signal }),
           adminApi.listIssues(1, 5, { status: 'Open', signal: abortController.signal }),
         ]);
         setStats(statsResponse);
