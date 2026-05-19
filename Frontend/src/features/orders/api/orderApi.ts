@@ -1,6 +1,7 @@
 import { request } from '../../../shared/api/request';
 import type { CurrencyCode } from '../../../shared/currency/currency';
-import type { Order, Review } from '../types';
+import type { PageResponse } from '../../../shared/types/pagination';
+import type { Order, OrderSummary, Review } from '../types';
 
 interface CreateReviewRequest {
   orderId: string;
@@ -15,7 +16,6 @@ export const orderApi = {
     const params = new URLSearchParams({ currency });
     return request<Order>(`/api/orders/${orderId}?${params}`, { signal });
   },
-
   createReview: async (review: CreateReviewRequest, signal?: AbortSignal) => {
     return request<Review>('/api/reviews', {
       method: 'POST',
@@ -25,5 +25,28 @@ export const orderApi = {
       body: JSON.stringify(review),
       signal,
     });
+  },
+  cancelOrder: async (orderId: string, currency: CurrencyCode, reason: string, signal?: AbortSignal) => {
+    const params = new URLSearchParams({ currency });
+    return request<Order>(`/api/orders/${orderId}/cancel?${params}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+      signal,
+    });
+  },
+  getOrdersSummary: async (
+    userId: string,
+    page: number,
+    pageSize: number,
+    currency: CurrencyCode,
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+      currency,
+    });
+    return request<PageResponse<OrderSummary>>(`/api/customers/${userId}/orders?${params}`, { signal });
   },
 };

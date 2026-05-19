@@ -9,6 +9,8 @@ export type AuditActionType =
   | 'Block'
   | 'Unblock'
   | 'Import'
+  | 'Cancelled'
+  | 'Refunded'
   | number;
 
 export type AuditOutcome =

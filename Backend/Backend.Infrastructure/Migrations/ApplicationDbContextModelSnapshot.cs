@@ -714,6 +714,10 @@ namespace Backend.Infrastructure.Migrations
                     b.Property<int>("OrderStatus")
                         .HasColumnType("integer");
 
+                    b.Property<string>("OrderStatusDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid?>("PlacedFromCartId")
                         .HasColumnType("uuid");
 

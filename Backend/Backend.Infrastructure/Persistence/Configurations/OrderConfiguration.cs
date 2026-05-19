@@ -21,6 +21,9 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(o => o.OrderStatus)
             .IsRequired();
+        
+        builder.Property(o => o.OrderStatusDescription)
+            .HasMaxLength(500);
 
         builder.Property(o => o.SubtotalAmount)
             .HasPrecision(18, 4)

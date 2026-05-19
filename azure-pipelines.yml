@@ -63,7 +63,7 @@ steps:
       arguments: '--configuration $(buildConfiguration) --no-build'
       publishTestResults: true
 
-  # 5. Integration tests  (no database connection required)
+  # 5. Integration tests  (uses Docker Compose test Postgres)
   - task: DotNetCoreCLI@2
     displayName: 'Run integration tests'
     inputs:

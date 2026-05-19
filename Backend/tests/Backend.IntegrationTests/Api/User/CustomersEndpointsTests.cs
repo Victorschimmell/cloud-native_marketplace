@@ -125,7 +125,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var orders = await response.Content.ReadFromJsonAsync<PageResponse<OrderModel>>(
+        var orders = await response.Content.ReadFromJsonAsync<PageResponse<OrderSummaryModel>>(
             IntegrationTestJson.Options,
             TestContext.Current.CancellationToken);
 

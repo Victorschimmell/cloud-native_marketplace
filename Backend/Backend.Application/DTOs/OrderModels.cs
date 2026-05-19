@@ -65,6 +65,7 @@ public sealed record OrderDto(
     Guid ShippingAddressId,
     string OrderNumber,
     OrderStatus OrderStatus,
+    string? OrderStatusDescription,
     DateTimeOffset OrderPurchaseTimestampUtc,
     DateTimeOffset? OrderApprovedAtUtc,
     DateTimeOffset? OrderDeliveredCarrierDateUtc,
@@ -78,6 +79,27 @@ public sealed record OrderDto(
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<PaymentDto> Payments,
     IReadOnlyList<ReviewDto> Reviews,
+    IReadOnlyList<ShipmentDto> Shipments);
+
+public sealed record OrderSummaryDto(
+    Guid Id,
+    Guid CustomerId,
+    Guid UserId,
+    Guid ShippingAddressId,
+    string OrderNumber,
+    OrderStatus OrderStatus,
+    string? OrderStatusDescription,
+    DateTimeOffset OrderPurchaseTimestampUtc,
+    DateTimeOffset? OrderApprovedAtUtc,
+    DateTimeOffset? OrderDeliveredCarrierDateUtc,
+    DateTimeOffset? OrderDeliveredCustomerDateUtc,
+    DateTimeOffset? OrderEstimatedDeliveryDateUtc,
+    decimal SubtotalAmount,
+    decimal FreightAmount,
+    decimal TotalAmount,
+    string CurrencyCode,
+    Guid? PlacedFromCartId,
+    IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<ShipmentDto> Shipments);
 
 public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);

@@ -14,6 +14,7 @@ public sealed class Order : AggregateRoot<Guid>
     public Guid CustomerId { get; set; }
     public Guid ShippingAddressId { get; set; }
     public OrderStatus OrderStatus { get; set; }
+    public string? OrderStatusDescription { get; set; }
     public DateTimeOffset OrderPurchaseTimestampUtc { get; set; }
     public DateTimeOffset? OrderApprovedAtUtc { get; set; }
     public DateTimeOffset? OrderDeliveredCarrierDateUtc { get; set; }

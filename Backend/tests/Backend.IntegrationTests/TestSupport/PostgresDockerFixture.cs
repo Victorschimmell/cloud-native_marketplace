@@ -5,7 +5,7 @@ namespace Backend.IntegrationTests.TestSupport;
 
 /// <summary>
 /// xUnit collection fixture that spins up the Docker Compose postgres service before the
-/// test suite runs and tears it down (container + image) once the suite finishes, whether
+/// test suite runs and tears it down once the suite finishes, whether
 /// tests pass or fail.
 /// </summary>
 public sealed class PostgresDockerFixture : IAsyncLifetime
@@ -23,7 +23,7 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        await RunComposeAsync("down --rmi all -v");
+        await RunComposeAsync("down -v");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -60,13 +60,30 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
             }
         };
 
+        process.OutputDataReceived += (_, eventArgs) =>
+        {
+            if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+            {
+                Console.WriteLine(eventArgs.Data);
+            }
+        };
+        process.ErrorDataReceived += (_, eventArgs) =>
+        {
+            if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+            {
+                Console.Error.WriteLine(eventArgs.Data);
+            }
+        };
+
+        Console.WriteLine($"Running docker compose {args} for integration tests.");
         process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
         await process.WaitForExitAsync();
 
         if (process.ExitCode != 0)
         {
-            var error = await process.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException($"'docker compose {args}' exited with code {process.ExitCode}: {error}");
+            throw new InvalidOperationException($"'docker compose {args}' exited with code {process.ExitCode}.");
         }
     }
 

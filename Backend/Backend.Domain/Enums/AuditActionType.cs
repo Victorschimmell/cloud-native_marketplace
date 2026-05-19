@@ -11,5 +11,7 @@ public enum AuditActionType
     Reject = 7,
     Block = 8,
     Unblock = 9,
-    Import = 10
+    Import = 10,
+    Cancelled = 11,
+    Refunded = 12
 }
