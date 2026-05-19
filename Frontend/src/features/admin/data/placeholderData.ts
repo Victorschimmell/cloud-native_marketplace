@@ -34,6 +34,7 @@ export interface AdminIssue {
   priority: IssuePriority;
   status: IssueStatus;
   reportedBy: string;
+  assignee?: string;
   date: string; // ISO date
 }
 

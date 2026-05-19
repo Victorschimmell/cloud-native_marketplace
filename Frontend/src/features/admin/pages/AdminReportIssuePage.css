@@ -7,7 +7,6 @@
   color: var(--admin-text);
   display: grid;
   gap: 24px;
-  max-width: 1160px;
 }
 
 .admin-issues-page__panel {
@@ -223,27 +222,31 @@
 }
 
 .admin-issues-page__table th:nth-child(1) {
-  width: 28%;
+  width: 24%;
 }
 
 .admin-issues-page__table th:nth-child(2) {
-  width: 14%;
+  width: 12%;
 }
 
 .admin-issues-page__table th:nth-child(3),
 .admin-issues-page__table th:nth-child(4) {
-  width: 10%;
+  width: 9%;
 }
 
 .admin-issues-page__table th:nth-child(5) {
-  width: 20%;
+  width: 18%;
 }
 
 .admin-issues-page__table th:nth-child(6) {
-  width: 10%;
+  width: 11%;
 }
 
 .admin-issues-page__table th:nth-child(7) {
+  width: 9%;
+}
+
+.admin-issues-page__table th:nth-child(8) {
   width: 8%;
 }
 
@@ -314,6 +317,10 @@
 .admin-issues-page__no-action {
   color: var(--admin-muted);
   font-size: 13px;
+}
+
+.admin-issues-page__muted {
+  color: var(--admin-muted);
 }
 
 .admin-issues-page__badge {

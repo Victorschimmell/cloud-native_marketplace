@@ -40,6 +40,7 @@ export default function IssuesList({
                 <th>Priority</th>
                 <th>Status</th>
                 <th>Reported by</th>
+                <th>Assignee</th>
                 <th>Date</th>
                 <th>Actions</th>
               </tr>
@@ -95,6 +96,13 @@ function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
         </span>
       </td>
       <td>{issue.reportedBy}</td>
+      <td>
+        {issue.assignee ? (
+          <span title={issue.assignee}>{shortenId(issue.assignee)}</span>
+        ) : (
+          <span className="admin-issues-page__muted">Unassigned</span>
+        )}
+      </td>
       <td>{formatDate(issue.date)}</td>
       <td>
         <div className="admin-issues-page__actions">
@@ -134,4 +142,8 @@ function badgeKey(status: string): string {
 function formatDate(isoDate: string): string {
   const date = new Date(isoDate);
   return date.toLocaleDateString('en-GB');
+}
+
+function shortenId(id: string): string {
+  return id.length <= 8 ? id : id.slice(0, 8);
 }

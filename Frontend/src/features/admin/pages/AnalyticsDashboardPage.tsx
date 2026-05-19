@@ -76,7 +76,7 @@ function StatsRow({ stats, priceFormatter }: { stats: DashboardStatsResponse | n
   return (
     <div className="admin-dashboard-page__stats">
       <StatCard label="Active Users" value={activeUsers.toLocaleString()} />
-      <StatCard label="Orders/Day" value={ordersPerDay.toLocaleString()} />
+      <StatCard label="Orders Last 24h" value={ordersPerDay.toLocaleString()} />
       <StatCard label="Total Revenue" value={priceFormatter.format(revenue)} />
       <StatCard
         label="Open Issues"

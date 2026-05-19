@@ -50,6 +50,7 @@ export function toAdminIssue(issue: IssueResponse): AdminIssue {
     priority: priorityToUi[issue.priority] ?? 'medium',
     status: statusToUi[issue.status] ?? 'open',
     reportedBy: issue.reportedByDisplay ?? issue.reportedByUserId,
+    assignee: issue.assignedToUserId ?? undefined,
     date: issue.createdAtUtc,
   };
 }
