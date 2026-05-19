@@ -83,7 +83,8 @@ public sealed record UpdateProductRequest(
     int ProductHeightCm,
     int ProductWidthCm,
     decimal Price,
-    int InventoryQuantity);
+    int InventoryQuantity,
+    string VisibilityStatus);
 
 public sealed record CreateCategoryRequest(string CategoryNamePt, string? CategoryNameEn);
 

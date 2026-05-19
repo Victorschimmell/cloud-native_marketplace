@@ -186,6 +186,11 @@ public sealed class ProductService : IProductService
 
         listing.ListingPrice = request.Price;
         listing.InventoryQuantity = request.InventoryQuantity;
+        if (Enum.TryParse<ListingVisibilityStatus>(request.VisibilityStatus, ignoreCase: true, out var parsedStatus)
+            && (parsedStatus == ListingVisibilityStatus.Draft || parsedStatus == ListingVisibilityStatus.Published))
+        {
+            listing.VisibilityStatus = parsedStatus;
+        }
 
         await _productRepository.UpdateAsync(product, cancellationToken);
         await _productListingRepository.UpdateAsync(listing, cancellationToken);

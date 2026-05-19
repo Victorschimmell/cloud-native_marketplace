@@ -18,4 +18,5 @@ public sealed record UpdateProductRequest
     public int ProductLengthCm { get; init; } = 0;
     public int ProductHeightCm { get; init; } = 0;
     public int ProductWidthCm { get; init; } = 0;
+    public string VisibilityStatus { get; init; } = "Draft";
 }

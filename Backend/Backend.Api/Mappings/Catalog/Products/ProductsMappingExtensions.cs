@@ -98,7 +98,8 @@ public static class ProductsMappingExtensions
             ProductHeightCm: request.ProductHeightCm,
             ProductWidthCm: request.ProductWidthCm,
             Price: request.Price,
-            InventoryQuantity: request.InventoryQuantity);
+            InventoryQuantity: request.InventoryQuantity,
+            VisibilityStatus: request.VisibilityStatus);
     }
 
     public static SellerListingResponse ToResponse(this App.SellerListingDto listing)

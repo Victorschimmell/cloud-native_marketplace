@@ -14,6 +14,7 @@ export interface UpdateProductRequest {
   description: string;
   price: number;
   inventoryQuantity: number;
+  visibilityStatus: string;
 }
 
 export interface ProductResponse {

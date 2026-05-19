@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { productApi } from '../../products/api/productApi';
@@ -14,21 +14,25 @@ interface ProductFormState {
   price: string;
   categoryId: string;
   inventoryQuantity: string;
+  visibilityStatus: string;
 }
 
 export default function EditProductPage() {
   const navigate = useNavigate();
   const { state } = useLocation() as { state: { listing: SellerListing } | null };
+  const { listingId } = useParams<{ listingId: string }>();
   const { currency } = useCurrency();
 
-  const listing = state?.listing;
+  const [listing, setListing] = useState<SellerListing | null>(state?.listing ?? null);
+  const [loadingListing, setLoadingListing] = useState(!state?.listing);
 
   const [form, setForm] = useState<ProductFormState>({
-    name: listing?.productName ?? '',
-    description: listing?.description ?? '',
-    price: String(listing?.listingPrice ?? ''),
-    categoryId: listing?.categoryId ?? '',
-    inventoryQuantity: String(listing?.inventoryQuantity ?? 0),
+    name: state?.listing?.productName ?? '',
+    description: state?.listing?.description ?? '',
+    price: String(state?.listing?.listingPrice ?? ''),
+    categoryId: state?.listing?.categoryId ?? '',
+    inventoryQuantity: String(state?.listing?.inventoryQuantity ?? 0),
+    visibilityStatus: state?.listing?.visibilityStatus ?? 'Draft',
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -38,6 +42,31 @@ export default function EditProductPage() {
     productApi.getCategories(controller.signal).then(setCategories).catch(() => {});
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (state?.listing || !listingId) return;
+    const controller = new AbortController();
+    setLoadingListing(true);
+    sellerApi
+      .getMyListings(controller.signal)
+      .then((listings) => {
+        const found = listings.find((l) => l.listingId === listingId) ?? null;
+        setListing(found);
+        if (found) {
+          setForm({
+            name: found.productName,
+            description: found.description,
+            price: String(found.listingPrice),
+            categoryId: found.categoryId,
+            inventoryQuantity: String(found.inventoryQuantity),
+            visibilityStatus: found.visibilityStatus,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingListing(false));
+    return () => controller.abort();
+  }, [listingId, state?.listing]);
 
   function updateField<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -54,11 +83,22 @@ export default function EditProductPage() {
         description: form.description,
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
+        visibilityStatus: form.visibilityStatus,
       });
       navigate('/seller/products');
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to update product.');
     }
+  }
+
+  if (loadingListing) {
+    return (
+      <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="">
+        <section className="add-product">
+          <p>Loading product…</p>
+        </section>
+      </PageSkeleton>
+    );
   }
 
   if (!listing) {
@@ -165,6 +205,21 @@ export default function EditProductPage() {
                 value={form.inventoryQuantity}
                 onChange={(event) => updateField('inventoryQuantity', event.target.value)}
               />
+            </label>
+
+            <label className="add-product__field">
+              <span className="add-product__field-label">
+                Visibility Status <span className="add-product__required">*</span>
+              </span>
+              <select
+                className="add-product__select"
+                value={form.visibilityStatus}
+                required
+                onChange={(event) => updateField('visibilityStatus', event.target.value)}
+              >
+                <option value="Draft">Draft</option>
+                <option value="Published">Published</option>
+              </select>
             </label>
 
             <div className="add-product__actions">
