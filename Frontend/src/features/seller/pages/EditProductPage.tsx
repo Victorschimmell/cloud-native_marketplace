@@ -1,10 +1,11 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import { productApi } from '../../products/api/productApi';
 import { sellerApi } from '../api/sellerApi';
 import type { Category } from '../../products/types';
+import type { SellerListing } from '../api/sellerApi';
 import './AddProductPage.css';
 
 interface ProductFormState {
@@ -14,21 +15,27 @@ interface ProductFormState {
   categoryId: string;
   imageUrl: string;
   inventoryQuantity: string;
+  visibilityStatus: string;
 }
 
-const INITIAL_STATE: ProductFormState = {
-  name: '',
-  description: '',
-  price: '',
-  categoryId: '',
-  imageUrl: '',
-  inventoryQuantity: '0',
-};
-
-export default function AddProductPage() {
+export default function EditProductPage() {
   const navigate = useNavigate();
+  const { state } = useLocation() as { state: { listing: SellerListing } | null };
+  const { listingId } = useParams<{ listingId: string }>();
   const { currency } = useCurrency();
-  const [form, setForm] = useState<ProductFormState>(INITIAL_STATE);
+
+  const [listing, setListing] = useState<SellerListing | null>(state?.listing ?? null);
+  const [loadingListing, setLoadingListing] = useState(!state?.listing);
+
+  const [form, setForm] = useState<ProductFormState>({
+    name: state?.listing?.productName ?? '',
+    description: state?.listing?.description ?? '',
+    price: String(state?.listing?.listingPrice ?? ''),
+    categoryId: state?.listing?.categoryId ?? '',
+    imageUrl: state?.listing?.imageUrl ?? '',
+    inventoryQuantity: String(state?.listing?.inventoryQuantity ?? 0),
+    visibilityStatus: state?.listing?.visibilityStatus ?? 'Draft',
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -38,35 +45,82 @@ export default function AddProductPage() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (state?.listing || !listingId) return;
+    const controller = new AbortController();
+    sellerApi
+      .getMyListings(controller.signal)
+      .then((listings) => {
+        const found = listings.find((l) => l.listingId === listingId) ?? null;
+        setListing(found);
+        if (found) {
+          setForm({
+            name: found.productName,
+            description: found.description,
+            price: String(found.listingPrice),
+            categoryId: found.categoryId,
+            imageUrl: found.imageUrl ?? '',
+            inventoryQuantity: String(found.inventoryQuantity),
+            visibilityStatus: found.visibilityStatus,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingListing(false);
+        }
+      });
+    return () => controller.abort();
+  }, [listingId, state?.listing]);
+
   function updateField<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!listing) return;
     setSubmitError(null);
     try {
-      await sellerApi.createProduct({
+      await sellerApi.updateProduct(listing.listingId, {
         categoryId: form.categoryId,
         productName: form.name,
         description: form.description,
         imageUrl: normalizeOptional(form.imageUrl),
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
+        visibilityStatus: form.visibilityStatus,
       });
       navigate('/seller/products');
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'Failed to create product.');
+      setSubmitError(error instanceof Error ? error.message : 'Failed to update product.');
     }
   }
 
+  if (loadingListing) {
+    return (
+      <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="">
+        <section className="add-product">
+          <p>Loading product...</p>
+        </section>
+      </PageSkeleton>
+    );
+  }
+
+  if (!listing) {
+    return (
+      <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="">
+        <section className="add-product">
+          <p>Product not found. <Link to="/seller/products">Back to products</Link></p>
+        </section>
+      </PageSkeleton>
+    );
+  }
+
   return (
-    <PageSkeleton
-      summary="Create a product listing for your seller catalog."
-      title="Add New Product"
-      titleId="add-product-page-title"
-    >
-      <section className="add-product" aria-labelledby="add-product-page-title">
+    <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="Update your product listing details.">
+      <section className="add-product" aria-labelledby="edit-product-page-title">
         <div className="add-product__navigation">
           <Link to="/seller/products" className="add-product__back">
             Back to Dashboard
@@ -172,9 +226,24 @@ export default function AddProductPage() {
               />
             </label>
 
+            <label className="add-product__field">
+              <span className="add-product__field-label">
+                Visibility Status <span className="add-product__required">*</span>
+              </span>
+              <select
+                className="add-product__select"
+                value={form.visibilityStatus}
+                required
+                onChange={(event) => updateField('visibilityStatus', event.target.value)}
+              >
+                <option value="Draft">Draft</option>
+                <option value="Published">Published</option>
+              </select>
+            </label>
+
             <div className="add-product__actions">
               <button type="submit" className="add-product__submit">
-                Add Product
+                Save Changes
               </button>
               <Link to="/seller/products" className="add-product__cancel">
                 Cancel

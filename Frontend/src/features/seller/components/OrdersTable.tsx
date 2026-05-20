@@ -1,128 +1,160 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { OrderStatus, SellerOrder } from '../data/placeholderData';
+import type { SellerOrderSort, SellerOrderStatusFilter, SellerOrderSummary } from '../api/sellerApi';
 
 interface OrdersTableProps {
-  orders: SellerOrder[];
+  error?: string | null;
+  orders: SellerOrderSummary[];
+  page: number;
+  pageSize: number;
   priceFormatter: Intl.NumberFormat;
+  sort: SellerOrderSort;
+  statusFilter: SellerOrderStatusFilter;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onSortChange: (sort: SellerOrderSort) => void;
+  onStatusFilterChange: (status: SellerOrderStatusFilter) => void;
 }
 
-type SortKey = 'date' | 'total' | 'status';
-type SortDirection = 'asc' | 'desc';
+const statusOptions: SellerOrderStatusFilter[] = [
+  'all',
+  'Pending',
+  'Approved',
+  'Processing',
+  'Shipped',
+  'Delivered',
+  'Cancelled',
+  'Returned',
+];
 
-export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
-  const sortedOrders = useMemo(() => {
-    return sortOrders(orders, sortKey, sortDirection);
-  }, [orders, sortKey, sortDirection]);
-
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDirection('asc');
-    }
-  }
+export default function OrdersTable({
+  error,
+  orders,
+  page,
+  pageSize,
+  priceFormatter,
+  sort,
+  statusFilter,
+  totalCount,
+  onPageChange,
+  onSortChange,
+  onStatusFilterChange,
+}: OrdersTableProps) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstVisible = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastVisible = Math.min(page * pageSize, totalCount);
 
   return (
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
-        <h2 className="seller-dashboard__panel-title">Orders Management</h2>
-        <p className="seller-dashboard__panel-subtitle">Click column headers to sort</p>
+        <div>
+          <h2 className="seller-dashboard__panel-title">Orders Management</h2>
+          <p className="seller-dashboard__panel-subtitle">Filter and sort fulfillment activity</p>
+        </div>
+
+        <div className="seller-dashboard__filters">
+          <label className="seller-dashboard__filter">
+            Status:
+            <select
+              value={statusFilter}
+              onChange={(event) => onStatusFilterChange(event.target.value as SellerOrderStatusFilter)}
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status === 'all' ? 'All' : status}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="seller-dashboard__filter">
+            Sort:
+            <select
+              value={sort}
+              onChange={(event) => onSortChange(event.target.value as SellerOrderSort)}
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="total-high">Total: high to low</option>
+              <option value="total-low">Total: low to high</option>
+            </select>
+          </label>
+        </div>
       </div>
 
-      {orders.length === 0 ? (
-        <p className="seller-dashboard__empty">No orders yet.</p>
+      {error ? (
+        <p className="seller-dashboard__empty">{error}</p>
+      ) : orders.length === 0 ? (
+        <p className="seller-dashboard__empty">
+          {statusFilter === 'all' ? 'No orders yet.' : 'No orders match the current filters.'}
+        </p>
       ) : (
-        <table className="seller-dashboard__table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer</th>
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'date'}
-                label="Date"
-                onClick={() => handleSort('date')}
-              />
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'total'}
-                label="Total"
-                onClick={() => handleSort('total')}
-              />
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'status'}
-                label="Status"
-                onClick={() => handleSort('status')}
-              />
-              <th>Tracking</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedOrders.map((order) => (
-              <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="seller-dashboard__table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Tracking</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
+              ))}
+            </tbody>
+          </table>
+
+          <div className="seller-dashboard__pagination">
+            <span>
+              Showing {firstVisible}-{lastVisible} of {totalCount}
+            </span>
+            <div className="seller-dashboard__pagination-actions">
+              <button
+                type="button"
+                className="seller-dashboard__page-button"
+                disabled={page <= 1}
+                onClick={() => onPageChange(page - 1)}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="seller-dashboard__page-button"
+                disabled={page >= totalPages}
+                onClick={() => onPageChange(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function SortableHeader({
-  direction,
-  isActive,
-  label,
-  onClick,
-}: {
-  direction: SortDirection;
-  isActive: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  const ariaSort = isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none';
+function OrderRow({ order, priceFormatter }: { order: SellerOrderSummary; priceFormatter: Intl.NumberFormat }) {
+  const tracking = order.shipments.find((shipment) => shipment.trackingNumber)?.trackingNumber;
 
-  return (
-    <th aria-sort={ariaSort}>
-      <button
-        type="button"
-        aria-label={`Sort by ${label}`}
-        onClick={onClick}
-        className="seller-dashboard__sort-button"
-      >
-        {label}
-        {isActive ? (
-          <span className="seller-dashboard__sort-indicator" aria-hidden="true">
-            {direction === 'asc' ? 'Asc' : 'Desc'}
-          </span>
-        ) : null}
-      </button>
-    </th>
-  );
-}
-
-function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatter: Intl.NumberFormat }) {
   return (
     <tr>
-      <td data-label="Order ID"><strong>{order.id}</strong></td>
+      <td data-label="Order ID"><strong>{order.orderNumber}</strong></td>
       <td data-label="Customer">
         <p className="seller-dashboard__customer-name">{order.customerName}</p>
         <p className="seller-dashboard__customer-email">{order.customerEmail}</p>
       </td>
-      <td data-label="Date">{formatDate(order.date)}</td>
-      <td className="seller-dashboard__price" data-label="Total">{priceFormatter.format(order.total)}</td>
+      <td data-label="Date">{formatDate(order.orderPurchaseTimestampUtc)}</td>
+      <td className="seller-dashboard__price" data-label="Total">{priceFormatter.format(order.totalAmount)}</td>
       <td data-label="Status">
-        <span className={`seller-dashboard__status seller-dashboard__status--${order.status.toLowerCase()}`}>
-          {order.status}
+        <span className={`seller-dashboard__status seller-dashboard__status--${order.orderStatus.toLowerCase()}`}>
+          {order.orderStatus}
         </span>
       </td>
-      <td data-label="Tracking">{order.tracking ?? '-'}</td>
+      <td data-label="Tracking">{tracking ?? '-'}</td>
       <td data-label="Actions">
         <Link
           to={`/seller/orders/${order.id}`}
@@ -133,30 +165,6 @@ function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatte
       </td>
     </tr>
   );
-}
-
-function sortOrders(orders: SellerOrder[], key: SortKey, direction: SortDirection): SellerOrder[] {
-  const statusRank: Record<OrderStatus, number> = {
-    Pending: 0,
-    Processing: 1,
-    Shipped: 2,
-    Delivered: 3,
-    Cancelled: 4,
-  };
-
-  const sorted = [...orders].sort((a, b) => {
-    let result = 0;
-    if (key === 'date') {
-      result = a.date.localeCompare(b.date);
-    } else if (key === 'total') {
-      result = a.total - b.total;
-    } else if (key === 'status') {
-      result = statusRank[a.status] - statusRank[b.status];
-    }
-    return direction === 'asc' ? result : -result;
-  });
-
-  return sorted;
 }
 
 function formatDate(isoDate: string): string {

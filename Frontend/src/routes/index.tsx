@@ -16,8 +16,7 @@ import CustomerPage from '../pages/CustomerPage';
 import SellersPage from '../features/seller/pages/SellersPage';
 import ReviewsPage from '../pages/ReviewsPage';
 import AnalyticsDashboardPage from '../features/admin/pages/AnalyticsDashboardPage';
-import SellerProductsPage from '../features/seller/pages/SellerProductsPage';
-import SellerOrdersPage from '../features/seller/pages/SellerOrdersPage';
+import SellerDashboard from '../features/seller/components/SellerDashboard';
 import SellerOrderDetailsPage from '../features/seller/pages/SellerOrderDetailsPage';
 import SellerVerificationPage from '../features/seller/pages/SellerVerificationPage';
 import NotFoundPage from '../pages/NotFoundPage';
@@ -28,6 +27,7 @@ import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
 import AdminCreateIssuePage from '../features/admin/pages/AdminCreateIssuePage';
 import AdminPaymentsPage from '../features/admin/pages/AdminPaymentsPage';
 import AddProductPage from '../features/seller/pages/AddProductPage';
+import EditProductPage from '../features/seller/pages/EditProductPage';
 
 export const router = createBrowserRouter([
   {
@@ -67,9 +67,10 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute capability="verifiedSeller" />,
         children: [
-          { path: 'seller/products', element: <SellerProductsPage /> },
+          { path: 'seller/products', element: <SellerDashboard /> },
           { path: 'seller/products/new', element: <AddProductPage /> },
-          { path: 'seller/orders', element: <SellerOrdersPage /> },
+          { path: 'seller/products/:listingId/edit', element: <EditProductPage /> },
+          { path: 'seller/orders', element: <SellerDashboard /> },
           { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
         ],
       },

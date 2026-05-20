@@ -12,5 +12,6 @@ public interface IProductService
     Task<Result<PagedResult<ProductDto>>> GetByCategoryAsync(Guid categoryId, PagedRequest request, CancellationToken cancellationToken = default);
     Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default);
     Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default);
-    Task<Result> DeleteAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<Result> DeleteListingAsync(Guid listingId, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(CancellationToken cancellationToken = default);
 }

@@ -8,6 +8,7 @@ public sealed record CartItemDto(
     Guid ListingId,
     Guid ProductId,
     string ProductName,
+    string? ImageUrl,
     int Quantity,
     decimal UnitPriceAtAddition,
     decimal LineTotal,

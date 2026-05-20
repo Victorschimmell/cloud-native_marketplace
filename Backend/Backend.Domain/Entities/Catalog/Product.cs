@@ -12,6 +12,7 @@ public sealed class Product : AuditableEntity<Guid>
     public Guid CategoryId { get; set; }
     public required string ProductName { get; set; }
     public required string Description { get; set; }
+    public string? ImageUrl { get; set; }
     public int ProductNameLength { get; set; }
     public int ProductDescriptionLength { get; set; }
     public int ProductPhotosQty { get; set; }

@@ -87,6 +87,69 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
         return new PagedResult<Order>(orders, page, pageSize, totalCount);
     }
 
+    public async Task<PagedResult<Order>> GetBySellerIdAsync(
+        Guid sellerId,
+        int page,
+        int pageSize,
+        OrderStatus? status = null,
+        SellerOrderSort sort = SellerOrderSort.Newest,
+        CancellationToken cancellationToken = default)
+    {
+        var query = OrdersWithDetails()
+            .Where(o => o.Items.Any(i => i.SellerId == sellerId));
+
+        if (status.HasValue)
+        {
+            query = query.Where(o => o.OrderStatus == status.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var orderedQuery = sort switch
+        {
+            SellerOrderSort.Oldest => query.OrderBy(o => o.OrderPurchaseTimestampUtc),
+            SellerOrderSort.TotalHigh => query.OrderByDescending(o => o.Items
+                .Where(i => i.SellerId == sellerId)
+                .Sum(i => i.UnitPrice * i.Quantity + i.FreightValue)),
+            SellerOrderSort.TotalLow => query.OrderBy(o => o.Items
+                .Where(i => i.SellerId == sellerId)
+                .Sum(i => i.UnitPrice * i.Quantity + i.FreightValue)),
+            _ => query.OrderByDescending(o => o.OrderPurchaseTimestampUtc)
+        };
+
+        var orders = await orderedQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<Order>(orders, page, pageSize, totalCount);
+    }
+
+    public async Task<SellerOrderAggregate> GetSellerOrderAggregateAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    {
+        var sellerOrders = dbContext.Orders
+            .AsNoTracking()
+            .Where(o => o.Items.Any(i => i.SellerId == sellerId));
+
+        var totalOrders = await sellerOrders.CountAsync(cancellationToken);
+        var activeOrders = await sellerOrders
+            .CountAsync(
+                o => o.OrderStatus != OrderStatus.Cancelled &&
+                     o.OrderStatus != OrderStatus.Delivered &&
+                     o.OrderStatus != OrderStatus.Returned,
+                cancellationToken);
+
+        var totalRevenue = await dbContext.OrderItems
+            .AsNoTracking()
+            .Where(i =>
+                i.SellerId == sellerId &&
+                i.Order != null &&
+                i.Order.OrderStatus != OrderStatus.Cancelled &&
+                i.Order.OrderStatus != OrderStatus.Returned)
+            .SumAsync(i => i.UnitPrice * i.Quantity + i.FreightValue, cancellationToken);
+
+        return new SellerOrderAggregate(totalOrders, activeOrders, totalRevenue);
+    }
+
     public async Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Orders.AsNoTracking();
@@ -168,6 +231,7 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
         dbContext.Orders
             .AsSplitQuery()
             .Include(o => o.Customer)
+                .ThenInclude(c => c!.UserAccount)
             .Include(o => o.ShippingAddress)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)

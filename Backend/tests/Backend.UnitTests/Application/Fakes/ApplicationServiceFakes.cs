@@ -122,6 +122,8 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Order>>([]);
     public Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, OrderStatus? status = null, CustomerOrderSort sort = CustomerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
     public Task<PagedResult<Order>> GetByCustomerIdWithDetailsAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
+    public Task<PagedResult<Order>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, OrderStatus? status = null, SellerOrderSort sort = SellerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
+    public Task<SellerOrderAggregate> GetSellerOrderAggregateAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult(new SellerOrderAggregate(0, 0, 0m));
     public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);

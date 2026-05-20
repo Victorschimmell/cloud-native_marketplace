@@ -239,7 +239,11 @@ export default function OrderDetailsPage() {
                   <article className="order-details__line" key={`${item.orderId}-${item.orderItemId}`}>
                     <div className="order-details__line-product">
                       <span className="order-details__product-media" aria-hidden="true">
-                        No image
+                        {item.imageUrl ? (
+                          <img alt="" src={item.imageUrl} />
+                        ) : (
+                          'No image'
+                        )}
                       </span>
                       <div>
                         <h3>

@@ -8,6 +8,7 @@ public sealed record OrderItemDto(
     Guid ListingId,
     Guid ProductId,
     string ProductName,
+    string? ImageUrl,
     int ProductPhotosQty,
     Guid SellerId,
     string SellerName,
@@ -16,7 +17,11 @@ public sealed record OrderItemDto(
     decimal LineTotal,
     decimal FreightValue,
     string CurrencyCode,
-    DateTimeOffset? ShippingLimitDateUtc);
+    DateTimeOffset? ShippingLimitDateUtc,
+    OrderStatus FulfillmentStatus,
+    DateTimeOffset? FulfillmentApprovedAtUtc,
+    DateTimeOffset? FulfillmentProcessingAtUtc,
+    DateTimeOffset? FulfillmentShippedAtUtc);
 
 public sealed record PaymentDto(
     Guid OrderId,
@@ -101,6 +106,33 @@ public sealed record OrderSummaryDto(
     Guid? PlacedFromCartId,
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<ShipmentDto> Shipments);
+
+public sealed record SellerOrderSummaryDto(
+    Guid Id,
+    Guid CustomerId,
+    string CustomerName,
+    string CustomerEmail,
+    string OrderNumber,
+    OrderStatus OrderStatus,
+    string? OrderStatusDescription,
+    DateTimeOffset OrderPurchaseTimestampUtc,
+    DateTimeOffset? OrderApprovedAtUtc,
+    DateTimeOffset? OrderDeliveredCarrierDateUtc,
+    DateTimeOffset? OrderDeliveredCustomerDateUtc,
+    DateTimeOffset? OrderEstimatedDeliveryDateUtc,
+    decimal SubtotalAmount,
+    decimal FreightAmount,
+    decimal TotalAmount,
+    string CurrencyCode,
+    bool CanUpdateStatus,
+    IReadOnlyList<OrderItemDto> Items,
+    IReadOnlyList<ShipmentDto> Shipments);
+
+public sealed record SellerOrderStatsDto(
+    int TotalOrders,
+    int ActiveOrders,
+    decimal TotalRevenue,
+    string CurrencyCode);
 
 public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);
 

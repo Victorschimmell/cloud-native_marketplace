@@ -418,6 +418,13 @@
   font-size: 11px;
   font-weight: 700;
   text-align: center;
+  overflow: hidden;
+}
+
+.order-details__product-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .order-details__totals {

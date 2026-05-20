@@ -7,6 +7,7 @@ public sealed record CartItemModel
     public required Guid ListingId { get; init; }
     public required Guid ProductId { get; init; }
     public required string ProductName { get; init; }
+    public string? ImageUrl { get; init; }
     public required int Quantity { get; init; }
     public required decimal UnitPriceAtAddition { get; init; }
     public required decimal LineTotal { get; init; }

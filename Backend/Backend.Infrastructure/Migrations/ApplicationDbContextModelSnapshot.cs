@@ -110,6 +110,10 @@ namespace Backend.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.Property<string>("OlistProductId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -760,6 +764,18 @@ namespace Backend.Infrastructure.Migrations
                     b.Property<decimal>("FreightValue")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTimeOffset?>("FulfillmentApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentProcessingAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentShippedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FulfillmentStatus")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ListingId")
                         .HasColumnType("uuid");
