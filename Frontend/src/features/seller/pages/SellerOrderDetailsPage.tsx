@@ -211,7 +211,7 @@ export default function SellerOrderDetailsPage() {
                 <div className="seller-order-details__panel-heading">
                   <div>
                     <h2>Actions</h2>
-                    <p>Move the order through the seller workflow</p>
+                    <p>Move your items through the seller workflow</p>
                   </div>
                 </div>
 
