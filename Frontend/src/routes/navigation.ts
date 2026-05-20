@@ -6,6 +6,7 @@ export interface NavigationItem {
   label: string;
   to: string;
   audience: NavigationAudience;
+  activePathPrefixes?: string[];
   end?: boolean;
   showForAdmin?: boolean;
 }
@@ -16,8 +17,12 @@ export const primaryNavigationItems: NavigationItem[] = [
   { label: 'Categories', to: '/categories', audience: 'public' },
   { label: 'Orders', to: '/orders', audience: 'customer' },
   { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
-  { label: 'Seller Products', to: '/seller/products', audience: 'verifiedSeller' },
-  { label: 'Seller Orders', to: '/seller/orders', audience: 'verifiedSeller' },
+  {
+    label: 'Seller Dashboard',
+    to: '/seller/products',
+    audience: 'verifiedSeller',
+    activePathPrefixes: ['/seller/products', '/seller/orders'],
+  },
   { label: 'Admin Dashboard', to: '/admin/dashboard', audience: 'admin' },
   { label: 'User Management', to: '/admin/users', audience: 'admin' },
   { label: 'Audit Logs', to: '/admin/audit', audience: 'admin' },
@@ -45,7 +50,11 @@ export function canShowNavigationItem(capabilities: AuthCapabilities, item: Navi
     return true;
   }
 
-  // Sellers and Admins don't need most shopping links, only their own pages.
+  if (capabilities.isSeller && item.audience === 'public') {
+    return true;
+  }
+
+  // Admins don't need most shopping links, only their own pages.
   if ((capabilities.isSeller || capabilities.isAdmin) && (item.audience === 'public' || item.audience === 'customer')) {
     return capabilities.isAdmin && item.showForAdmin === true;
   }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 import { cartApi, subscribeToCartUpdates } from '../features/cart/api/cartApi';
 import { canShowNavigationItem, primaryNavigationItems } from '../routes/navigation';
@@ -11,6 +11,7 @@ import './Navbar.css';
 export default function Navbar() {
   const { currency, setCurrency } = useCurrency();
   const { capabilities, isAuthenticated, logout, user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [isCurrencyMenuOpen, setIsCurrencyMenuOpen] = useState(false);
   const [cartItemCount, setCartItemCount] = useState(0);
@@ -75,7 +76,11 @@ export default function Navbar() {
         <div className="navbar__links">
           {visibleNavigationItems.map((item) => (
             <NavLink
-              className={({ isActive }) => (isActive ? 'navbar__link navbar__link--active' : 'navbar__link')}
+              className={({ isActive }) =>
+                isActive || isNavigationItemActive(location.pathname, item)
+                  ? 'navbar__link navbar__link--active'
+                  : 'navbar__link'
+              }
               end={item.end}
               key={item.to}
               to={item.to}
@@ -154,4 +159,8 @@ export default function Navbar() {
       </div>
     </nav>
   );
+}
+
+function isNavigationItemActive(pathname: string, item: { activePathPrefixes?: string[] }) {
+  return item.activePathPrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) ?? false;
 }
