@@ -10,6 +10,7 @@ using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 
 namespace Backend.UnitTests.Application.Fakes;
 
@@ -124,7 +125,19 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
     public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
+    public Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new SalesAggregate(0, 0m));
+    public Task<OrderStatusAggregate> GetOrderStatusAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new OrderStatusAggregate(0, 0, 0));
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class FakeAdminDashboardRepository : IAdminDashboardRepository
+{
+    public AdminDashboardSnapshot Snapshot { get; set; } = new(0, 0, 0m, 0);
+
+    public Task<AdminDashboardSnapshot> GetSnapshotAsync(
+        DateTimeOffset ordersFromUtc,
+        DateTimeOffset ordersToUtc,
+        CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
 }
 
 internal sealed class FakeOrderNumberRepository : IOrderNumberGenerator
@@ -156,6 +169,7 @@ internal sealed class FakePaymentRepository : IPaymentRepository
     public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
     public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>([]);
+    public Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<OrderPayment>([], page, pageSize, 0));
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -198,6 +212,26 @@ internal sealed class FakeAuditLogService : IAuditLogService
     public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result.NotImplemented());
 }
 
+internal sealed class FakeAdminIssueRepository : IAdminIssueRepository
+{
+    public AdminIssue? Issue { get; set; }
+    public int UpdateCalls { get; private set; }
+
+    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Issue is not null && Issue.Id == id ? Issue : null);
+    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, bool unresolvedOnly, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AdminIssue>([], page, pageSize, 0));
+    public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default)
+    {
+        Issue = issue;
+        return Task.CompletedTask;
+    }
+    public Task UpdateAsync(AdminIssue issue, CancellationToken cancellationToken = default)
+    {
+        Issue = issue;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
+}
+
 internal sealed class FakeAuditLogRepository : IAuditLogRepository
 {
     public List<AuditLog> AddedLogs { get; } = [];
@@ -227,6 +261,7 @@ internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificat
         return Task.CompletedTask;
     }
     public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
+    public Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Request is null ? 0 : 1);
     public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Request is not null && Request.Id == id ? Request : null);
     public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Request is not null && Request.SellerId == sellerId ? [Request] : []);
     public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
@@ -251,6 +286,8 @@ internal sealed class FakeUserAccountRepository : IUserAccountRepository
     }
     public Task DeleteAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<UserAccount>>([]);
+    public Task<PagedResult<UserAccount>> GetByFilterAsync(AdminUserRoleFilter role, AdminUserStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<UserAccount>([], page, pageSize, 0));
+    public Task<int> CountActiveAsync(CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && !UserAccount.IsBlocked ? 1 : 0);
     public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && string.Equals(UserAccount.Email.Value, email, StringComparison.OrdinalIgnoreCase) ? UserAccount : null);
     public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && UserAccount.Id == id ? UserAccount : null);
     public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
