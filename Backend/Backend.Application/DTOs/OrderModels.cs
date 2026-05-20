@@ -8,6 +8,7 @@ public sealed record OrderItemDto(
     Guid ListingId,
     Guid ProductId,
     string ProductName,
+    string? ImageUrl,
     int ProductPhotosQty,
     Guid SellerId,
     string SellerName,

@@ -19,6 +19,7 @@ export interface OrderItem {
   listingId: string;
   productId: string;
   productName: string;
+  imageUrl?: string | null;
   productPhotosQty: number;
   sellerId: string;
   sellerName: string;

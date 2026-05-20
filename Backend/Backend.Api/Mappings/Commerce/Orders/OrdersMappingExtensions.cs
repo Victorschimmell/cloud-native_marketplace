@@ -95,6 +95,7 @@ public static class OrdersMappingExtensions
             ListingId = item.ListingId,
             ProductId = item.ProductId,
             ProductName = item.ProductName,
+            ImageUrl = item.ImageUrl,
             ProductPhotosQty = item.ProductPhotosQty,
             SellerId = item.SellerId,
             SellerName = item.SellerName,

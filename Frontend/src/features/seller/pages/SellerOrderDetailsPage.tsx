@@ -148,10 +148,19 @@ export default function SellerOrderDetailsPage() {
                 <div className="seller-order-details__items">
                   {order.items.map((item) => (
                     <div className="seller-order-details__item" key={item.orderItemId}>
-                      <div>
-                        <h3>{item.productName}</h3>
-                        <p>Quantity {item.quantity} - Unit {formatMoney(item.unitPrice, item.currencyCode)}</p>
-                        <p>Ship by {formatDateTime(item.shippingLimitDateUtc)}</p>
+                      <div className="seller-order-details__item-product">
+                        <span className="seller-order-details__product-media" aria-hidden="true">
+                          {item.imageUrl ? (
+                            <img alt="" src={item.imageUrl} />
+                          ) : (
+                            'No image'
+                          )}
+                        </span>
+                        <div>
+                          <h3>{item.productName}</h3>
+                          <p>Quantity {item.quantity} - Unit {formatMoney(item.unitPrice, item.currencyCode)}</p>
+                          <p>Ship by {formatDateTime(item.shippingLimitDateUtc)}</p>
+                        </div>
                       </div>
                       <div className="seller-order-details__item-totals">
                         <span>{formatMoney(item.lineTotal, item.currencyCode)}</span>

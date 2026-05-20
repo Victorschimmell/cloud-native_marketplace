@@ -173,6 +173,7 @@ internal static class ApplicationMappings
             item.ListingId,
             item.ProductId,
             item.Product?.ProductName ?? $"Product {item.ProductId:N}"[..20],
+            item.Product?.ImageUrl,
             item.Product?.ProductPhotosQty ?? 0,
             item.SellerId,
             item.Seller?.BusinessName ?? $"Seller {item.SellerId:N}"[..15],

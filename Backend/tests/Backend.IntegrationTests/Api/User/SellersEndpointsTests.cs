@@ -73,6 +73,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(5m, order.FreightAmount);
         Assert.Equal(55m, order.TotalAmount);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
+        Assert.All(order.Items, item => Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl));
 
         var statsResponse = await _client.GetAsync(
             "/api/sellers/me/order-stats?currency=BRL",
@@ -114,6 +115,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(55m, order.TotalAmount);
         var item = Assert.Single(order.Items);
         Assert.Equal("Seller owned product", item.ProductName);
+        Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl);
     }
 
     [Fact]
@@ -143,6 +145,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(OrderStatus.Shipped, order.OrderStatus);
         Assert.NotNull(order.OrderDeliveredCarrierDateUtc);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
+        Assert.All(order.Items, item => Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl));
 
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -168,6 +171,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("categoria", "Category");
         var sellerProduct = TestEntityFactory.CreateProduct(category.Id, "Seller owned product");
+        sellerProduct.ImageUrl = $"https://example.com/seller-product-{unique}.jpg";
         var otherProduct = TestEntityFactory.CreateProduct(category.Id, "Other seller product");
         var sellerListing = TestEntityFactory.CreateListing(seller.Id, sellerProduct.Id, $"SKU-{Guid.NewGuid():N}", 25m);
         var otherListing = TestEntityFactory.CreateListing(otherSeller.Id, otherProduct.Id, $"SKU-{Guid.NewGuid():N}", 100m);
@@ -224,7 +228,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return new SellerOrdersSeed(sellerUser.Id, otherSellerUser.Id, sellerOrder.Id, expectedOrderNumber, customerEmail);
+        return new SellerOrdersSeed(sellerUser.Id, otherSellerUser.Id, sellerOrder.Id, expectedOrderNumber, customerEmail, sellerProduct.ImageUrl);
     }
 
     private void AuthenticateAs(Guid userId)
@@ -239,5 +243,6 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Guid OtherSellerUserId,
         Guid SellerOrderId,
         string ExpectedOrderNumber,
-        string CustomerEmail);
+        string CustomerEmail,
+        string? SellerProductImageUrl);
 }
