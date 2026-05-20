@@ -10,104 +10,98 @@ interface OrdersTableProps {
 }
 
 type SortKey = 'date' | 'total' | 'status';
-type SortDirection = 'asc' | 'desc';
+type StatusFilter = 'all' | OrderStatus;
+type SortOption = 'newest' | 'oldest' | 'total-high' | 'total-low' | 'status';
+
+const statusOptions: StatusFilter[] = [
+  'all',
+  'Pending',
+  'Approved',
+  'Processing',
+  'Shipped',
+  'Delivered',
+  'Cancelled',
+  'Returned',
+];
 
 export default function OrdersTable({ error, orders, priceFormatter }: OrdersTableProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
-  const sortedOrders = useMemo(() => {
-    return sortOrders(orders, sortKey, sortDirection);
-  }, [orders, sortKey, sortDirection]);
+  const visibleOrders = useMemo(() => {
+    const filteredOrders = statusFilter === 'all'
+      ? orders
+      : orders.filter((order) => order.orderStatus === statusFilter);
 
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDirection('asc');
-    }
-  }
+    return sortOrders(filteredOrders, sortBy);
+  }, [orders, statusFilter, sortBy]);
 
   return (
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
-        <h2 className="seller-dashboard__panel-title">Orders Management</h2>
-        <p className="seller-dashboard__panel-subtitle">Click column headers to sort</p>
+        <div>
+          <h2 className="seller-dashboard__panel-title">Orders Management</h2>
+          <p className="seller-dashboard__panel-subtitle">Filter and sort fulfillment activity</p>
+        </div>
+
+        <div className="seller-dashboard__filters">
+          <label className="seller-dashboard__filter">
+            Status:
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+            >
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status === 'all' ? 'All' : status}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="seller-dashboard__filter">
+            Sort:
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as SortOption)}
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="total-high">Total: high to low</option>
+              <option value="total-low">Total: low to high</option>
+              <option value="status">Status</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       {error ? (
         <p className="seller-dashboard__empty">{error}</p>
       ) : orders.length === 0 ? (
         <p className="seller-dashboard__empty">No orders yet.</p>
+      ) : visibleOrders.length === 0 ? (
+        <p className="seller-dashboard__empty">No orders match the current filters.</p>
       ) : (
         <table className="seller-dashboard__table">
           <thead>
             <tr>
               <th>Order ID</th>
               <th>Customer</th>
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'date'}
-                label="Date"
-                onClick={() => handleSort('date')}
-              />
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'total'}
-                label="Total"
-                onClick={() => handleSort('total')}
-              />
-              <SortableHeader
-                direction={sortDirection}
-                isActive={sortKey === 'status'}
-                label="Status"
-                onClick={() => handleSort('status')}
-              />
+              <th>Date</th>
+              <th>Total</th>
+              <th>Status</th>
               <th>Tracking</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {sortedOrders.map((order) => (
+            {visibleOrders.map((order) => (
               <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
             ))}
           </tbody>
         </table>
       )}
     </div>
-  );
-}
-
-function SortableHeader({
-  direction,
-  isActive,
-  label,
-  onClick,
-}: {
-  direction: SortDirection;
-  isActive: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  const ariaSort = isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none';
-
-  return (
-    <th aria-sort={ariaSort}>
-      <button
-        type="button"
-        aria-label={`Sort by ${label}`}
-        onClick={onClick}
-        className="seller-dashboard__sort-button"
-      >
-        {label}
-        {isActive ? (
-          <span className="seller-dashboard__sort-indicator" aria-hidden="true">
-            {direction === 'asc' ? 'Asc' : 'Desc'}
-          </span>
-        ) : null}
-      </button>
-    </th>
   );
 }
 
@@ -141,30 +135,48 @@ function OrderRow({ order, priceFormatter }: { order: SellerOrderSummary; priceF
   );
 }
 
-function sortOrders(orders: SellerOrderSummary[], key: SortKey, direction: SortDirection): SellerOrderSummary[] {
+function sortOrders(orders: SellerOrderSummary[], sortBy: SortOption): SellerOrderSummary[] {
   const statusRank: Record<OrderStatus, number> = {
     Pending: 0,
     Approved: 1,
-    Processing: 1,
-    Shipped: 2,
-    Delivered: 3,
-    Cancelled: 4,
-    Returned: 5,
+    Processing: 2,
+    Shipped: 3,
+    Delivered: 4,
+    Cancelled: 5,
+    Returned: 6,
   };
+  const sortKey = getSortKey(sortBy);
+  const sortDirection = getSortDirection(sortBy);
 
   const sorted = [...orders].sort((a, b) => {
     let result = 0;
-    if (key === 'date') {
+    if (sortKey === 'date') {
       result = a.orderPurchaseTimestampUtc.localeCompare(b.orderPurchaseTimestampUtc);
-    } else if (key === 'total') {
+    } else if (sortKey === 'total') {
       result = a.totalAmount - b.totalAmount;
-    } else if (key === 'status') {
+    } else if (sortKey === 'status') {
       result = statusRank[a.orderStatus] - statusRank[b.orderStatus];
     }
-    return direction === 'asc' ? result : -result;
+    return sortDirection === 'asc' ? result : -result;
   });
 
   return sorted;
+}
+
+function getSortKey(sortBy: SortOption): SortKey {
+  if (sortBy === 'total-high' || sortBy === 'total-low') {
+    return 'total';
+  }
+
+  if (sortBy === 'status') {
+    return 'status';
+  }
+
+  return 'date';
+}
+
+function getSortDirection(sortBy: SortOption): 'asc' | 'desc' {
+  return sortBy === 'oldest' || sortBy === 'total-low' || sortBy === 'status' ? 'asc' : 'desc';
 }
 
 function formatDate(isoDate: string): string {
