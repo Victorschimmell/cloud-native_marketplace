@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
@@ -12,17 +12,18 @@ import './SellerDashboard.css';
 export type SellerDashboardTab = 'products' | 'orders';
 
 interface SellerDashboardProps {
-  activeTab: SellerDashboardTab;
+  activeTab?: SellerDashboardTab;
 }
 
 /**
  * Seller Dashboard
  *
- * This is the same page is used for the "My Products" and "Orders" tabs. 
- * The tab is controlled by `activeTab`, which comes from the route (so each tab has its
- * own URL). Replace placeholder arrays when the back-end is ready with real API calls.
+ * This same component is used for the "My Products" and "Orders" routes so tab changes
+ * swap table content without remounting and refetching the dashboard counters.
  */
 export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
+  const location = useLocation();
+  const selectedTab = activeTab ?? getActiveTab(location.pathname);
   const { currency } = useCurrency();
   const priceFormatter = useMemo(
     () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
@@ -71,9 +72,9 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         </div>
 
         <StatsRow listings={listings} orders={orders} priceFormatter={priceFormatter} />
-        <TabBar activeTab={activeTab} />
+        <TabBar activeTab={selectedTab} />
 
-        {activeTab === 'products' ? (
+        {selectedTab === 'products' ? (
           <ProductInventoryTable
             priceFormatter={priceFormatter}
             products={listings}
@@ -111,6 +112,10 @@ function StatsRow({
       <StatCard label="Active Orders" value={activeOrders.toString()} />
     </div>
   );
+}
+
+function getActiveTab(pathname: string): SellerDashboardTab {
+  return pathname.includes('/seller/orders') ? 'orders' : 'products';
 }
 
 function StatCard({ label, value }: { label: string; value: ReactNode }) {
