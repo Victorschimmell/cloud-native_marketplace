@@ -51,7 +51,7 @@ export default function CartLine({
             onClick={() => onRemoveItem(item)}
             type="button"
           >
-            Remove
+            Remove item
           </button>
         </div>
       </div>
