@@ -50,6 +50,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(listingId, item.ListingId);
         Assert.NotEqual(Guid.Empty, item.ProductId);
         Assert.Equal("Cart product", item.ProductName);
+        Assert.StartsWith("https://example.com/cart-product-", item.ImageUrl);
         Assert.Equal(2, item.Quantity);
         Assert.Equal(39.95m, item.UnitPriceAtAddition);
         Assert.Equal(79.90m, item.LineTotal);
@@ -420,6 +421,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("cart_category", "Cart category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
+        product.ImageUrl = $"https://example.com/cart-product-{Guid.NewGuid():N}.jpg";
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, sku, price);
         listing.InventoryQuantity = inventoryQuantity;
         listing.IsDeleted = isDeleted;

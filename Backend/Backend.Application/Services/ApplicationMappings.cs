@@ -149,6 +149,7 @@ internal static class ApplicationMappings
             item.ListingId,
             product.Id,
             product.ProductName,
+            product.ImageUrl,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             priceConverter(item.UnitPriceAtAddition * item.Quantity),

@@ -41,6 +41,7 @@ public static class CartMappingExtensions
             ListingId = item.ListingId,
             ProductId = item.ProductId,
             ProductName = item.ProductName,
+            ImageUrl = item.ImageUrl,
             Quantity = item.Quantity,
             UnitPriceAtAddition = item.UnitPriceAtAddition,
             LineTotal = item.LineTotal,
