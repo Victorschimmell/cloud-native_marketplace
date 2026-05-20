@@ -9,6 +9,11 @@ using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
+using Backend.Application.DTOs;
+using Backend.Domain.Base;
+using Backend.Domain.Entities.Catalog;
+using Backend.Domain.Enums;
+using Backend.Domain.Entities.Catalog;
 
 namespace Backend.Api.Controllers.Catalog;
 
@@ -18,12 +23,19 @@ public class ProductsController : ApiControllerBase
     private readonly IProductService _productService;
     private readonly IReviewService _reviewService;
     private readonly ILogger<ProductsController> _logger;
+    private readonly IAuditLogService _auditLogService;
 
-    public ProductsController(IProductService productService, IReviewService reviewService, ILogger<ProductsController> logger)
+    public ProductsController(
+        IProductService productService, 
+        IReviewService reviewService, 
+        ILogger<ProductsController> logger,
+        IAuditLogService auditLogService
+    )
     {
         _productService = productService;
         _reviewService = reviewService;
         _logger = logger;
+        _auditLogService = auditLogService;
     }
 
     [HttpGet("{productId:guid}")]
@@ -89,15 +101,27 @@ public class ProductsController : ApiControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] Backend.Api.Contracts.Catalog.Products.CreateProductRequest request, CancellationToken cancellationToken)
     {
         var result = await _productService.CreateAsync(request.ToDto(), cancellationToken);
+        
+        if (result.IsSuccess)
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Product),
+                TargetEntityId: result.Value.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: "Product created"
+            ), cancellationToken);
+        }
+
         return HandleResult(result, product => product.ToResponse());
     }
 
     [HttpPut("listings/{listingId:guid}")]
     [Authorize]
-    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] Backend.Api.Contracts.Catalog.Products.UpdateProductRequest request, CancellationToken cancellationToken)
     {
         var result = await _productService.UpdateAsync(request.ToDto(listingId), cancellationToken);
         return HandleResult(result, product => product.ToResponse());
@@ -108,6 +132,18 @@ public class ProductsController : ApiControllerBase
     public async Task<IActionResult> DeleteProductAsync([NotEmptyGuid] Guid listingId, CancellationToken cancellationToken)
     {
         var result = await _productService.DeleteListingAsync(listingId, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Deleted,
+                TargetEntityType: nameof(ProductListing),
+                TargetEntityId: listingId.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: "Listing deleted"
+            ), cancellationToken);
+        }
+
         return HandleResult(result);
     }
 
