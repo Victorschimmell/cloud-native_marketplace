@@ -4,7 +4,7 @@ import { ApiError } from '../../../shared/api/request';
 import IssueForm from '../components/IssueForm';
 import { adminApi } from '../api/adminApi';
 import { toCreateIssuePayload } from '../api/issueMapping';
-import type { AdminIssue } from '../data/placeholderData';
+import type { AdminIssue } from '../types';
 import './AdminReportIssuePage.css';
 
 export default function AdminCreateIssuePage() {

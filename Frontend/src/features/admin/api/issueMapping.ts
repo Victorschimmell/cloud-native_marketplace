@@ -1,4 +1,4 @@
-import type { AdminIssue, IssuePriority, IssueStatus, IssueType } from '../data/placeholderData';
+import type { AdminIssue, IssuePriority, IssueStatus, IssueType } from '../types';
 import type {
   CreateIssuePayload,
   IssuePriorityApi,

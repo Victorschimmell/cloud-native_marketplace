@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AdminIssue } from '../data/placeholderData';
+import type { AdminIssue } from '../types';
 
 interface IssuesListProps {
   issues: AdminIssue[];

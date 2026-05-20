@@ -6,7 +6,7 @@ import Pagination from '../../../shared/components/Pagination';
 import IssuesList from '../components/IssuesList';
 import { adminApi } from '../api/adminApi';
 import { toAdminIssue } from '../api/issueMapping';
-import type { AdminIssue } from '../data/placeholderData';
+import type { AdminIssue } from '../types';
 import './AdminReportIssuePage.css';
 
 const issuesPageSize = 10;

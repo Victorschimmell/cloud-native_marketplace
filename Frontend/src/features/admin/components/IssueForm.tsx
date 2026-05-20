@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { AdminIssue, IssuePriority, IssueType } from '../data/placeholderData';
+import type { AdminIssue, IssuePriority, IssueType } from '../types';
 
 interface IssueFormProps {
   onSubmit: (issue: Omit<AdminIssue, 'id' | 'status' | 'reportedBy' | 'date'>) => Promise<void> | void;

@@ -1,4 +1,4 @@
-import type { AdminUser } from '../data/placeholderData';
+import type { AdminUser } from '../types';
 
 type UserTableAction = 'block' | 'unblock' | 'approve' | 'reject';
 

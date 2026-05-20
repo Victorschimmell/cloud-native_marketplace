@@ -13,7 +13,7 @@ import type {
   AdminUser,
   AdminUserRole,
   AdminUserStatus,
-} from '../data/placeholderData';
+} from '../types';
 import './AdminUsersPage.css';
 
 type RoleFilter = AdminUserRole | 'All';
