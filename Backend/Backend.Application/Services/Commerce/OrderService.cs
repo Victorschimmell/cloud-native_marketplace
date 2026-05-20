@@ -13,6 +13,7 @@ public sealed class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IOrderItemRepository _orderItemRepository;
     private readonly ICustomerRepository _customerRepository;
+    private readonly ISellerRepository _sellerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
@@ -21,6 +22,7 @@ public sealed class OrderService : IOrderService
         IOrderRepository orderRepository,
         IOrderItemRepository orderItemRepository,
         ICustomerRepository customerRepository,
+        ISellerRepository sellerRepository,
         ICurrencyConversionService currencyConversionService,
         IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
@@ -28,6 +30,7 @@ public sealed class OrderService : IOrderService
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
+        ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
@@ -35,6 +38,7 @@ public sealed class OrderService : IOrderService
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _customerRepository = customerRepository;
+        _sellerRepository = sellerRepository;
         _currencyConversionService = currencyConversionService;
         _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
@@ -130,6 +134,39 @@ public sealed class OrderService : IOrderService
 
         return Result<PagedResult<OrderDto>>.Success(
             new PagedResult<OrderDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
+    }
+
+    public async Task<Result<PagedResult<SellerOrderSummaryDto>>> GetSummaryBySellerUserAsync(
+        Guid authenticatedUserId,
+        PagedRequest request,
+        string? currency,
+        OrderStatus? status = null,
+        SellerOrderSort sort = SellerOrderSort.Newest,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.Page < 1 || request.PageSize < 1)
+        {
+            return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
+        }
+
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (seller is null)
+        {
+            return Result<PagedResult<SellerOrderSummaryDto>>.NotFound("Seller profile was not found for the authenticated user.");
+        }
+
+        var orders = await _orderRepository.GetBySellerIdAsync(seller.Id, request.Page, request.PageSize, status, sort, cancellationToken);
+        var mappedOrders = orders.Items
+            .Select(order => order.ToSellerOrderSummaryDto(seller.Id, currencyCode, priceConverter))
+            .ToArray();
+
+        return Result<PagedResult<SellerOrderSummaryDto>>.Success(
+            new PagedResult<SellerOrderSummaryDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
     }
 
     public Task<Result<IReadOnlyList<OrderItemDto>>> GetOrderItemsAsync(Guid orderId, CancellationToken cancellationToken = default)

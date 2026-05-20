@@ -55,6 +55,29 @@ public static class OrdersMappingExtensions
             Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
         };
 
+    public static SellerOrderSummaryModel ToSellerSummaryModel(this App.SellerOrderSummaryDto order) =>
+        new()
+        {
+            Id = order.Id,
+            CustomerId = order.CustomerId,
+            CustomerName = order.CustomerName,
+            CustomerEmail = order.CustomerEmail,
+            OrderNumber = order.OrderNumber,
+            OrderStatus = (OrderStatus)order.OrderStatus,
+            OrderStatusDescription = order.OrderStatusDescription,
+            OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
+            OrderApprovedAtUtc = order.OrderApprovedAtUtc,
+            OrderDeliveredCarrierDateUtc = order.OrderDeliveredCarrierDateUtc,
+            OrderDeliveredCustomerDateUtc = order.OrderDeliveredCustomerDateUtc,
+            OrderEstimatedDeliveryDateUtc = order.OrderEstimatedDeliveryDateUtc,
+            SubtotalAmount = order.SubtotalAmount,
+            FreightAmount = order.FreightAmount,
+            TotalAmount = order.TotalAmount,
+            CurrencyCode = order.CurrencyCode,
+            Items = order.Items.Select(i => i.ToModel()).ToArray(),
+            Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
+        };
+
     public static OrderItemModel ToModel(this App.OrderItemDto item) =>
         new()
         {

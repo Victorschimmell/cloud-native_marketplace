@@ -271,6 +271,40 @@ internal static class ApplicationMappings
             order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             order.Shipments.Select(ToShipmentDto).ToArray());
 
+    public static SellerOrderSummaryDto ToSellerOrderSummaryDto(this Order order, Guid sellerId, string currencyCode, Func<decimal, decimal> priceConverter)
+    {
+        var sellerItems = order.Items
+            .Where(item => item.SellerId == sellerId)
+            .ToArray();
+        var sellerShipments = order.Shipments
+            .Where(shipment => shipment.SellerId == sellerId)
+            .Select(ToShipmentDto)
+            .ToArray();
+        var customerName = order.Customer is { } customer
+            ? $"{customer.FirstName} {customer.LastName}".Trim()
+            : string.Empty;
+
+        return new SellerOrderSummaryDto(
+            order.Id,
+            order.CustomerId,
+            string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName,
+            order.Customer?.UserAccount?.Email.Value ?? string.Empty,
+            order.OrderNumber,
+            order.OrderStatus,
+            order.OrderStatusDescription,
+            order.OrderPurchaseTimestampUtc,
+            order.OrderApprovedAtUtc,
+            order.OrderDeliveredCarrierDateUtc,
+            order.OrderDeliveredCustomerDateUtc,
+            order.OrderEstimatedDeliveryDateUtc,
+            priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity)),
+            priceConverter(sellerItems.Sum(item => item.FreightValue)),
+            priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity + item.FreightValue)),
+            currencyCode,
+            sellerItems.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
+            sellerShipments);
+    }
+
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(
             auditLog.Id,

@@ -6,8 +6,7 @@ import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
-import { sellerApi, type SellerListing } from '../api/sellerApi';
-import { placeholderOrders, placeholderStats } from '../data/placeholderData';
+import { sellerApi, type SellerListing, type SellerOrderSummary } from '../api/sellerApi';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
@@ -30,12 +29,33 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     [currency],
   );
   const [listings, setListings] = useState<SellerListing[]>([]);
+  const [orders, setOrders] = useState<SellerOrderSummary[]>([]);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     sellerApi.getMyListings(controller.signal).then(setListings).catch(() => {});
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setOrdersError(null);
+
+    sellerApi
+      .getMyOrders(currency, 1, 50, controller.signal)
+      .then((response) => setOrders(response.items))
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setOrders([]);
+        setOrdersError('Orders could not be loaded right now.');
+      });
+
+    return () => controller.abort();
+  }, [currency]);
 
   return (
     <PageSkeleton
@@ -50,7 +70,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
           </Link>
         </div>
 
-        <StatsRow priceFormatter={priceFormatter} />
+        <StatsRow listings={listings} orders={orders} priceFormatter={priceFormatter} />
         <TabBar activeTab={activeTab} />
 
         {activeTab === 'products' ? (
@@ -60,7 +80,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
             onDeleteListing={(listingId) => setListings((prev) => prev.filter((l) => l.listingId !== listingId))}
           />
         ) : (
-          <OrdersTable orders={placeholderOrders} priceFormatter={priceFormatter} />
+          <OrdersTable error={ordersError} orders={orders} priceFormatter={priceFormatter} />
         )}
       </section>
     </PageSkeleton>
@@ -69,15 +89,26 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
 /* Stats */
 
-function StatsRow({ priceFormatter }: { priceFormatter: Intl.NumberFormat }) {
-  const stats = placeholderStats;
+function StatsRow({
+  listings,
+  orders,
+  priceFormatter,
+}: {
+  listings: SellerListing[];
+  orders: SellerOrderSummary[];
+  priceFormatter: Intl.NumberFormat;
+}) {
+  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const activeOrders = orders.filter(
+    (order) => !['Cancelled', 'Delivered', 'Returned'].includes(order.orderStatus),
+  ).length;
 
   return (
     <div className="seller-dashboard__stats">
-      <StatCard label="Total Products" value={stats.totalProducts.toString()} />
-      <StatCard label="Total Revenue" value={priceFormatter.format(stats.totalRevenue)} />
-      <StatCard label="Total Orders" value={stats.totalOrders.toString()} />
-      <StatCard label="Active Orders" value={stats.activeOrders.toString()} />
+      <StatCard label="Total Products" value={listings.length.toString()} />
+      <StatCard label="Total Revenue" value={priceFormatter.format(totalRevenue)} />
+      <StatCard label="Total Orders" value={orders.length.toString()} />
+      <StatCard label="Active Orders" value={activeOrders.toString()} />
     </div>
   );
 }

@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { OrderStatus, SellerOrder } from '../data/placeholderData';
+import type { OrderStatus } from '../../orders/types';
+import type { SellerOrderSummary } from '../api/sellerApi';
 
 interface OrdersTableProps {
-  orders: SellerOrder[];
+  error?: string | null;
+  orders: SellerOrderSummary[];
   priceFormatter: Intl.NumberFormat;
 }
 
 type SortKey = 'date' | 'total' | 'status';
 type SortDirection = 'asc' | 'desc';
 
-export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps) {
+export default function OrdersTable({ error, orders, priceFormatter }: OrdersTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -34,7 +36,9 @@ export default function OrdersTable({ orders, priceFormatter }: OrdersTableProps
         <p className="seller-dashboard__panel-subtitle">Click column headers to sort</p>
       </div>
 
-      {orders.length === 0 ? (
+      {error ? (
+        <p className="seller-dashboard__empty">{error}</p>
+      ) : orders.length === 0 ? (
         <p className="seller-dashboard__empty">No orders yet.</p>
       ) : (
         <table className="seller-dashboard__table">
@@ -107,22 +111,24 @@ function SortableHeader({
   );
 }
 
-function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatter: Intl.NumberFormat }) {
+function OrderRow({ order, priceFormatter }: { order: SellerOrderSummary; priceFormatter: Intl.NumberFormat }) {
+  const tracking = order.shipments.find((shipment) => shipment.trackingNumber)?.trackingNumber;
+
   return (
     <tr>
-      <td data-label="Order ID"><strong>{order.id}</strong></td>
+      <td data-label="Order ID"><strong>{order.orderNumber}</strong></td>
       <td data-label="Customer">
         <p className="seller-dashboard__customer-name">{order.customerName}</p>
         <p className="seller-dashboard__customer-email">{order.customerEmail}</p>
       </td>
-      <td data-label="Date">{formatDate(order.date)}</td>
-      <td className="seller-dashboard__price" data-label="Total">{priceFormatter.format(order.total)}</td>
+      <td data-label="Date">{formatDate(order.orderPurchaseTimestampUtc)}</td>
+      <td className="seller-dashboard__price" data-label="Total">{priceFormatter.format(order.totalAmount)}</td>
       <td data-label="Status">
-        <span className={`seller-dashboard__status seller-dashboard__status--${order.status.toLowerCase()}`}>
-          {order.status}
+        <span className={`seller-dashboard__status seller-dashboard__status--${order.orderStatus.toLowerCase()}`}>
+          {order.orderStatus}
         </span>
       </td>
-      <td data-label="Tracking">{order.tracking ?? '-'}</td>
+      <td data-label="Tracking">{tracking ?? '-'}</td>
       <td data-label="Actions">
         <Link
           to={`/seller/orders/${order.id}`}
@@ -135,23 +141,25 @@ function OrderRow({ order, priceFormatter }: { order: SellerOrder; priceFormatte
   );
 }
 
-function sortOrders(orders: SellerOrder[], key: SortKey, direction: SortDirection): SellerOrder[] {
+function sortOrders(orders: SellerOrderSummary[], key: SortKey, direction: SortDirection): SellerOrderSummary[] {
   const statusRank: Record<OrderStatus, number> = {
     Pending: 0,
+    Approved: 1,
     Processing: 1,
     Shipped: 2,
     Delivered: 3,
     Cancelled: 4,
+    Returned: 5,
   };
 
   const sorted = [...orders].sort((a, b) => {
     let result = 0;
     if (key === 'date') {
-      result = a.date.localeCompare(b.date);
+      result = a.orderPurchaseTimestampUtc.localeCompare(b.orderPurchaseTimestampUtc);
     } else if (key === 'total') {
-      result = a.total - b.total;
+      result = a.totalAmount - b.totalAmount;
     } else if (key === 'status') {
-      result = statusRank[a.status] - statusRank[b.status];
+      result = statusRank[a.orderStatus] - statusRank[b.orderStatus];
     }
     return direction === 'asc' ? result : -result;
   });

@@ -264,6 +264,11 @@
   color: #374151;
 }
 
+.seller-dashboard__status--approved {
+  background: #e0f2fe;
+  color: #075985;
+}
+
 .seller-dashboard__status--processing {
   background: #fef3c7;
   color: #92400e;
@@ -282,6 +287,11 @@
 .seller-dashboard__status--cancelled {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.seller-dashboard__status--returned {
+  background: #f3e8ff;
+  color: #6b21a8;
 }
 
 /* ---------- Empty state ---------- */
