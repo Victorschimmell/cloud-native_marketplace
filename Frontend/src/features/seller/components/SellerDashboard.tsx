@@ -42,7 +42,6 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
   useEffect(() => {
     const controller = new AbortController();
-    setOrdersError(null);
 
     async function loadOrders() {
       try {
@@ -53,6 +52,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
         setOrders(ordersResponse.items);
         setOrderStats(statsResponse);
+        setOrdersError(null);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
