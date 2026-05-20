@@ -14,6 +14,7 @@ public static class ProductsMappingExtensions
             CategoryId = product.CategoryId,
             ProductName = product.ProductName,
             Description = product.Description,
+            ImageUrl = product.ImageUrl,
             CategoryName = product.CategoryName,
             Price = product.Price,
             CurrencyCode = product.CurrencyCode,
@@ -38,6 +39,7 @@ public static class ProductsMappingExtensions
             CategoryId = product.CategoryId,
             ProductName = product.ProductName,
             Description = product.Description,
+            ImageUrl = product.ImageUrl,
             CategoryName = product.CategoryName,
             Price = product.Price,
             CurrencyCode = product.CurrencyCode,
@@ -60,6 +62,7 @@ public static class ProductsMappingExtensions
             CategoryId = product.CategoryId,
             ProductName = product.ProductName,
             Description = product.Description,
+            ImageUrl = product.ImageUrl,
             ProductNameLength = product.ProductNameLength,
             ProductDescriptionLength = product.ProductDescriptionLength,
             ProductPhotosQty = product.ProductPhotosQty,
@@ -76,6 +79,7 @@ public static class ProductsMappingExtensions
             CategoryId: request.CategoryId,
             ProductName: request.ProductName,
             Description: request.Description,
+            ImageUrl: NormalizeOptional(request.ImageUrl),
             ProductPhotosQty: request.ProductPhotosQty,
             ProductWeightG: request.ProductWeightG,
             ProductLengthCm: request.ProductLengthCm,
@@ -92,6 +96,7 @@ public static class ProductsMappingExtensions
             CategoryId: request.CategoryId,
             ProductName: request.ProductName,
             Description: request.Description,
+            ImageUrl: NormalizeOptional(request.ImageUrl),
             ProductPhotosQty: request.ProductPhotosQty,
             ProductWeightG: request.ProductWeightG,
             ProductLengthCm: request.ProductLengthCm,
@@ -111,10 +116,17 @@ public static class ProductsMappingExtensions
             CategoryId = listing.CategoryId,
             ProductName = listing.ProductName,
             Description = listing.Description,
+            ImageUrl = listing.ImageUrl,
             CategoryName = listing.CategoryName,
             ListingPrice = listing.ListingPrice,
             InventoryQuantity = listing.InventoryQuantity,
             VisibilityStatus = listing.VisibilityStatus,
         };
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        var normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 }

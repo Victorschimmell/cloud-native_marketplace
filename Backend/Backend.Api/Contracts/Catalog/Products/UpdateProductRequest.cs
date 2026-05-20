@@ -13,6 +13,9 @@ public sealed record UpdateProductRequest
     public required string ProductName { get; init; }
     [MinLength(1)]
     public required string Description { get; init; }
+    [MaxLength(2048)]
+    [Url]
+    public string? ImageUrl { get; init; }
     [Range(0, double.MaxValue)]
     public required decimal Price { get; init; }
     [Range(0, int.MaxValue)]

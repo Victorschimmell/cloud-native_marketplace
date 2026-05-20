@@ -110,6 +110,10 @@ namespace Backend.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.Property<string>("OlistProductId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");

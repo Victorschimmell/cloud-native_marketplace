@@ -13,6 +13,7 @@ interface ProductFormState {
   description: string;
   price: string;
   categoryId: string;
+  imageUrl: string;
   inventoryQuantity: string;
   visibilityStatus: string;
 }
@@ -31,6 +32,7 @@ export default function EditProductPage() {
     description: state?.listing?.description ?? '',
     price: String(state?.listing?.listingPrice ?? ''),
     categoryId: state?.listing?.categoryId ?? '',
+    imageUrl: state?.listing?.imageUrl ?? '',
     inventoryQuantity: String(state?.listing?.inventoryQuantity ?? 0),
     visibilityStatus: state?.listing?.visibilityStatus ?? 'Draft',
   });
@@ -57,6 +59,7 @@ export default function EditProductPage() {
             description: found.description,
             price: String(found.listingPrice),
             categoryId: found.categoryId,
+            imageUrl: found.imageUrl ?? '',
             inventoryQuantity: String(found.inventoryQuantity),
             visibilityStatus: found.visibilityStatus,
           });
@@ -80,6 +83,7 @@ export default function EditProductPage() {
         categoryId: form.categoryId,
         productName: form.name,
         description: form.description,
+        imageUrl: normalizeOptional(form.imageUrl),
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
         visibilityStatus: form.visibilityStatus,
@@ -113,8 +117,7 @@ export default function EditProductPage() {
   return (
     <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="Update your product listing details.">
       <section className="add-product" aria-labelledby="edit-product-page-title">
-        <div className="add-product__header">
-          <h1 className="add-product__title">Edit Product</h1>
+        <div className="add-product__navigation">
           <Link to="/seller/products" className="add-product__back">
             Back to Dashboard
           </Link>
@@ -192,6 +195,19 @@ export default function EditProductPage() {
 
             <label className="add-product__field">
               <span className="add-product__field-label">
+                Product Image URL
+              </span>
+              <input
+                className="add-product__input"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={form.imageUrl}
+                onChange={(event) => updateField('imageUrl', event.target.value)}
+              />
+            </label>
+
+            <label className="add-product__field">
+              <span className="add-product__field-label">
                 Inventory Quantity <span className="add-product__required">*</span>
               </span>
               <input
@@ -234,4 +250,9 @@ export default function EditProductPage() {
       </section>
     </PageSkeleton>
   );
+}
+
+function normalizeOptional(value: string): string | null {
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
 }

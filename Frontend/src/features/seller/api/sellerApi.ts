@@ -7,6 +7,7 @@ export interface CreateProductRequest {
   categoryId: string;
   productName: string;
   description: string;
+  imageUrl?: string | null;
   price: number;
   inventoryQuantity: number;
 }
@@ -15,6 +16,7 @@ export interface UpdateProductRequest {
   categoryId: string;
   productName: string;
   description: string;
+  imageUrl?: string | null;
   price: number;
   inventoryQuantity: number;
   visibilityStatus: string;
@@ -25,6 +27,7 @@ export interface ProductResponse {
   categoryId: string;
   productName: string;
   description: string;
+  imageUrl?: string | null;
 }
 
 export interface SellerListing {
@@ -33,6 +36,7 @@ export interface SellerListing {
   categoryId: string;
   productName: string;
   description: string;
+  imageUrl?: string | null;
   categoryName: string | null;
   listingPrice: number;
   inventoryQuantity: number;

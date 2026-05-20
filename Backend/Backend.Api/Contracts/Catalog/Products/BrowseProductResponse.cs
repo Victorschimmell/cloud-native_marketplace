@@ -7,6 +7,7 @@ public sealed record BrowseProductResponse
     public required Guid CategoryId { get; init; }
     public required string ProductName { get; init; }
     public required string Description { get; init; }
+    public string? ImageUrl { get; init; }
     public required string? CategoryName { get; init; }
     public required decimal Price { get; init; }
     public required string CurrencyCode { get; init; }

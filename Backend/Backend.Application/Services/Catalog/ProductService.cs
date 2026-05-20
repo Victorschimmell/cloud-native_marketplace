@@ -229,6 +229,7 @@ public sealed class ProductService : IProductService
             CategoryId = request.CategoryId,
             ProductName = request.ProductName.Trim(),
             Description = request.Description.Trim(),
+            ImageUrl = request.ImageUrl,
             ProductNameLength = request.ProductName.Trim().Length,
             ProductDescriptionLength = request.Description.Trim().Length,
             ProductPhotosQty = request.ProductPhotosQty,
@@ -244,6 +245,7 @@ public sealed class ProductService : IProductService
             CategoryId = request.CategoryId,
             ProductName = request.ProductName.Trim(),
             Description = request.Description.Trim(),
+            ImageUrl = request.ImageUrl,
             ProductNameLength = request.ProductName.Trim().Length,
             ProductDescriptionLength = request.Description.Trim().Length,
             ProductPhotosQty = request.ProductPhotosQty,
@@ -258,6 +260,7 @@ public sealed class ProductService : IProductService
         product.CategoryId = request.CategoryId;
         product.ProductName = request.ProductName.Trim();
         product.Description = request.Description.Trim();
+        product.ImageUrl = request.ImageUrl;
         product.ProductNameLength = product.ProductName.Length;
         product.ProductDescriptionLength = product.Description.Length;
         product.ProductPhotosQty = request.ProductPhotosQty;

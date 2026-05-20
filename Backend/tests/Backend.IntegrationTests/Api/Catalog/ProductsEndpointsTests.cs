@@ -177,6 +177,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             ProductName = "Seller-specific product",
             CategoryId = seed.CategoryId,
             Description = "Updated only for the authenticated seller.",
+            ImageUrl = "https://example.com/seller-specific-product.jpg",
             Price = 42m,
             InventoryQuantity = 7,
             VisibilityStatus = "Published"
@@ -209,6 +210,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var sellerProduct = await dbContext.Products.FindAsync([sellerListing.ProductId], TestContext.Current.CancellationToken);
         Assert.NotNull(sellerProduct);
         Assert.Equal("Seller-specific product", sellerProduct.ProductName);
+        Assert.Equal("https://example.com/seller-specific-product.jpg", sellerProduct.ImageUrl);
     }
 
     [Fact]
