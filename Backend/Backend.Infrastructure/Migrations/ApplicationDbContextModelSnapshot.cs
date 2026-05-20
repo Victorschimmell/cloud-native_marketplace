@@ -765,6 +765,18 @@ namespace Backend.Infrastructure.Migrations
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<DateTimeOffset?>("FulfillmentApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentProcessingAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentShippedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FulfillmentStatus")
+                        .HasColumnType("integer");
+
                     b.Property<Guid>("ListingId")
                         .HasColumnType("uuid");
 

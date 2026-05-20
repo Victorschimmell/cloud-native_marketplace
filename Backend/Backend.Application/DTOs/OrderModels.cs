@@ -17,7 +17,11 @@ public sealed record OrderItemDto(
     decimal LineTotal,
     decimal FreightValue,
     string CurrencyCode,
-    DateTimeOffset? ShippingLimitDateUtc);
+    DateTimeOffset? ShippingLimitDateUtc,
+    OrderStatus FulfillmentStatus,
+    DateTimeOffset? FulfillmentApprovedAtUtc,
+    DateTimeOffset? FulfillmentProcessingAtUtc,
+    DateTimeOffset? FulfillmentShippedAtUtc);
 
 public sealed record PaymentDto(
     Guid OrderId,

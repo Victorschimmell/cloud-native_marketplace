@@ -29,6 +29,10 @@ export interface OrderItem {
   freightValue: number;
   currencyCode: CurrencyCode;
   shippingLimitDateUtc?: string | null;
+  fulfillmentStatus: OrderStatus;
+  fulfillmentApprovedAtUtc?: string | null;
+  fulfillmentProcessingAtUtc?: string | null;
+  fulfillmentShippedAtUtc?: string | null;
 }
 
 export interface Payment {

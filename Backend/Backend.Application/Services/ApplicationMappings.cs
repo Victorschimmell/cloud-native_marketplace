@@ -183,7 +183,11 @@ internal static class ApplicationMappings
             priceConverter(item.UnitPrice * item.Quantity),
             priceConverter(item.FreightValue),
             currencyCode,
-            item.ShippingLimitDateUtc);
+            item.ShippingLimitDateUtc,
+            item.FulfillmentStatus,
+            item.FulfillmentApprovedAtUtc,
+            item.FulfillmentProcessingAtUtc,
+            item.FulfillmentShippedAtUtc);
 
     public static PaymentDto ToPaymentDto(this OrderPayment payment) =>
         new(
@@ -307,10 +311,14 @@ internal static class ApplicationMappings
             priceConverter(sellerItems.Sum(item => item.FreightValue)),
             priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity + item.FreightValue)),
             currencyCode,
-            order.Items.All(item => item.SellerId == sellerId),
+            CanSellerUpdateItems(order.OrderStatus, sellerItems),
             sellerItems.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             sellerShipments);
     }
+
+    private static bool CanSellerUpdateItems(OrderStatus orderStatus, IReadOnlyCollection<OrderItem> sellerItems) =>
+        orderStatus is not (OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned) &&
+        sellerItems.Any(item => item.FulfillmentStatus is not (OrderStatus.Cancelled or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Returned));
 
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(

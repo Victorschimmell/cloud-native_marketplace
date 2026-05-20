@@ -267,18 +267,28 @@ public sealed class OrderService : IOrderService
         {
             return Result<SellerOrderSummaryDto>.NotFound("Order was not found for the authenticated seller.");
         }
-        if (order.Items.Any(item => item.SellerId != seller.Id))
+        if (order.OrderStatus is OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned)
         {
-            return Result<SellerOrderSummaryDto>.ValidationFailure("Order contains items from another seller and cannot be updated with order-level seller status.");
+            return Result<SellerOrderSummaryDto>.ValidationFailure($"Order cannot be updated in its current status of {order.OrderStatus}.");
         }
 
-        if (!CanSellerMoveOrderToStatus(order.OrderStatus, request.Status))
+        var sellerItems = order.Items
+            .Where(item => item.SellerId == seller.Id)
+            .ToArray();
+        var blockedItem = sellerItems.FirstOrDefault(item => !CanSellerMoveItemToStatus(item.FulfillmentStatus, request.Status));
+        if (blockedItem is not null)
         {
-            return Result<SellerOrderSummaryDto>.ValidationFailure($"Order cannot move from {order.OrderStatus} to {request.Status}.");
+            return Result<SellerOrderSummaryDto>.ValidationFailure($"Seller item {blockedItem.OrderItemId} cannot move from {blockedItem.FulfillmentStatus} to {request.Status}.");
         }
 
-        var previousStatus = order.OrderStatus;
-        ApplySellerOrderStatus(order, request.Status);
+        var previousOrderStatus = order.OrderStatus;
+        var now = DateTimeOffset.UtcNow;
+        foreach (var item in sellerItems)
+        {
+            ApplySellerItemStatus(item, request.Status, now);
+        }
+
+        ApplyDerivedOrderStatus(order, now);
 
         await _orderRepository.UpdateAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -288,7 +298,7 @@ public sealed class OrderService : IOrderService
             TargetEntityType: nameof(Order),
             TargetEntityId: order.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Seller {seller.Id} changed order {order.Id} status from {previousStatus} to {request.Status}."
+            Details: $"Seller {seller.Id} changed {sellerItems.Length} item(s) on order {order.Id} to {request.Status}. Order status moved from {previousOrderStatus} to {order.OrderStatus}."
         ), cancellationToken);
 
         var updatedOrder = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
@@ -353,7 +363,7 @@ public sealed class OrderService : IOrderService
         return Result<OrderDto>.Success(orderWithDetails.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
     }
 
-    private static bool CanSellerMoveOrderToStatus(OrderStatus currentStatus, OrderStatus nextStatus)
+    private static bool CanSellerMoveItemToStatus(OrderStatus currentStatus, OrderStatus nextStatus)
     {
         if (currentStatus == nextStatus)
         {
@@ -369,18 +379,77 @@ public sealed class OrderService : IOrderService
         };
     }
 
-    private static void ApplySellerOrderStatus(Order order, OrderStatus status)
+    private static void ApplySellerItemStatus(OrderItem item, OrderStatus status, DateTimeOffset now)
     {
-        order.OrderStatus = status;
+        item.FulfillmentStatus = status;
 
         if (status is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped)
         {
-            order.OrderApprovedAtUtc ??= DateTimeOffset.UtcNow;
+            item.FulfillmentApprovedAtUtc ??= now;
+        }
+
+        if (status is OrderStatus.Processing or OrderStatus.Shipped)
+        {
+            item.FulfillmentProcessingAtUtc ??= now;
         }
 
         if (status == OrderStatus.Shipped)
         {
-            order.OrderDeliveredCarrierDateUtc ??= DateTimeOffset.UtcNow;
+            item.FulfillmentShippedAtUtc ??= now;
         }
     }
+
+    private static void ApplyDerivedOrderStatus(Order order, DateTimeOffset now)
+    {
+        var derivedStatus = DeriveOrderStatusFromItems(order.Items);
+        order.OrderStatus = derivedStatus;
+
+        if (derivedStatus is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped)
+        {
+            order.OrderApprovedAtUtc ??= now;
+        }
+
+        if (derivedStatus == OrderStatus.Shipped)
+        {
+            order.OrderDeliveredCarrierDateUtc ??= now;
+        }
+    }
+
+    private static OrderStatus DeriveOrderStatusFromItems(IEnumerable<OrderItem> items)
+    {
+        var itemStatuses = items.Select(item => item.FulfillmentStatus).ToArray();
+        if (itemStatuses.Length == 0)
+        {
+            return OrderStatus.Pending;
+        }
+
+        if (itemStatuses.All(status => IsAtLeast(status, OrderStatus.Shipped)))
+        {
+            return OrderStatus.Shipped;
+        }
+
+        if (itemStatuses.All(status => IsAtLeast(status, OrderStatus.Processing)))
+        {
+            return OrderStatus.Processing;
+        }
+
+        if (itemStatuses.All(status => IsAtLeast(status, OrderStatus.Approved)))
+        {
+            return OrderStatus.Approved;
+        }
+
+        return OrderStatus.Pending;
+    }
+
+    private static bool IsAtLeast(OrderStatus currentStatus, OrderStatus targetStatus) =>
+        GetFulfillmentRank(currentStatus) >= GetFulfillmentRank(targetStatus);
+
+    private static int GetFulfillmentRank(OrderStatus status) =>
+        status switch
+        {
+            OrderStatus.Approved => 2,
+            OrderStatus.Processing => 3,
+            OrderStatus.Shipped or OrderStatus.Delivered => 4,
+            _ => 1
+        };
 }

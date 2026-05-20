@@ -17,4 +17,8 @@ public sealed record OrderItemModel
     public required decimal FreightValue { get; init; }
     public required string CurrencyCode { get; init; }
     public DateTimeOffset? ShippingLimitDateUtc { get; init; }
+    public required OrderStatus FulfillmentStatus { get; init; }
+    public DateTimeOffset? FulfillmentApprovedAtUtc { get; init; }
+    public DateTimeOffset? FulfillmentProcessingAtUtc { get; init; }
+    public DateTimeOffset? FulfillmentShippedAtUtc { get; init; }
 }

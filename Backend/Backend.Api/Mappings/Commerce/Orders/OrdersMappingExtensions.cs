@@ -105,7 +105,11 @@ public static class OrdersMappingExtensions
             LineTotal = item.LineTotal,
             FreightValue = item.FreightValue,
             CurrencyCode = item.CurrencyCode,
-            ShippingLimitDateUtc = item.ShippingLimitDateUtc
+            ShippingLimitDateUtc = item.ShippingLimitDateUtc,
+            FulfillmentStatus = (OrderStatus)item.FulfillmentStatus,
+            FulfillmentApprovedAtUtc = item.FulfillmentApprovedAtUtc,
+            FulfillmentProcessingAtUtc = item.FulfillmentProcessingAtUtc,
+            FulfillmentShippedAtUtc = item.FulfillmentShippedAtUtc
         };
 
     public static App.CancelOrderRequest ToApplicationRequest(this CancelOrderRequest request, Guid orderId) =>

@@ -55,9 +55,13 @@ export default function SellerOrderDetailsPage() {
     return () => controller.abort();
   }, [currency, id]);
 
+  const sellerFulfillmentStatus = useMemo(
+    () => (order ? getSellerFulfillmentStatusFromItems(order) : undefined),
+    [order],
+  );
   const actions = useMemo(
-    () => (order?.canUpdateStatus ? getStatusActions(order.orderStatus) : []),
-    [order?.canUpdateStatus, order?.orderStatus],
+    () => (order?.canUpdateStatus ? getStatusActions(sellerFulfillmentStatus) : []),
+    [order?.canUpdateStatus, sellerFulfillmentStatus],
   );
   const itemCount = order?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
   const earliestShippingLimit = useMemo(() => {
@@ -79,7 +83,7 @@ export default function SellerOrderDetailsPage() {
       const updatedOrder = await sellerApi.updateMyOrderStatus(order.id, status, currency);
       setOrder(updatedOrder);
       setError(null);
-      setSuccessMessage(`Order status updated to ${status}.`);
+      setSuccessMessage(`Seller items updated to ${status}.`);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Order status could not be updated.');
     } finally {
@@ -162,6 +166,7 @@ export default function SellerOrderDetailsPage() {
                         <div>
                           <h3>{item.productName}</h3>
                           <p>Quantity {item.quantity} - Unit {formatMoney(item.unitPrice, item.currencyCode)}</p>
+                          <p>Seller status {item.fulfillmentStatus}</p>
                           <p>Ship by {formatDateTime(item.shippingLimitDateUtc)}</p>
                         </div>
                       </div>
@@ -178,7 +183,7 @@ export default function SellerOrderDetailsPage() {
                 <div className="seller-order-details__panel-heading">
                   <div>
                     <h2>Status</h2>
-                    <p>Order-level fulfillment controls</p>
+                    <p>Seller item fulfillment controls</p>
                   </div>
                 </div>
 
@@ -226,9 +231,7 @@ export default function SellerOrderDetailsPage() {
                   </div>
                 ) : (
                   <p className="seller-order-details__muted">
-                    {order.canUpdateStatus
-                      ? 'No seller status actions are available for this order.'
-                      : 'This order includes items from another seller, so order-level status changes are unavailable.'}
+                    No seller status actions are available for your items on this order.
                   </p>
                 )}
 
@@ -268,7 +271,7 @@ export default function SellerOrderDetailsPage() {
               <div className="seller-order-details__panel-heading">
                 <div>
                   <h2>Status Path</h2>
-                  <p>Order-level progress for this seller workflow</p>
+                  <p>Order progress derived from all seller items</p>
                 </div>
               </div>
 
@@ -283,13 +286,13 @@ export default function SellerOrderDetailsPage() {
                   detail={order.orderApprovedAtUtc ? formatDateTime(order.orderApprovedAtUtc) : undefined}
                   isComplete={isAtLeastStatus(order.orderStatus, 'Approved')}
                   label="Seller approval"
-                  value={getSellerApprovalState(order)}
+                  value={getOrderApprovalState(order)}
                 />
                 <StatusPathItem
                   detail={order.orderDeliveredCarrierDateUtc ? formatDateTime(order.orderDeliveredCarrierDateUtc) : undefined}
                   isComplete={isAtLeastStatus(order.orderStatus, 'Shipped')}
-                  label="Fulfillment"
-                  value={getSellerFulfillmentState(order)}
+                  label="Order fulfillment"
+                  value={getOrderFulfillmentState(order)}
                 />
               </dl>
             </section>
@@ -333,8 +336,8 @@ function getStatusActions(status: OrderStatus | undefined): StatusAction[] {
     return [
       {
         status: 'Approved',
-        label: 'Approve Order',
-        note: 'Moves the order into the seller fulfillment queue.',
+        label: 'Approve Seller Items',
+        note: 'Approves the products assigned to your seller account.',
       },
     ];
   }
@@ -349,7 +352,7 @@ function getStatusActions(status: OrderStatus | undefined): StatusAction[] {
       {
         status: 'Shipped',
         label: 'Mark Seller Items Shipped',
-        note: 'Marks the order as shipped for the current order-level workflow.',
+        note: 'Marks your products as shipped. The order moves once all products are shipped.',
       },
     ];
   }
@@ -367,11 +370,11 @@ function getStatusActions(status: OrderStatus | undefined): StatusAction[] {
   return [];
 }
 
-function getSellerApprovalState(order: SellerOrderSummary): string {
+function getOrderApprovalState(order: SellerOrderSummary): string {
   return isAtLeastStatus(order.orderStatus, 'Approved') ? 'Approved' : 'Pending';
 }
 
-function getSellerFulfillmentState(order: SellerOrderSummary): string {
+function getOrderFulfillmentState(order: SellerOrderSummary): string {
   if (order.orderStatus === 'Delivered') {
     return 'Delivered';
   }
@@ -387,7 +390,17 @@ function getSellerFulfillmentState(order: SellerOrderSummary): string {
   return 'Not started';
 }
 
+function getSellerFulfillmentStatusFromItems(order: SellerOrderSummary): OrderStatus {
+  return order.items.reduce<OrderStatus>((lowestStatus, item) => (
+    getStatusRank(item.fulfillmentStatus) < getStatusRank(lowestStatus) ? item.fulfillmentStatus : lowestStatus
+  ), 'Shipped');
+}
+
 function isAtLeastStatus(current: OrderStatus, target: OrderStatus): boolean {
+  return getStatusRank(current) >= getStatusRank(target);
+}
+
+function getStatusRank(status: OrderStatus): number {
   const rank: Record<OrderStatus, number> = {
     Pending: 1,
     Approved: 2,
@@ -398,5 +411,5 @@ function isAtLeastStatus(current: OrderStatus, target: OrderStatus): boolean {
     Returned: 0,
   };
 
-  return rank[current] >= rank[target];
+  return rank[status];
 }
