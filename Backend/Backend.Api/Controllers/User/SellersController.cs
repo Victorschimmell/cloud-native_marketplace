@@ -9,6 +9,7 @@ using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using App = Backend.Application.DTOs;
 using ApiOrderStatus = Backend.Api.Contracts.Commerce.Orders.OrderStatus;
 using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
 
@@ -98,6 +99,44 @@ public class SellersController : ApiControllerBase
 
         var result = await _orderService.GetStatsBySellerUserAsync(authenticatedUserId, currency, cancellationToken);
         return HandleResult(result, stats => stats.ToSellerStatsModel());
+    }
+
+    [Authorize]
+    [HttpGet("me/orders/{orderId:guid}")]
+    public async Task<ActionResult<SellerOrderSummaryModel>> GetMyOrderByIdAsync(
+        [NotEmptyGuid] Guid orderId,
+        [FromQuery] string? currency,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _orderService.GetByIdForSellerUserAsync(orderId, authenticatedUserId, currency, cancellationToken);
+        return HandleResult(result, order => order.ToSellerSummaryModel());
+    }
+
+    [Authorize]
+    [HttpPatch("me/orders/{orderId:guid}/status")]
+    public async Task<ActionResult<SellerOrderSummaryModel>> UpdateMyOrderStatusAsync(
+        [NotEmptyGuid] Guid orderId,
+        [FromBody] UpdateOrderStatusRequest request,
+        [FromQuery] string? currency,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _orderService.UpdateStatusForSellerUserAsync(
+            new App.UpdateOrderStatusRequest(orderId, (DomainOrderStatus)(int)request.Status),
+            authenticatedUserId,
+            currency,
+            cancellationToken);
+
+        return HandleResult(result, order => order.ToSellerSummaryModel());
     }
 
     private bool TryGetCurrentUserId(out Guid userId)

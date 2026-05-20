@@ -100,9 +100,27 @@ export const sellerApi = {
     return request<PageResponse<SellerOrderSummary>>(`/api/sellers/me/orders?${params}`, { signal });
   },
 
+  getMyOrder: async (orderId: string, currency: CurrencyCode, signal?: AbortSignal): Promise<SellerOrderSummary> => {
+    const params = new URLSearchParams({ currency });
+    return request<SellerOrderSummary>(`/api/sellers/me/orders/${orderId}?${params}`, { signal });
+  },
+
   getMyOrderStats: async (currency: CurrencyCode, signal?: AbortSignal): Promise<SellerOrderStats> => {
     const params = new URLSearchParams({ currency });
     return request<SellerOrderStats>(`/api/sellers/me/order-stats?${params}`, { signal });
+  },
+
+  updateMyOrderStatus: async (
+    orderId: string,
+    status: OrderStatus,
+    currency: CurrencyCode,
+  ): Promise<SellerOrderSummary> => {
+    const params = new URLSearchParams({ currency });
+    return request<SellerOrderSummary>(`/api/sellers/me/orders/${orderId}/status?${params}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
   },
 
   updateProduct: async (listingId: string, data: UpdateProductRequest): Promise<ProductResponse> => {

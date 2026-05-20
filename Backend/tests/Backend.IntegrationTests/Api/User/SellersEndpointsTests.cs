@@ -49,8 +49,8 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     public async Task GetMyOrders_WhenOrderContainsSellerItem_ReturnsOnlySellerOrdersAndLines()
     {
         // Arrange
-        var (sellerUserId, expectedOrderNumber) = await SeedSellerOrdersAsync();
-        AuthenticateAs(sellerUserId);
+        var seed = await SeedSellerOrdersAsync();
+        AuthenticateAs(seed.SellerUserId);
 
         // Act
         var response = await _client.GetAsync(
@@ -66,9 +66,9 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         Assert.NotNull(page);
         var order = Assert.Single(page.Items);
-        Assert.Equal(expectedOrderNumber, order.OrderNumber);
+        Assert.Equal(seed.ExpectedOrderNumber, order.OrderNumber);
         Assert.Equal("Test Customer", order.CustomerName);
-        Assert.Equal("seller-orders-customer@example.com", order.CustomerEmail);
+        Assert.Equal(seed.CustomerEmail, order.CustomerEmail);
         Assert.Equal(50m, order.SubtotalAmount);
         Assert.Equal(5m, order.FreightAmount);
         Assert.Equal(55m, order.TotalAmount);
@@ -88,16 +88,82 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(55m, stats.TotalRevenue);
     }
 
-    private async Task<(Guid SellerUserId, string ExpectedOrderNumber)> SeedSellerOrdersAsync()
+    [Fact]
+    public async Task GetMyOrderById_WhenOrderContainsSellerItem_ReturnsOnlySellerOrderLines()
+    {
+        // Arrange
+        var seed = await SeedSellerOrdersAsync();
+        AuthenticateAs(seed.SellerUserId);
+
+        // Act
+        var response = await _client.GetAsync(
+            $"/api/sellers/me/orders/{seed.SellerOrderId}?currency=BRL",
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var order = await response.Content.ReadFromJsonAsync<SellerOrderSummaryModel>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(order);
+        Assert.Equal(seed.ExpectedOrderNumber, order.OrderNumber);
+        Assert.Equal(50m, order.SubtotalAmount);
+        Assert.Equal(5m, order.FreightAmount);
+        Assert.Equal(55m, order.TotalAmount);
+        var item = Assert.Single(order.Items);
+        Assert.Equal("Seller owned product", item.ProductName);
+    }
+
+    [Fact]
+    public async Task UpdateMyOrderStatus_WhenSellerOwnsOrderLine_MarksOrderAsShipped()
+    {
+        // Arrange
+        var seed = await SeedSellerOrdersAsync();
+        AuthenticateAs(seed.SellerUserId);
+        var request = new UpdateOrderStatusRequest
+        {
+            Status = OrderStatus.Shipped
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/sellers/me/orders/{seed.SellerOrderId}/status?currency=BRL",
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var order = await response.Content.ReadFromJsonAsync<SellerOrderSummaryModel>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(order);
+        Assert.Equal(OrderStatus.Shipped, order.OrderStatus);
+        Assert.NotNull(order.OrderDeliveredCarrierDateUtc);
+        Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var savedOrder = await dbContext.Orders.FindAsync([seed.SellerOrderId], TestContext.Current.CancellationToken);
+        Assert.NotNull(savedOrder);
+        Assert.Equal(DomainOrderStatus.Shipped, savedOrder.OrderStatus);
+        Assert.NotNull(savedOrder.OrderDeliveredCarrierDateUtc);
+    }
+
+    private async Task<SellerOrdersSeed> SeedSellerOrdersAsync()
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var customerUser = TestEntityFactory.CreateUserAccount("seller-orders-customer@example.com");
+        var unique = Guid.NewGuid().ToString("N");
+        var customerEmail = $"seller-orders-customer-{unique}@example.com";
+        var customerUser = TestEntityFactory.CreateUserAccount(customerEmail);
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
-        var sellerUser = TestEntityFactory.CreateUserAccount("seller-orders-seller@example.com");
+        var sellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-seller-{unique}@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
-        var otherSellerUser = TestEntityFactory.CreateUserAccount("seller-orders-other@example.com");
+        var otherSellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-other-{unique}@example.com");
         var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("categoria", "Category");
@@ -158,7 +224,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return (sellerUser.Id, expectedOrderNumber);
+        return new SellerOrdersSeed(sellerUser.Id, otherSellerUser.Id, sellerOrder.Id, expectedOrderNumber, customerEmail);
     }
 
     private void AuthenticateAs(Guid userId)
@@ -167,4 +233,11 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
             "Bearer",
             IntegrationTestAuth.CreateBearerToken(userId));
     }
+
+    private sealed record SellerOrdersSeed(
+        Guid SellerUserId,
+        Guid OtherSellerUserId,
+        Guid SellerOrderId,
+        string ExpectedOrderNumber,
+        string CustomerEmail);
 }

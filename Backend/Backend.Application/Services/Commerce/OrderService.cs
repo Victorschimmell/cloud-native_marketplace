@@ -169,6 +169,32 @@ public sealed class OrderService : IOrderService
             new PagedResult<SellerOrderSummaryDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
     }
 
+    public async Task<Result<SellerOrderSummaryDto>> GetByIdForSellerUserAsync(
+        Guid orderId,
+        Guid authenticatedUserId,
+        string? currency,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<SellerOrderSummaryDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (seller is null)
+        {
+            return Result<SellerOrderSummaryDto>.NotFound("Seller profile was not found for the authenticated user.");
+        }
+
+        var order = await _orderRepository.GetByIdWithDetailsAsync(orderId, cancellationToken);
+        if (order is null || !order.Items.Any(item => item.SellerId == seller.Id))
+        {
+            return Result<SellerOrderSummaryDto>.NotFound("Order was not found for the authenticated seller.");
+        }
+
+        return Result<SellerOrderSummaryDto>.Success(order.ToSellerOrderSummaryDto(seller.Id, currencyCode, priceConverter));
+    }
+
     public async Task<Result<SellerOrderStatsDto>> GetStatsBySellerUserAsync(
         Guid authenticatedUserId,
         string? currency,
@@ -201,6 +227,57 @@ public sealed class OrderService : IOrderService
     public Task<Result<OrderDto>> UpdateStatusAsync(UpdateOrderStatusRequest request, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Result<OrderDto>.NotImplemented());
+    }
+
+    public async Task<Result<SellerOrderSummaryDto>> UpdateStatusForSellerUserAsync(
+        UpdateOrderStatusRequest request,
+        Guid authenticatedUserId,
+        string? currency,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<SellerOrderSummaryDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (seller is null)
+        {
+            return Result<SellerOrderSummaryDto>.NotFound("Seller profile was not found for the authenticated user.");
+        }
+
+        var order = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
+        if (order is null || !order.Items.Any(item => item.SellerId == seller.Id))
+        {
+            return Result<SellerOrderSummaryDto>.NotFound("Order was not found for the authenticated seller.");
+        }
+
+        if (!CanSellerMoveOrderToStatus(order.OrderStatus, request.Status))
+        {
+            return Result<SellerOrderSummaryDto>.ValidationFailure($"Order cannot move from {order.OrderStatus} to {request.Status}.");
+        }
+
+        var previousStatus = order.OrderStatus;
+        ApplySellerOrderStatus(order, request.Status);
+
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Updated,
+            TargetEntityType: nameof(Order),
+            TargetEntityId: order.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Seller {seller.Id} changed order {order.Id} status from {previousStatus} to {request.Status}."
+        ), cancellationToken);
+
+        var updatedOrder = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
+        if (updatedOrder is null)
+        {
+            return Result<SellerOrderSummaryDto>.NotFound("Order was not found after update.");
+        }
+
+        return Result<SellerOrderSummaryDto>.Success(updatedOrder.ToSellerOrderSummaryDto(seller.Id, currencyCode, priceConverter));
     }
 
     public async Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
@@ -254,5 +331,36 @@ public sealed class OrderService : IOrderService
         }
 
         return Result<OrderDto>.Success(orderWithDetails.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
+    }
+
+    private static bool CanSellerMoveOrderToStatus(OrderStatus currentStatus, OrderStatus nextStatus)
+    {
+        if (currentStatus == nextStatus)
+        {
+            return true;
+        }
+
+        return currentStatus switch
+        {
+            OrderStatus.Pending => nextStatus == OrderStatus.Approved,
+            OrderStatus.Approved => nextStatus is OrderStatus.Processing or OrderStatus.Shipped,
+            OrderStatus.Processing => nextStatus == OrderStatus.Shipped,
+            _ => false
+        };
+    }
+
+    private static void ApplySellerOrderStatus(Order order, OrderStatus status)
+    {
+        order.OrderStatus = status;
+
+        if (status is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped)
+        {
+            order.OrderApprovedAtUtc ??= DateTimeOffset.UtcNow;
+        }
+
+        if (status == OrderStatus.Shipped)
+        {
+            order.OrderDeliveredCarrierDateUtc ??= DateTimeOffset.UtcNow;
+        }
     }
 }
