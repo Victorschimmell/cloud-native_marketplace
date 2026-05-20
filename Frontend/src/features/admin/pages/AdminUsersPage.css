@@ -1,21 +1,30 @@
 .admin-users-page {
+  --admin-border: #e5e7eb;
+  --admin-text: #111827;
+  --admin-muted: #6b7280;
+  --admin-bg-soft: #f9fafb;
+
+  color: var(--admin-text);
   display: grid;
-  grid-template-columns: 1fr minmax(280px, 360px);
   gap: 24px;
-  align-items: start;
 }
 
 .admin-users-page__panel {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--admin-border);
   border-radius: 8px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .admin-users-page__panel-header {
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
+  align-items: flex-end;
+  background: var(--admin-bg-soft);
+  border-bottom: 1px solid var(--admin-border);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 18px 24px;
 }
 
 .admin-users-page__panel-title {
@@ -24,13 +33,18 @@
   font-weight: 700;
 }
 
+.admin-users-page__panel-subtitle {
+  margin: 4px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
 .admin-users-page__filters {
   display: inline-flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
   font-size: 14px;
-  margin-top: 10px;
 }
 
 .admin-users-page__filter {
@@ -40,33 +54,61 @@
 }
 
 .admin-users-page__filter select {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--admin-border);
   border-radius: 6px;
   padding: 6px 10px;
   font: inherit;
   background: #ffffff;
 }
 
+.admin-users-page__table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .admin-users-page__table {
+  table-layout: fixed;
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 840px;
+}
+
+.admin-users-page__table th:nth-child(1) {
+  width: 38%;
+}
+
+.admin-users-page__table th:nth-child(2) {
+  width: 12%;
+}
+
+.admin-users-page__table th:nth-child(3) {
+  width: 16%;
+}
+
+.admin-users-page__table th:nth-child(4) {
+  width: 14%;
+}
+
+.admin-users-page__table th:nth-child(5) {
+  width: 20%;
 }
 
 .admin-users-page__table thead th {
   text-align: left;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
-  color: #111827;
+  background: var(--admin-bg-soft);
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text);
   font-weight: 700;
-  padding: 12px 24px;
+  padding: 12px 18px;
   white-space: nowrap;
 }
 
 .admin-users-page__table tbody td {
-  padding: 14px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--admin-border);
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .admin-users-page__table tbody tr:last-child td {
@@ -86,20 +128,40 @@
 .admin-users-page__user-email {
   margin: 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--admin-muted);
 }
 
 .admin-users-page__user-company {
   margin: 0;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--admin-muted);
 }
 
 .admin-users-page__empty {
-  padding: 24px;
+  padding: 32px 24px;
   text-align: center;
-  color: #6b7280;
+  color: var(--admin-muted);
   font-size: 14px;
+}
+
+.admin-users-page__empty--error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.admin-users-page__notice {
+  margin: 0;
+  border-bottom: 1px solid var(--admin-border);
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 14px;
+  padding: 14px 24px;
+}
+
+.admin-users-page__actions {
+  display: inline-flex;
+  gap: 12px;
+  white-space: nowrap;
 }
 
 .admin-users-page__action {
@@ -112,8 +174,29 @@
   color: #1e40af;
 }
 
+.admin-users-page__action--approve,
+.admin-users-page__action--unblock {
+  color: #16a34a;
+}
+
+.admin-users-page__action--reject,
+.admin-users-page__action--block {
+  color: #dc2626;
+}
+
 .admin-users-page__action:hover {
   text-decoration: underline;
+}
+
+.admin-users-page__action:disabled {
+  color: var(--admin-muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.admin-users-page__no-action {
+  color: var(--admin-muted);
+  font-size: 13px;
 }
 
 .admin-users-page__badge {
@@ -168,12 +251,33 @@
 }
 
 .admin-users-page__detail-label {
-  color: #6b7280;
+  color: var(--admin-muted);
   font-weight: 600;
 }
 
-@media (max-width: 1000px) {
-  .admin-users-page {
-    grid-template-columns: 1fr;
+.admin-users-page .pagination {
+  border-top: 1px solid var(--admin-border);
+  margin-top: 0;
+  padding: 16px 24px;
+}
+
+@media (max-width: 760px) {
+  .admin-users-page__panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-users-page__filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-users-page__filter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-users-page__table {
+    min-width: 840px;
   }
 }

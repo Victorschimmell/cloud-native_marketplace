@@ -46,6 +46,8 @@ export interface AdminUser {
   name: string;
   email: string;
   company?: string; // only shown for sellers
+  sellerId?: string;
+  pendingVerificationRequestId?: string;
   role: AdminUserRole;
   status: AdminUserStatus;
   registeredOn: string; // ISO date

@@ -1,38 +1,80 @@
 import type { AdminUser } from '../data/placeholderData';
 
+type UserTableAction = 'block' | 'unblock' | 'approve' | 'reject';
+
 interface UsersTableProps {
   users: AdminUser[];
-  // Called when "Manage" is clicked on a row.
-  onManage: (user: AdminUser) => void;
+  pendingAction?: {
+    userId: string;
+    action: UserTableAction;
+  } | null;
+  onApproveVerification: (user: AdminUser) => void;
+  onBlock: (user: AdminUser) => void;
+  onRejectVerification: (user: AdminUser) => void;
+  onUnblock: (user: AdminUser) => void;
 }
 
-// Users table on the User Management page. Filters and selection live in the parent.
-export default function UsersTable({ users, onManage }: UsersTableProps) {
-  if (users.length === 0) {
-    return <p className="admin-users-page__empty">No users match the current filters.</p>;
-  }
-
+// Users table on the User Management page. Filters, pagination and mutations live in the parent.
+export default function UsersTable({
+  users,
+  pendingAction = null,
+  onApproveVerification,
+  onBlock,
+  onRejectVerification,
+  onUnblock,
+}: UsersTableProps) {
   return (
-    <table className="admin-users-page__table">
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Registered</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {users.map((user) => (
-          <UserRow key={user.id} user={user} onManage={onManage} />
-        ))}
-      </tbody>
-    </table>
+    <div className="admin-users-page__table-wrap">
+      <table className="admin-users-page__table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Registered</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <UserRow
+              key={user.id}
+              user={user}
+              pendingAction={pendingAction?.userId === user.id ? pendingAction.action : null}
+              onApproveVerification={onApproveVerification}
+              onBlock={onBlock}
+              onRejectVerification={onRejectVerification}
+              onUnblock={onUnblock}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
-function UserRow({ user, onManage }: { user: AdminUser; onManage: (user: AdminUser) => void }) {
+interface UserRowProps {
+  user: AdminUser;
+  pendingAction: UserTableAction | null;
+  onApproveVerification: (user: AdminUser) => void;
+  onBlock: (user: AdminUser) => void;
+  onRejectVerification: (user: AdminUser) => void;
+  onUnblock: (user: AdminUser) => void;
+}
+
+function UserRow({
+  user,
+  pendingAction,
+  onApproveVerification,
+  onBlock,
+  onRejectVerification,
+  onUnblock,
+}: UserRowProps) {
+  const isBlocked = user.status === 'blocked';
+  const canReviewSeller = user.status === 'pending verification'
+    && Boolean(user.sellerId)
+    && Boolean(user.pendingVerificationRequestId);
+
   return (
     <tr>
       <td>
@@ -50,13 +92,52 @@ function UserRow({ user, onManage }: { user: AdminUser; onManage: (user: AdminUs
       </td>
       <td>{formatDate(user.registeredOn)}</td>
       <td>
-        <button
-          type="button"
-          className="admin-users-page__action"
-          onClick={() => onManage(user)}
-        >
-          Manage
-        </button>
+        <div className="admin-users-page__actions">
+          {canReviewSeller ? (
+            <>
+              <button
+                type="button"
+                className="admin-users-page__action admin-users-page__action--approve"
+                disabled={pendingAction !== null}
+                onClick={() => onApproveVerification(user)}
+              >
+                {pendingAction === 'approve' ? 'Working...' : 'Approve'}
+              </button>
+              <button
+                type="button"
+                className="admin-users-page__action admin-users-page__action--reject"
+                disabled={pendingAction !== null}
+                onClick={() => onRejectVerification(user)}
+              >
+                {pendingAction === 'reject' ? 'Working...' : 'Reject'}
+              </button>
+            </>
+          ) : null}
+
+          {isBlocked ? (
+            <button
+              type="button"
+              className="admin-users-page__action admin-users-page__action--unblock"
+              disabled={pendingAction !== null}
+              onClick={() => onUnblock(user)}
+            >
+              {pendingAction === 'unblock' ? 'Working...' : 'Unblock'}
+            </button>
+          ) : user.role !== 'Admin' ? (
+            <button
+              type="button"
+              className="admin-users-page__action admin-users-page__action--block"
+              disabled={pendingAction !== null}
+              onClick={() => onBlock(user)}
+            >
+              {pendingAction === 'block' ? 'Working...' : 'Block'}
+            </button>
+          ) : null}
+
+          {!canReviewSeller && !isBlocked && user.role === 'Admin' ? (
+            <span className="admin-users-page__no-action">No actions</span>
+          ) : null}
+        </div>
       </td>
     </tr>
   );

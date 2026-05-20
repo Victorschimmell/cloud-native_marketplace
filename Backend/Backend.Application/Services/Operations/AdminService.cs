@@ -325,6 +325,12 @@ public sealed class AdminService : IAdminService
             status = "active";
         }
 
+        var pendingVerificationRequestId = user.SellerProfile?.VerificationRequests
+            .Where(request => request.Status == SellerVerificationRequestStatus.Submitted)
+            .OrderByDescending(request => request.SubmittedAtUtc)
+            .Select(request => (Guid?)request.Id)
+            .FirstOrDefault();
+
         return new AdminUserDto(
             user.Id,
             user.Email.Value,
@@ -332,6 +338,8 @@ public sealed class AdminService : IAdminService
             role,
             status,
             company,
+            user.SellerProfile?.Id,
+            pendingVerificationRequestId,
             user.CreatedAtUtc,
             user.LastLoginAtUtc);
     }

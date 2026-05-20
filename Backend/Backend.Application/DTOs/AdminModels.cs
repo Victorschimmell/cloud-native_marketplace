@@ -36,6 +36,8 @@ public sealed record AdminUserDto(
     string Role,
     string Status,
     string? Company,
+    Guid? SellerId,
+    Guid? PendingVerificationRequestId,
     DateTimeOffset RegisteredAtUtc,
     DateTimeOffset? LastLoginAtUtc);
 

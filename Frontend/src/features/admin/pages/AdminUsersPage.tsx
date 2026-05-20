@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
+import { ApiError } from '../../../shared/api/request';
+import Pagination from '../../../shared/components/Pagination';
 import UsersTable from '../components/UsersTable';
-import UserDetailsPanel from '../components/UserDetailsPanel';
 import {
   adminApi,
   type AdminUserResponse,
@@ -17,59 +18,137 @@ import './AdminUsersPage.css';
 
 type RoleFilter = AdminUserRole | 'All';
 type StatusFilter = 'active' | 'pending' | 'blocked' | 'All';
+type PendingAction = {
+  userId: string;
+  action: 'block' | 'unblock' | 'approve' | 'reject';
+} | null;
 
-// User Management page. Filter users by role + status, click "Manage" to see details.
+const usersPageSize = 10;
+
+// User Management page. Filter users by role/status and run admin account actions.
 export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / usersPageSize)), [totalCount]);
+
+  const loadUsers = useCallback(async (targetPage: number, signal?: AbortSignal) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await adminApi.listUsers(targetPage, usersPageSize, {
+        role: roleToApi(roleFilter),
+        status: statusToApi(statusFilter),
+        signal,
+      });
+      setUsers(response.items.map(toAdminUser));
+      setTotalCount(response.totalCount);
+    } catch (requestError) {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+        return;
+      }
+      setError(`Could not load users: ${getErrorMessage(requestError)}`);
+      setUsers([]);
+      setTotalCount(0);
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }, [roleFilter, statusFilter]);
 
   useEffect(() => {
     const abortController = new AbortController();
+    void loadUsers(page, abortController.signal);
+    return () => abortController.abort();
+  }, [loadUsers, page]);
 
-    async function load() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await adminApi.listUsers(1, 100, {
-          role: roleToApi(roleFilter),
-          status: statusToApi(statusFilter),
-          signal: abortController.signal,
+  async function runUserAction(user: AdminUser, action: Exclude<PendingAction, null>['action']) {
+    setError(null);
+    setActionMessage(null);
+    setPendingAction({ userId: user.id, action });
+
+    try {
+      if (action === 'block') {
+        const reason = window.prompt('Block reason (optional):') ?? undefined;
+        await adminApi.blockUser(user.id, reason || undefined);
+        setActionMessage(`${user.name} has been blocked.`);
+      } else if (action === 'unblock') {
+        const reason = window.prompt('Unblock reason (optional):') ?? undefined;
+        await adminApi.unblockUser(user.id, reason || undefined);
+        setActionMessage(`${user.name} has been unblocked.`);
+      } else if (action === 'approve') {
+        if (!user.sellerId || !user.pendingVerificationRequestId) {
+          throw new Error('This seller does not have a pending verification request.');
+        }
+        const reviewNotes = window.prompt('Review notes (optional):') ?? undefined;
+        await adminApi.verifySeller(user.sellerId, user.pendingVerificationRequestId, {
+          approve: true,
+          reviewNotes: reviewNotes || undefined,
         });
-        setUsers(response.items.map(toAdminUser));
-      } catch (requestError) {
-        if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+        setActionMessage(`${user.name} has been approved as a seller.`);
+      } else {
+        if (!user.sellerId || !user.pendingVerificationRequestId) {
+          throw new Error('This seller does not have a pending verification request.');
+        }
+        const rejectionReason = window.prompt('Rejection reason:');
+        if (!rejectionReason?.trim()) {
           return;
         }
-        setError('Could not load users.');
-      } finally {
-        if (!abortController.signal.aborted) {
-          setIsLoading(false);
-        }
+        await adminApi.verifySeller(user.sellerId, user.pendingVerificationRequestId, {
+          approve: false,
+          rejectionReason: rejectionReason.trim(),
+        });
+        setActionMessage(`${user.name} has been rejected as a seller.`);
       }
+
+      await loadUsers(page);
+    } catch (requestError) {
+      setError(`Could not ${action} user: ${getErrorMessage(requestError)}`);
+    } finally {
+      setPendingAction(null);
     }
+  }
 
-    void load();
-    return () => abortController.abort();
-  }, [roleFilter, statusFilter]);
+  function handleRoleChange(value: RoleFilter) {
+    setRoleFilter(value);
+    setPage(1);
+  }
 
-  const filteredUsers = useMemo(() => users, [users]);
+  function handleStatusChange(value: StatusFilter) {
+    setStatusFilter(value);
+    setPage(1);
+  }
+
+  function goToPreviousPage() {
+    setPage((currentPage) => Math.max(1, currentPage - 1));
+  }
+
+  function goToNextPage() {
+    setPage((currentPage) => Math.min(totalPages, currentPage + 1));
+  }
 
   return (
     <PageSkeleton title="User Management" summary="Browse, filter and inspect every account on the platform.">
       <div className="admin-users-page">
         <div className="admin-users-page__panel">
           <div className="admin-users-page__panel-header">
-            <h2 className="admin-users-page__panel-title">All Users</h2>
+            <div>
+              <h2 className="admin-users-page__panel-title">All Users</h2>
+              <p className="admin-users-page__panel-subtitle">Visible to all administrators</p>
+            </div>
             <div className="admin-users-page__filters">
               <label className="admin-users-page__filter">
                 Role:
                 <select
                   value={roleFilter}
-                  onChange={(event) => setRoleFilter(event.target.value as RoleFilter)}
+                  onChange={(event) => handleRoleChange(event.target.value as RoleFilter)}
                 >
                   <option value="All">All</option>
                   <option value="Customer">Customer</option>
@@ -82,7 +161,7 @@ export default function AdminUsersPage() {
                 Status:
                 <select
                   value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                  onChange={(event) => handleStatusChange(event.target.value as StatusFilter)}
                 >
                   <option value="All">All</option>
                   <option value="active">Active</option>
@@ -93,15 +172,34 @@ export default function AdminUsersPage() {
             </div>
           </div>
 
-          {error ? <p className="admin-users-page__empty">{error}</p> : null}
-          {isLoading ? (
+          {actionMessage ? <p className="admin-users-page__notice">{actionMessage}</p> : null}
+          {error ? (
+            <p className="admin-users-page__empty admin-users-page__empty--error">{error}</p>
+          ) : isLoading ? (
             <p className="admin-users-page__empty">Loading users...</p>
+          ) : users.length === 0 ? (
+            <p className="admin-users-page__empty">No users match the current filters.</p>
           ) : (
-            <UsersTable users={filteredUsers} onManage={setSelectedUser} />
+            <>
+              <UsersTable
+                users={users}
+                pendingAction={pendingAction}
+                onApproveVerification={(user) => void runUserAction(user, 'approve')}
+                onBlock={(user) => void runUserAction(user, 'block')}
+                onRejectVerification={(user) => void runUserAction(user, 'reject')}
+                onUnblock={(user) => void runUserAction(user, 'unblock')}
+              />
+              <Pagination
+                currentPage={page}
+                disabled={isLoading || pendingAction !== null}
+                label="Users pagination"
+                onNext={goToNextPage}
+                onPrevious={goToPreviousPage}
+                totalPages={totalPages}
+              />
+            </>
           )}
         </div>
-
-        <UserDetailsPanel user={selectedUser} />
       </div>
     </PageSkeleton>
   );
@@ -141,6 +239,22 @@ function toAdminUser(response: AdminUserResponse): AdminUser {
     company: response.company ?? undefined,
     role: response.role as AdminUserRole,
     status: response.status as AdminUserStatus,
+    sellerId: response.sellerId ?? undefined,
+    pendingVerificationRequestId: response.pendingVerificationRequestId ?? undefined,
     registeredOn: response.registeredOn,
   };
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const payload = err.payload as Record<string, unknown> | null;
+    if (payload && typeof payload === 'object' && 'error' in payload) {
+      return String(payload.error);
+    }
+    return err.message;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return 'Unknown error';
 }

@@ -25,6 +25,8 @@ export interface AdminUserResponse {
   role: 'Customer' | 'Seller' | 'Admin';
   status: 'active' | 'pending verification' | 'blocked';
   company?: string | null;
+  sellerId?: string | null;
+  pendingVerificationRequestId?: string | null;
   registeredOn: string;
   lastLoginAtUtc?: string | null;
 }
@@ -88,6 +90,12 @@ interface ListIssuesOptions {
   signal?: AbortSignal;
 }
 
+interface VerifySellerPayload {
+  approve: boolean;
+  reviewNotes?: string | null;
+  rejectionReason?: string | null;
+}
+
 // ── API client ──────────────────────────────────────────────────────
 
 export const adminApi = {
@@ -123,6 +131,25 @@ export const adminApi = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason: reason ?? null }),
+      signal,
+    });
+  },
+
+  verifySeller: async (
+    sellerId: string,
+    verificationRequestId: string,
+    payload: VerifySellerPayload,
+    signal?: AbortSignal,
+  ) => {
+    return request<unknown>(`/api/admin/sellers/${sellerId}/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        verificationRequestId,
+        approve: payload.approve,
+        reviewNotes: payload.reviewNotes ?? null,
+        rejectionReason: payload.rejectionReason ?? null,
+      }),
       signal,
     });
   },

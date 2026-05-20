@@ -209,6 +209,8 @@ public class AdminController : ApiControllerBase
         Role = dto.Role,
         Status = dto.Status,
         Company = dto.Company,
+        SellerId = dto.SellerId,
+        PendingVerificationRequestId = dto.PendingVerificationRequestId,
         RegisteredOn = dto.RegisteredAtUtc,
         LastLoginAtUtc = dto.LastLoginAtUtc
     };

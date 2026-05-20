@@ -45,6 +45,7 @@ internal sealed class UserAccountRepository(ApplicationDbContext dbContext) : IU
         var query = dbContext.UserAccounts
             .Include(u => u.CustomerProfile)
             .Include(u => u.SellerProfile)
+                .ThenInclude(s => s!.VerificationRequests)
             .AsQueryable();
 
         query = role switch
