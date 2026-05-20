@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { AdminUser } from '../data/placeholderData';
+import type { AdminUser } from '../types';
 
 interface UserDetailsPanelProps {
   // Currently selected user, or null if nothing has been clicked yet.

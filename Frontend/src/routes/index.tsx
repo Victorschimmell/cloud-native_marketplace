@@ -25,6 +25,7 @@ import AdminUsersPage from '../features/admin/pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../features/admin/pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
 import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
+import AdminCreateIssuePage from '../features/admin/pages/AdminCreateIssuePage';
 import AdminPaymentsPage from '../features/admin/pages/AdminPaymentsPage';
 import AddProductPage from '../features/seller/pages/AddProductPage';
 import EditProductPage from '../features/seller/pages/EditProductPage';
@@ -80,6 +81,7 @@ export const router = createBrowserRouter([
           { path: 'admin/dashboard', element: <AnalyticsDashboardPage /> },
           { path: 'admin/users', element: <AdminUsersPage /> },
           { path: 'admin/issues', element: <AdminReportIssuePage /> },
+          { path: 'admin/issues/new', element: <AdminCreateIssuePage /> },
           { path: 'admin/payments', element: <AdminPaymentsPage /> },
           { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
           { path: 'admin/audit', element: <AdminAuditPage /> },

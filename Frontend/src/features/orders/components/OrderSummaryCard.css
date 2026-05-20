@@ -1,15 +1,20 @@
 .orders-page__card {
   display: grid;
   gap: 16px;
-  border: 1px solid #d7dde7;
-  border-radius: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0;
   background: #ffffff;
-  padding: 22px;
+  padding: 22px 24px;
+}
+
+.orders-page__card:last-child {
+  border-bottom: 0;
 }
 
 .orders-page__card-header {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 16px;
 }
 
@@ -19,9 +24,11 @@
 
 .orders-page__eyebrow {
   margin: 0;
-  color: #1f2937;
-  font-size: 20px;
+  color: #111827;
+  font-size: 18px;
   font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .orders-page__card-date {
@@ -67,14 +74,23 @@
 
 .orders-page__items {
   display: grid;
-  gap: 8px;
+  gap: 0;
+  border: 1px solid #eef2f7;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .orders-page__item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
+  background: #ffffff;
+  padding: 12px 14px;
+}
+
+.orders-page__item + .orders-page__item {
+  border-top: 1px solid #eef2f7;
 }
 
 .orders-page__item-name {
@@ -96,12 +112,10 @@
 }
 
 .orders-page__footer {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
 }
 
 .orders-page__total {
@@ -114,6 +128,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .orders-page__action {
@@ -152,8 +167,7 @@
 
 @media (max-width: 720px) {
   .orders-page__card-header {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
   }
 
   .orders-page__card-status {
@@ -162,7 +176,10 @@
   }
 
   .orders-page__footer {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .orders-page__actions {
+    justify-content: flex-start;
   }
 }

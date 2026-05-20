@@ -23,6 +23,8 @@ public static class DependencyInjection
 
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+        services.AddScoped<IAdminIssueService, AdminIssueService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
 
         services.AddScoped<ICustomerService, CustomerService>();

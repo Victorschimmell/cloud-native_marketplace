@@ -37,3 +37,34 @@ export interface AuditLogFilterState {
   entityType: string;
   entityId: string;
 }
+
+export type IssuePriority = 'low' | 'medium' | 'high';
+export type IssueStatus = 'open' | 'in progress' | 'resolved';
+export type IssueType = 'user behavior' | 'payment' | 'workload anomaly' | 'system' | 'other';
+
+export interface AdminIssue {
+  id: string;
+  title: string;
+  description: string;
+  type: IssueType;
+  priority: IssuePriority;
+  status: IssueStatus;
+  reportedBy: string;
+  assignee?: string;
+  date: string;
+}
+
+export type AdminUserRole = 'Customer' | 'Seller' | 'Admin';
+export type AdminUserStatus = 'active' | 'pending verification' | 'blocked';
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  sellerId?: string;
+  pendingVerificationRequestId?: string;
+  role: AdminUserRole;
+  status: AdminUserStatus;
+  registeredOn: string;
+}

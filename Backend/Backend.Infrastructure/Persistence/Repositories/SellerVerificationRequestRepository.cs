@@ -22,6 +22,11 @@ internal sealed class SellerVerificationRequestRepository(ApplicationDbContext d
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.SellerVerificationRequests.CountAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
         return await dbContext.SellerVerificationRequests
