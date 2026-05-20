@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/useAuth';
 import { cartApi, subscribeToCartUpdates } from '../features/cart/api/cartApi';
 import { canShowNavigationItem, primaryNavigationItems } from '../routes/navigation';
@@ -74,9 +74,14 @@ export default function Navbar() {
 
         <div className="navbar__links">
           {visibleNavigationItems.map((item) => (
-            <Link key={item.to} to={item.to}>
+            <NavLink
+              className={({ isActive }) => (isActive ? 'navbar__link navbar__link--active' : 'navbar__link')}
+              end={item.end}
+              key={item.to}
+              to={item.to}
+            >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
         </div>
 
@@ -112,9 +117,9 @@ export default function Navbar() {
           </div>
 
           {capabilities.isCustomer ? (
-            <Link
+            <NavLink
               aria-label={cartAriaLabel}
-              className="navbar__cart"
+              className={({ isActive }) => (isActive ? 'navbar__cart navbar__cart--active' : 'navbar__cart')}
               to="/cart"
             >
               <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
@@ -123,7 +128,7 @@ export default function Navbar() {
                 <circle cx="17.5" cy="20" r="1.3" />
               </svg>
               {cartItemCount > 0 ? <span className="navbar__cart-badge">{cartBadgeText}</span> : null}
-            </Link>
+            </NavLink>
           ) : null}
 
           <span className="navbar__utility-divider" aria-hidden="true" />

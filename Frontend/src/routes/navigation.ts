@@ -1,15 +1,18 @@
 import type { AuthCapabilities, AuthCapability } from '../features/auth/types';
 
-export type NavigationAudience = 'public' | AuthCapability;
+export type NavigationAudience = 'all' | 'public' | AuthCapability;
 
 export interface NavigationItem {
   label: string;
   to: string;
   audience: NavigationAudience;
+  end?: boolean;
+  showForAdmin?: boolean;
 }
 
 export const primaryNavigationItems: NavigationItem[] = [
-  { label: 'Browse Products', to: '/products', audience: 'public' },
+  { label: 'Home', to: '/', audience: 'all', end: true },
+  { label: 'Browse Products', to: '/products', audience: 'public', showForAdmin: true },
   { label: 'Categories', to: '/categories', audience: 'public' },
   { label: 'Orders', to: '/orders', audience: 'customer' },
   { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
@@ -38,9 +41,13 @@ export function canUseCapability(capabilities: AuthCapabilities, capability: Aut
 }
 
 export function canShowNavigationItem(capabilities: AuthCapabilities, item: NavigationItem) {
-  // Sellers and Admins don't need the shopping links, only their own pages.
+  if (item.audience === 'all') {
+    return true;
+  }
+
+  // Sellers and Admins don't need most shopping links, only their own pages.
   if ((capabilities.isSeller || capabilities.isAdmin) && (item.audience === 'public' || item.audience === 'customer')) {
-    return false;
+    return capabilities.isAdmin && item.showForAdmin === true;
   }
 
   return item.audience === 'public' || canUseCapability(capabilities, item.audience);
