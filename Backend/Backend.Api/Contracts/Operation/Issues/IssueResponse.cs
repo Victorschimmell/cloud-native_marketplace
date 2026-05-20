@@ -11,6 +11,7 @@ public sealed record IssueResponse
     public required Guid ReportedByUserId { get; init; }
     public string? ReportedByDisplay { get; init; }
     public Guid? AssignedToUserId { get; init; }
+    public string? AssignedToDisplay { get; init; }
     public Guid? ResolvedByUserId { get; init; }
     public DateTimeOffset? ResolvedAtUtc { get; init; }
     public string? Resolution { get; init; }

@@ -5,7 +5,6 @@ using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;
 using Backend.Domain.Entities.IdentityAccess;
-using Backend.Domain.Entities.Operations;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 namespace Backend.Application.Services;
@@ -16,10 +15,7 @@ public sealed class AdminService : IAdminService
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly IAuditLogService _auditLogService;
     private readonly IPaymentRepository _paymentRepository;
-    private readonly IOrderRepository _orderRepository;
-    private readonly IAdminIssueRepository _adminIssueRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
-    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly IUnitOfWork _unitOfWork;
 
@@ -28,10 +24,7 @@ public sealed class AdminService : IAdminService
         IAuditLogRepository auditLogRepository,
         IAuditLogService auditLogService,
         IPaymentRepository paymentRepository,
-        IOrderRepository orderRepository,
-        IAdminIssueRepository adminIssueRepository,
         ICurrencyConversionService currencyConversionService,
-        IDateTimeProvider dateTimeProvider,
         ICurrentUserProvider currentUserProvider,
         IUnitOfWork unitOfWork)
     {
@@ -39,10 +32,7 @@ public sealed class AdminService : IAdminService
         ArgumentNullException.ThrowIfNull(auditLogRepository);
         ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(paymentRepository);
-        ArgumentNullException.ThrowIfNull(orderRepository);
-        ArgumentNullException.ThrowIfNull(adminIssueRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
-        ArgumentNullException.ThrowIfNull(dateTimeProvider);
         ArgumentNullException.ThrowIfNull(currentUserProvider);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
@@ -50,10 +40,7 @@ public sealed class AdminService : IAdminService
         _auditLogRepository = auditLogRepository;
         _auditLogService = auditLogService;
         _paymentRepository = paymentRepository;
-        _orderRepository = orderRepository;
-        _adminIssueRepository = adminIssueRepository;
         _currencyConversionService = currencyConversionService;
-        _dateTimeProvider = dateTimeProvider;
         _currentUserProvider = currentUserProvider;
         _unitOfWork = unitOfWork;
     }
@@ -194,9 +181,10 @@ public sealed class AdminService : IAdminService
 
     public async Task<Result<PagedResult<AuditLogEntryDto>>> GetAuditLogsAsync(GetAuditLogsRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Page <= 0 || request.PageSize <= 0)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<AuditLogEntryDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<AuditLogEntryDto>>.ValidationFailure(paginationError);
         }
 
         if (request.TargetEntityId is not null && request.TargetEntityType is null)
@@ -216,9 +204,10 @@ public sealed class AdminService : IAdminService
             return Result<PagedResult<AdminUserDto>>.Forbidden("Only admins can list users.");
         }
 
-        if (request.Page <= 0 || request.PageSize <= 0)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<AdminUserDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<AdminUserDto>>.ValidationFailure(paginationError);
         }
 
         var page = await _userAccountRepository.GetByFilterAsync(request.Role, request.Status, request.Page, request.PageSize, cancellationToken);
@@ -233,9 +222,10 @@ public sealed class AdminService : IAdminService
             return Result<PagedResult<AdminPaymentDto>>.Forbidden("Only admins can list payments.");
         }
 
-        if (request.Page <= 0 || request.PageSize <= 0)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<AdminPaymentDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<AdminPaymentDto>>.ValidationFailure(paginationError);
         }
 
         if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var convert))
@@ -246,37 +236,6 @@ public sealed class AdminService : IAdminService
         var page = await _paymentRepository.GetRecentAsync(request.Status, request.Page, request.PageSize, cancellationToken);
         var items = page.Items.Select(p => ToAdminPaymentDto(p, currencyCode, convert)).ToList();
         return Result<PagedResult<AdminPaymentDto>>.Success(new PagedResult<AdminPaymentDto>(items, page.Page, page.PageSize, page.TotalCount));
-    }
-
-    public async Task<Result<DashboardStatsDto>> GetDashboardStatsAsync(GetDashboardStatsRequest request, CancellationToken cancellationToken = default)
-    {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return Result<DashboardStatsDto>.Forbidden("Only admins can view dashboard stats.");
-        }
-
-        if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var convert))
-        {
-            return Result<DashboardStatsDto>.ValidationFailure($"Unsupported currency '{request.Currency}'.");
-        }
-
-        var now = _dateTimeProvider.UtcNow;
-        var dayAgo = now.AddDays(-1);
-
-        var activeUsers = await _userAccountRepository.CountActiveAsync(cancellationToken);
-        var orderStats = await _orderRepository.GetOrderStatusAggregateAsync(dayAgo, now, cancellationToken);
-        var salesAllTime = await _orderRepository.GetSalesAggregateAsync(null, null, cancellationToken);
-        var openIssues = await _adminIssueRepository.CountByStatusAsync(IssueStatus.Open, cancellationToken);
-
-        var totalRevenue = Math.Round(convert(salesAllTime.TotalSalesAmount), 2);
-
-        return Result<DashboardStatsDto>.Success(new DashboardStatsDto(
-            ActiveUsers: activeUsers,
-            OrdersInLast24Hours: orderStats.TotalOrders,
-            TotalRevenue: totalRevenue,
-            CurrencyCode: currencyCode,
-            OpenIssues: openIssues,
-            GeneratedAtUtc: now));
     }
 
     private static AdminUserDto ToAdminUserDto(UserAccount user)
@@ -356,7 +315,7 @@ public sealed class AdminService : IAdminService
             }
         }
 
-        var date = payment.PaidAtUtc ?? payment.Order?.OrderPurchaseTimestampUtc ?? DateTimeOffset.UtcNow;
+        var date = payment.PaidAtUtc ?? payment.Order?.OrderPurchaseTimestampUtc ?? DateTimeOffset.MinValue;
         var displayId = $"{payment.Order?.OrderNumber ?? payment.OrderId.ToString("N")[..8]}-{payment.PaymentSequential}";
         var status = payment.PaymentStatus switch
         {

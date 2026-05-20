@@ -12,7 +12,7 @@ import {
 } from '../api/adminApi';
 import './AnalyticsDashboardPage.css';
 
-// Admin dashboard. Stats row on top, then the Recent Payments and Open Issues panels.
+// Admin dashboard. Stats row on top, then the Recent Payments and Unresolved Issues panels.
 export default function AnalyticsDashboardPage() {
   const { currency } = useCurrency();
   const priceFormatter = useMemo(
@@ -22,7 +22,7 @@ export default function AnalyticsDashboardPage() {
 
   const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [payments, setPayments] = useState<AdminPaymentResponse[]>([]);
-  const [openIssues, setOpenIssues] = useState<IssueResponse[]>([]);
+  const [unresolvedIssues, setUnresolvedIssues] = useState<IssueResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,11 +34,11 @@ export default function AnalyticsDashboardPage() {
         const [statsResponse, paymentsResponse, issuesResponse] = await Promise.all([
           adminApi.getDashboardStats(currency, abortController.signal),
           adminApi.listPayments(currency, 1, 5, { signal: abortController.signal }),
-          adminApi.listIssues(1, 5, { status: 'Open', signal: abortController.signal }),
+          adminApi.listIssues(1, 5, { unresolvedOnly: true, signal: abortController.signal }),
         ]);
         setStats(statsResponse);
         setPayments(paymentsResponse.items);
-        setOpenIssues(issuesResponse.items);
+        setUnresolvedIssues(issuesResponse.items);
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return;
@@ -52,7 +52,7 @@ export default function AnalyticsDashboardPage() {
   }, [currency]);
 
   return (
-    <PageSkeleton title="Admin Dashboard" summary="Analytics overview, recent payments and open issues at a glance.">
+    <PageSkeleton title="Admin Dashboard" summary="Analytics overview, recent payments and unresolved issues at a glance.">
       <div className="admin-dashboard-page">
         <StatsRow stats={stats} priceFormatter={priceFormatter} />
 
@@ -60,7 +60,7 @@ export default function AnalyticsDashboardPage() {
 
         <div className="admin-dashboard-page__columns">
           <RecentPaymentsPanel payments={payments} priceFormatter={priceFormatter} />
-          <OpenIssuesPanel issues={openIssues} />
+          <UnresolvedIssuesPanel issues={unresolvedIssues} />
         </div>
       </div>
     </PageSkeleton>
@@ -71,7 +71,7 @@ function StatsRow({ stats, priceFormatter }: { stats: DashboardStatsResponse | n
   const activeUsers = stats?.activeUsers ?? 0;
   const ordersPerDay = stats?.ordersInLast24Hours ?? 0;
   const revenue = stats?.totalRevenue ?? 0;
-  const openIssues = stats?.openIssues ?? 0;
+  const unresolvedIssues = stats?.unresolvedIssues ?? 0;
 
   return (
     <div className="admin-dashboard-page__stats">
@@ -79,10 +79,10 @@ function StatsRow({ stats, priceFormatter }: { stats: DashboardStatsResponse | n
       <StatCard label="Orders Last 24h" value={ordersPerDay.toLocaleString()} />
       <StatCard label="Total Revenue" value={priceFormatter.format(revenue)} />
       <StatCard
-        label="Open Issues"
-        value={openIssues.toString()}
-        meta={openIssues > 0 ? 'Needs attention' : 'All clear'}
-        isWarning={openIssues > 0}
+        label="Unresolved Issues"
+        value={unresolvedIssues.toString()}
+        meta={unresolvedIssues > 0 ? 'Needs attention' : 'All clear'}
+        isWarning={unresolvedIssues > 0}
       />
     </div>
   );
@@ -133,16 +133,16 @@ function RecentPaymentsPanel({ payments, priceFormatter }: { payments: AdminPaym
   );
 }
 
-function OpenIssuesPanel({ issues }: { issues: IssueResponse[] }) {
+function UnresolvedIssuesPanel({ issues }: { issues: IssueResponse[] }) {
   return (
     <div className="admin-dashboard-page__panel">
       <div className="admin-dashboard-page__panel-header">
-        <h2 className="admin-dashboard-page__panel-title">Open Issues</h2>
+        <h2 className="admin-dashboard-page__panel-title">Unresolved Issues</h2>
         <Link to="/admin/issues" className="admin-dashboard-page__panel-link">View All</Link>
       </div>
 
       {issues.length === 0 ? (
-        <p className="admin-dashboard-page__panel-empty">No open issues.</p>
+        <p className="admin-dashboard-page__panel-empty">No unresolved issues.</p>
       ) : (
         <ul className="admin-dashboard-page__list">
           {issues.map((issue) => (

@@ -19,6 +19,7 @@ public static class IssueMappingExtensions
         new(
             request.Status.HasValue ? (Backend.Domain.Enums.IssueStatus)request.Status.Value : null,
             request.Priority.HasValue ? (Backend.Domain.Enums.IssuePriority)request.Priority.Value : null,
+            request.UnresolvedOnly,
             page,
             pageSize);
 
@@ -34,6 +35,7 @@ public static class IssueMappingExtensions
             ReportedByUserId = dto.ReportedByUserId,
             ReportedByDisplay = dto.ReportedByDisplay,
             AssignedToUserId = dto.AssignedToUserId,
+            AssignedToDisplay = dto.AssignedToDisplay,
             ResolvedByUserId = dto.ResolvedByUserId,
             ResolvedAtUtc = dto.ResolvedAtUtc,
             Resolution = dto.Resolution,

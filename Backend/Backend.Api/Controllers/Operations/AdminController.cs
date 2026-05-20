@@ -17,15 +17,18 @@ namespace Backend.Api.Controllers.Operations;
 public class AdminController : ApiControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly IAdminDashboardService _adminDashboardService;
     private readonly ISellerVerificationService _sellerVerificationService;
     private readonly ICurrentUserProvider _currentUserProvider;
 
     public AdminController(
         IAdminService adminService,
+        IAdminDashboardService adminDashboardService,
         ISellerVerificationService sellerVerificationService,
         ICurrentUserProvider currentUserProvider)
     {
         _adminService = adminService;
+        _adminDashboardService = adminDashboardService;
         _sellerVerificationService = sellerVerificationService;
         _currentUserProvider = currentUserProvider;
     }
@@ -146,11 +149,16 @@ public class AdminController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can list payments." });
         }
 
+        if (!TryParsePaymentStatusFilter(filters.Status, out var statusFilter))
+        {
+            return BadRequest(new { Error = $"Unsupported payment status filter '{filters.Status}'." });
+        }
+
         var applicationRequest = new App.GetAdminPaymentsRequest(
             pageRequest.Page,
             pageRequest.PageSize,
             currency,
-            ParsePaymentStatusFilter(filters.Status));
+            statusFilter);
         var result = await _adminService.GetPaymentsAsync(applicationRequest, cancellationToken);
         return HandleResult(result, page => new PageResponse<AdminPaymentResponse>
         {
@@ -161,14 +169,16 @@ public class AdminController : ApiControllerBase
         });
     }
 
-    private static ApplicationRepositories.AdminPaymentStatusFilter ParsePaymentStatusFilter(string? status)
+    private static bool TryParsePaymentStatusFilter(string? status, out ApplicationRepositories.AdminPaymentStatusFilter filter)
     {
         if (string.IsNullOrWhiteSpace(status))
         {
-            return ApplicationRepositories.AdminPaymentStatusFilter.Any;
+            filter = ApplicationRepositories.AdminPaymentStatusFilter.Any;
+            return true;
         }
 
-        return status.Trim().ToLowerInvariant() switch
+        var normalizedStatus = status.Trim().ToLowerInvariant();
+        filter = normalizedStatus switch
         {
             "all" or "any" => ApplicationRepositories.AdminPaymentStatusFilter.Any,
             "completed" => ApplicationRepositories.AdminPaymentStatusFilter.Completed,
@@ -176,6 +186,8 @@ public class AdminController : ApiControllerBase
             "failed" => ApplicationRepositories.AdminPaymentStatusFilter.Failed,
             _ => ApplicationRepositories.AdminPaymentStatusFilter.Any
         };
+
+        return normalizedStatus is "all" or "any" or "completed" or "pending" or "failed";
     }
 
     [HttpGet("dashboard/stats")]
@@ -189,14 +201,14 @@ public class AdminController : ApiControllerBase
         }
 
         var applicationRequest = new App.GetDashboardStatsRequest(currency);
-        var result = await _adminService.GetDashboardStatsAsync(applicationRequest, cancellationToken);
+        var result = await _adminDashboardService.GetDashboardStatsAsync(applicationRequest, cancellationToken);
         return HandleResult(result, dto => new DashboardStatsResponse
         {
             ActiveUsers = dto.ActiveUsers,
             OrdersInLast24Hours = dto.OrdersInLast24Hours,
             TotalRevenue = dto.TotalRevenue,
             CurrencyCode = dto.CurrencyCode,
-            OpenIssues = dto.OpenIssues,
+            UnresolvedIssues = dto.UnresolvedIssues,
             GeneratedAtUtc = dto.GeneratedAtUtc
         });
     }

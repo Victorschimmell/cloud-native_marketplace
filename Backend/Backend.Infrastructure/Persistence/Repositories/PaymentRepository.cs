@@ -29,6 +29,7 @@ internal sealed class PaymentRepository(ApplicationDbContext dbContext, IDateTim
     public async Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = dbContext.OrderPayments
+            .AsNoTracking()
             .Include(p => p.Order)
                 .ThenInclude(o => o!.Customer)
             .AsQueryable();

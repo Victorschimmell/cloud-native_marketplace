@@ -11,5 +11,4 @@ public interface IAdminService
     Task<Result<PagedResult<AuditLogEntryDto>>> GetAuditLogsAsync(GetAuditLogsRequest request, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<AdminUserDto>>> GetUsersAsync(GetAdminUsersRequest request, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<AdminPaymentDto>>> GetPaymentsAsync(GetAdminPaymentsRequest request, CancellationToken cancellationToken = default);
-    Task<Result<DashboardStatsDto>> GetDashboardStatsAsync(GetDashboardStatsRequest request, CancellationToken cancellationToken = default);
 }

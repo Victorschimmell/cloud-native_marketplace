@@ -43,6 +43,7 @@ internal sealed class UserAccountRepository(ApplicationDbContext dbContext) : IU
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.UserAccounts
+            .AsNoTracking()
             .Include(u => u.CustomerProfile)
             .Include(u => u.SellerProfile)
                 .ThenInclude(s => s!.VerificationRequests)
@@ -77,6 +78,7 @@ internal sealed class UserAccountRepository(ApplicationDbContext dbContext) : IU
     public async Task<int> CountActiveAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.UserAccounts
+            .AsNoTracking()
             .CountAsync(u => !u.IsBlocked && u.AccountStatus == AccountStatus.Active, cancellationToken);
     }
 

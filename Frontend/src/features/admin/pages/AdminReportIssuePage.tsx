@@ -11,7 +11,7 @@ import './AdminReportIssuePage.css';
 
 const issuesPageSize = 10;
 
-// Report Issue page. Reached from the Open Issues "View All" link on the dashboard.
+// Issues page. Reached from the Unresolved Issues "View All" link on the dashboard.
 export default function AdminReportIssuePage() {
   const [issues, setIssues] = useState<AdminIssue[]>([]);
   const [totalCount, setTotalCount] = useState(0);

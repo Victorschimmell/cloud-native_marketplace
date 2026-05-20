@@ -245,9 +245,10 @@ public sealed class SellerVerificationService : ISellerVerificationService
 
     public async Task<Result<PagedResult<SellerVerificationRequestDto>>> GetAllRequestsAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        if (page <= 0 || pageSize <= 0)
+        var paginationError = PaginationRules.Validate(page, pageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<SellerVerificationRequestDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<SellerVerificationRequestDto>>.ValidationFailure(paginationError);
         }
 
         var requests = await _verificationRequestRepository.GetAllAsync(page, pageSize, cancellationToken);

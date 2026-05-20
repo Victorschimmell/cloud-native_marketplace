@@ -53,12 +53,10 @@ public sealed class ServiceConstructorTests
             new FakeAuditLogRepository(),
             new FakeAuditLogService(),
             new FakePaymentRepository(),
-            new FakeOrderRepository(),
-            new FakeAdminIssueRepository(),
             new FakeCurrencyConversionService(),
-            new FakeDateTimeProvider(),
             new FakeCurrentUserProvider(),
             new FakeUnitOfWork());
+        _ = new AdminDashboardService(new FakeAdminDashboardRepository(), new FakeCurrencyConversionService(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
         _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new ShipmentService(new FakeShipmentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
         _ = new AuditLogService(new FakeAuditLogRepository(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());

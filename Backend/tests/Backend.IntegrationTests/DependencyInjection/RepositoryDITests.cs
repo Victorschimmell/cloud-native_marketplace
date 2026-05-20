@@ -38,6 +38,7 @@ public sealed class RepositoryDITests
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IAdminIssueRepository, AdminIssueRepository>();
+        services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
         services.AddScoped<ISellerVerificationRequestRepository, SellerVerificationRequestRepository>();
         services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
@@ -93,6 +94,7 @@ public sealed class RepositoryDITests
         typeof(ICartRepository),
         typeof(IAuditLogRepository),
         typeof(IAdminIssueRepository),
+        typeof(IAdminDashboardRepository),
         typeof(ISellerVerificationRequestRepository),
         typeof(IShipmentRepository),
         typeof(ICurrencyRepository),

@@ -9,7 +9,7 @@ export interface AnalyticsStats {
   requestsPerDayChange: number;
   totalRevenue: number;
   totalRevenueChange: number;
-  openIssues: number;
+  unresolvedIssues: number;
 }
 
 export type PaymentStatus = 'completed' | 'pending' | 'failed';
@@ -60,7 +60,7 @@ export const placeholderStats: AnalyticsStats = {
   requestsPerDayChange: 0,
   totalRevenue: 0,
   totalRevenueChange: 0,
-  openIssues: 0,
+  unresolvedIssues: 0,
 };
 
 export const placeholderPayments: RecentPayment[] = [];

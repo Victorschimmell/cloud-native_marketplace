@@ -143,8 +143,35 @@ public sealed class AdminIssueService : IAdminIssueService
             return Result<AdminIssueDto>.Conflict("Issue is already resolved.");
         }
 
+        var currentAdminId = _currentUserProvider.UserId.Value;
+        if (issue.Status != IssueStatus.InProgress || issue.AssignedToUserId is null)
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: issue.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: "Resolve failed: issue must be assigned before it can be resolved."
+            ), cancellationToken);
+
+            return Result<AdminIssueDto>.Conflict("Issue must be assigned before it can be resolved.");
+        }
+
+        if (issue.AssignedToUserId != currentAdminId)
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: issue.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: $"Resolve failed: issue is assigned to user {issue.AssignedToUserId}, not {currentAdminId}."
+            ), cancellationToken);
+
+            return Result<AdminIssueDto>.Conflict("Only the assigned admin can resolve this issue.");
+        }
+
         issue.Status = IssueStatus.Resolved;
-        issue.ResolvedByUserId = _currentUserProvider.UserId.Value;
+        issue.ResolvedByUserId = currentAdminId;
         issue.ResolvedAtUtc = _dateTimeProvider.UtcNow;
         issue.Resolution = string.IsNullOrWhiteSpace(request.Resolution) ? null : request.Resolution.Trim();
 
@@ -204,6 +231,19 @@ public sealed class AdminIssueService : IAdminIssueService
             return Result<AdminIssueDto>.Conflict("Resolved issues cannot be reassigned.");
         }
 
+        if (issue.Status == IssueStatus.InProgress && issue.AssignedToUserId is not null)
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(AdminIssue),
+                TargetEntityId: issue.Id.ToString(),
+                Outcome: AuditOutcome.Failed,
+                Details: $"Assign failed: issue is already assigned to user {issue.AssignedToUserId}."
+            ), cancellationToken);
+
+            return Result<AdminIssueDto>.Conflict("Issue is already assigned.");
+        }
+
         // Issues are always assigned to the logged-in admin (assign-to-self).
         var assigneeUserId = _currentUserProvider.UserId.Value;
         issue.AssignedToUserId = assigneeUserId;
@@ -246,12 +286,13 @@ public sealed class AdminIssueService : IAdminIssueService
             return Result<PagedResult<AdminIssueDto>>.Forbidden("Only admins can view issues.");
         }
 
-        if (request.Page <= 0 || request.PageSize <= 0)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<AdminIssueDto>>.ValidationFailure("Page and PageSize must be greater than 0.");
+            return Result<PagedResult<AdminIssueDto>>.ValidationFailure(paginationError);
         }
 
-        var page = await _issueRepository.GetByFilterAsync(request.Status, request.Priority, request.Page, request.PageSize, cancellationToken);
+        var page = await _issueRepository.GetByFilterAsync(request.Status, request.Priority, request.UnresolvedOnly, request.Page, request.PageSize, cancellationToken);
         var items = page.Items.Select(issue => issue.ToAdminIssueDto()).ToList();
         return Result<PagedResult<AdminIssueDto>>.Success(new PagedResult<AdminIssueDto>(items, page.Page, page.PageSize, page.TotalCount));
     }

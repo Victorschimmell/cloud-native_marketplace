@@ -68,7 +68,7 @@ public sealed record DashboardStatsDto(
     int OrdersInLast24Hours,
     decimal TotalRevenue,
     string CurrencyCode,
-    int OpenIssues,
+    int UnresolvedIssues,
     DateTimeOffset GeneratedAtUtc);
 
 public sealed record GetDashboardStatsRequest(string? Currency = null);

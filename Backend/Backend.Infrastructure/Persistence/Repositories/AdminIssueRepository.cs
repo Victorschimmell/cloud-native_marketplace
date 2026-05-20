@@ -12,16 +12,28 @@ internal sealed class AdminIssueRepository(ApplicationDbContext dbContext) : IAd
     public async Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.AdminIssues
+            .Include(i => i.ReportedByUser)
+            .Include(i => i.AssignedToUser)
+            .Include(i => i.ResolvedByUser)
             .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
     }
 
-    public async Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, bool unresolvedOnly, int page, int pageSize, CancellationToken cancellationToken = default)
     {
-        var query = dbContext.AdminIssues.AsQueryable();
+        var query = dbContext.AdminIssues
+            .AsNoTracking()
+            .Include(i => i.ReportedByUser)
+            .Include(i => i.AssignedToUser)
+            .Include(i => i.ResolvedByUser)
+            .AsQueryable();
 
         if (status.HasValue)
         {
             query = query.Where(i => i.Status == status.Value);
+        }
+        else if (unresolvedOnly)
+        {
+            query = query.Where(i => i.Status != IssueStatus.Resolved);
         }
 
         if (priority.HasValue)
@@ -37,11 +49,6 @@ internal sealed class AdminIssueRepository(ApplicationDbContext dbContext) : IAd
             .ToListAsync(cancellationToken);
 
         return new PagedResult<AdminIssue>(items, page, pageSize, totalCount);
-    }
-
-    public async Task<int> CountByStatusAsync(IssueStatus status, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.AdminIssues.CountAsync(i => i.Status == status, cancellationToken);
     }
 
     public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default)

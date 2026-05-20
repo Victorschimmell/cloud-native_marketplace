@@ -9,7 +9,7 @@ export interface DashboardStatsResponse {
   ordersInLast24Hours: number;
   totalRevenue: number;
   currencyCode: string;
-  openIssues: number;
+  unresolvedIssues: number;
   generatedAtUtc: string;
 }
 
@@ -70,6 +70,7 @@ export interface IssueResponse {
   reportedByUserId: string;
   reportedByDisplay?: string | null;
   assignedToUserId?: string | null;
+  assignedToDisplay?: string | null;
   resolvedByUserId?: string | null;
   resolvedAtUtc?: string | null;
   resolution?: string | null;
@@ -87,6 +88,7 @@ export interface CreateIssuePayload {
 interface ListIssuesOptions {
   status?: IssueStatusApi;
   priority?: IssuePriorityApi;
+  unresolvedOnly?: boolean;
   signal?: AbortSignal;
 }
 
@@ -173,6 +175,7 @@ export const adminApi = {
     });
     if (options?.status) params.set('status', options.status);
     if (options?.priority) params.set('priority', options.priority);
+    if (options?.unresolvedOnly) params.set('unresolvedOnly', 'true');
 
     return request<PageResponse<IssueResponse>>(`/api/admin/issues?${params}`, {
       signal: options?.signal,

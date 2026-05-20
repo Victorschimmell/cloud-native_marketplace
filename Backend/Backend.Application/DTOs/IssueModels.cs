@@ -12,6 +12,7 @@ public sealed record AdminIssueDto(
     Guid ReportedByUserId,
     string? ReportedByDisplay,
     Guid? AssignedToUserId,
+    string? AssignedToDisplay,
     Guid? ResolvedByUserId,
     DateTimeOffset? ResolvedAtUtc,
     string? Resolution,
@@ -31,5 +32,6 @@ public sealed record AssignAdminIssueRequest(Guid IssueId);
 public sealed record GetAdminIssuesRequest(
     IssueStatus? Status,
     IssuePriority? Priority,
+    bool UnresolvedOnly = false,
     int Page = 1,
     int PageSize = 20);

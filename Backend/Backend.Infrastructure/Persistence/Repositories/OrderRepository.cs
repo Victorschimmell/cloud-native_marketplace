@@ -71,7 +71,7 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
 
     public async Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Orders.AsQueryable();
+        var query = dbContext.Orders.AsNoTracking();
 
         if (fromUtc.HasValue)
         {
@@ -86,15 +86,21 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
         // Revenue includes any placed order that wasn't cancelled or returned.
         query = query.Where(o => o.OrderStatus != OrderStatus.Cancelled && o.OrderStatus != OrderStatus.Returned);
 
-        var orderCount = await query.CountAsync(cancellationToken);
-        var totalSales = orderCount == 0 ? 0m : await query.SumAsync(o => o.TotalAmount, cancellationToken);
+        var aggregate = await query
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                OrderCount = g.Count(),
+                TotalSales = g.Sum(o => o.TotalAmount)
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-        return new SalesAggregate(orderCount, totalSales);
+        return new SalesAggregate(aggregate?.OrderCount ?? 0, aggregate?.TotalSales ?? 0m);
     }
 
     public async Task<OrderStatusAggregate> GetOrderStatusAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Orders.AsQueryable();
+        var query = dbContext.Orders.AsNoTracking();
 
         if (fromUtc.HasValue)
         {
@@ -106,11 +112,20 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
             query = query.Where(o => o.OrderPurchaseTimestampUtc <= toUtc.Value);
         }
 
-        var total = await query.CountAsync(cancellationToken);
-        var cancelled = await query.CountAsync(o => o.OrderStatus == OrderStatus.Cancelled, cancellationToken);
-        var completed = await query.CountAsync(o => o.OrderStatus == OrderStatus.Delivered, cancellationToken);
+        var aggregate = await query
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Cancelled = g.Count(o => o.OrderStatus == OrderStatus.Cancelled),
+                Completed = g.Count(o => o.OrderStatus == OrderStatus.Delivered)
+            })
+            .SingleOrDefaultAsync(cancellationToken);
 
-        return new OrderStatusAggregate(total, cancelled, completed);
+        return new OrderStatusAggregate(
+            aggregate?.Total ?? 0,
+            aggregate?.Cancelled ?? 0,
+            aggregate?.Completed ?? 0);
     }
 
     public Task AddAsync(Order order, CancellationToken cancellationToken = default)

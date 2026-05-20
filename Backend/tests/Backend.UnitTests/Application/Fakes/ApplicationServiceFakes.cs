@@ -130,6 +130,16 @@ internal sealed class FakeOrderRepository : IOrderRepository
     public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
+internal sealed class FakeAdminDashboardRepository : IAdminDashboardRepository
+{
+    public AdminDashboardSnapshot Snapshot { get; set; } = new(0, 0, 0m, 0);
+
+    public Task<AdminDashboardSnapshot> GetSnapshotAsync(
+        DateTimeOffset ordersFromUtc,
+        DateTimeOffset ordersToUtc,
+        CancellationToken cancellationToken = default) => Task.FromResult(Snapshot);
+}
+
 internal sealed class FakeOrderNumberRepository : IOrderNumberGenerator
 {
     public Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken = default) => Task.FromResult("ORDER-123456");
@@ -204,11 +214,22 @@ internal sealed class FakeAuditLogService : IAuditLogService
 
 internal sealed class FakeAdminIssueRepository : IAdminIssueRepository
 {
-    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AdminIssue?>(null);
-    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AdminIssue>([], page, pageSize, 0));
-    public Task<int> CountByStatusAsync(IssueStatus status, CancellationToken cancellationToken = default) => Task.FromResult(0);
-    public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task UpdateAsync(AdminIssue issue, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public AdminIssue? Issue { get; set; }
+    public int UpdateCalls { get; private set; }
+
+    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Issue is not null && Issue.Id == id ? Issue : null);
+    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, bool unresolvedOnly, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AdminIssue>([], page, pageSize, 0));
+    public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default)
+    {
+        Issue = issue;
+        return Task.CompletedTask;
+    }
+    public Task UpdateAsync(AdminIssue issue, CancellationToken cancellationToken = default)
+    {
+        Issue = issue;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeAuditLogRepository : IAuditLogRepository
