@@ -9,6 +9,7 @@ using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
+using DomainVerificationStatus = Backend.Domain.Enums.VerificationStatus;
 
 namespace Backend.IntegrationTests;
 
@@ -72,6 +73,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(50m, order.SubtotalAmount);
         Assert.Equal(5m, order.FreightAmount);
         Assert.Equal(55m, order.TotalAmount);
+        Assert.False(order.CanUpdateStatus);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
         Assert.All(order.Items, item => Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl));
 
@@ -87,6 +89,22 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(1, stats.TotalOrders);
         Assert.Equal(1, stats.ActiveOrders);
         Assert.Equal(55m, stats.TotalRevenue);
+    }
+
+    [Fact]
+    public async Task GetMyOrders_WhenSellerIsNotVerified_ReturnsForbidden()
+    {
+        // Arrange
+        var seed = await SeedSellerOrdersAsync(sellerIsVerified: false);
+        AuthenticateAs(seed.SellerUserId);
+
+        // Act
+        var response = await _client.GetAsync(
+            "/api/sellers/me/orders?page=1&pageSize=10&currency=BRL",
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -113,13 +131,14 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(50m, order.SubtotalAmount);
         Assert.Equal(5m, order.FreightAmount);
         Assert.Equal(55m, order.TotalAmount);
+        Assert.False(order.CanUpdateStatus);
         var item = Assert.Single(order.Items);
         Assert.Equal("Seller owned product", item.ProductName);
         Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl);
     }
 
     [Fact]
-    public async Task UpdateMyOrderStatus_WhenSellerOwnsOrderLine_MarksOrderAsShipped()
+    public async Task UpdateMyOrderStatus_WhenOrderContainsAnotherSellerLine_ReturnsBadRequest()
     {
         // Arrange
         var seed = await SeedSellerOrdersAsync();
@@ -136,14 +155,35 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
             TestContext.Current.CancellationToken);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 
+    [Fact]
+    public async Task UpdateMyOrderStatus_WhenSellerOwnsWholeOrder_MarksOrderAsShipped()
+    {
+        // Arrange
+        var seed = await SeedSellerOrdersAsync(includeOtherSellerLine: false);
+        AuthenticateAs(seed.SellerUserId);
+        var request = new UpdateOrderStatusRequest
+        {
+            Status = OrderStatus.Shipped
+        };
+
+        // Act
+        var response = await _client.PatchAsJsonAsync(
+            $"/api/sellers/me/orders/{seed.SellerOrderId}/status?currency=BRL",
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var order = await response.Content.ReadFromJsonAsync<SellerOrderSummaryModel>(
             IntegrationTestJson.Options,
             TestContext.Current.CancellationToken);
         Assert.NotNull(order);
         Assert.Equal(OrderStatus.Shipped, order.OrderStatus);
         Assert.NotNull(order.OrderDeliveredCarrierDateUtc);
+        Assert.True(order.CanUpdateStatus);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
         Assert.All(order.Items, item => Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl));
 
@@ -155,7 +195,7 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.NotNull(savedOrder.OrderDeliveredCarrierDateUtc);
     }
 
-    private async Task<SellerOrdersSeed> SeedSellerOrdersAsync()
+    private async Task<SellerOrdersSeed> SeedSellerOrdersAsync(bool includeOtherSellerLine = true, bool sellerIsVerified = true)
     {
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -166,8 +206,13 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-seller-{unique}@example.com");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        if (sellerIsVerified)
+        {
+            seller.VerificationStatus = DomainVerificationStatus.Verified;
+        }
         var otherSellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-other-{unique}@example.com");
         var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        otherSeller.VerificationStatus = DomainVerificationStatus.Verified;
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("categoria", "Category");
         var sellerProduct = TestEntityFactory.CreateProduct(category.Id, "Seller owned product");
@@ -191,19 +236,21 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         dbContext.Products.AddRange(sellerProduct, otherProduct);
         dbContext.ProductListings.AddRange(sellerListing, otherListing);
         dbContext.Orders.AddRange(sellerOrder, otherOrder);
-        dbContext.Set<OrderItem>().AddRange(
-            new OrderItem
-            {
-                OrderId = sellerOrder.Id,
-                OrderItemId = 1,
-                ListingId = sellerListing.Id,
-                ProductId = sellerProduct.Id,
-                SellerId = seller.Id,
-                Quantity = 2,
-                UnitPrice = 25m,
-                FreightValue = 5m
-            },
-            new OrderItem
+        dbContext.Set<OrderItem>().Add(new OrderItem
+        {
+            OrderId = sellerOrder.Id,
+            OrderItemId = 1,
+            ListingId = sellerListing.Id,
+            ProductId = sellerProduct.Id,
+            SellerId = seller.Id,
+            Quantity = 2,
+            UnitPrice = 25m,
+            FreightValue = 5m
+        });
+
+        if (includeOtherSellerLine)
+        {
+            dbContext.Set<OrderItem>().Add(new OrderItem
             {
                 OrderId = sellerOrder.Id,
                 OrderItemId = 2,
@@ -213,18 +260,20 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
                 Quantity = 1,
                 UnitPrice = 100m,
                 FreightValue = 10m
-            },
-            new OrderItem
-            {
-                OrderId = otherOrder.Id,
-                OrderItemId = 1,
-                ListingId = otherListing.Id,
-                ProductId = otherProduct.Id,
-                SellerId = otherSeller.Id,
-                Quantity = 1,
-                UnitPrice = 100m,
-                FreightValue = 10m
             });
+        }
+
+        dbContext.Set<OrderItem>().Add(new OrderItem
+        {
+            OrderId = otherOrder.Id,
+            OrderItemId = 1,
+            ListingId = otherListing.Id,
+            ProductId = otherProduct.Id,
+            SellerId = otherSeller.Id,
+            Quantity = 1,
+            UnitPrice = 100m,
+            FreightValue = 10m
+        });
 
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

@@ -6,10 +6,19 @@ import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
-import { sellerApi, type SellerListing, type SellerOrderStats, type SellerOrderSummary } from '../api/sellerApi';
+import {
+  sellerApi,
+  type SellerListing,
+  type SellerOrderSort,
+  type SellerOrderStats,
+  type SellerOrderStatusFilter,
+  type SellerOrderSummary,
+} from '../api/sellerApi';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
+
+const ORDERS_PAGE_SIZE = 25;
 
 interface SellerDashboardProps {
   activeTab?: SellerDashboardTab;
@@ -31,6 +40,10 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
   );
   const [listings, setListings] = useState<SellerListing[]>([]);
   const [orders, setOrders] = useState<SellerOrderSummary[]>([]);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersTotalCount, setOrdersTotalCount] = useState(0);
+  const [ordersStatusFilter, setOrdersStatusFilter] = useState<SellerOrderStatusFilter>('all');
+  const [ordersSort, setOrdersSort] = useState<SellerOrderSort>('newest');
   const [orderStats, setOrderStats] = useState<SellerOrderStats | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
 
@@ -45,13 +58,17 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
     async function loadOrders() {
       try {
-        const [ordersResponse, statsResponse] = await Promise.all([
-          sellerApi.getMyOrders(currency, 1, 50, controller.signal),
-          sellerApi.getMyOrderStats(currency, controller.signal),
-        ]);
+        const ordersResponse = await sellerApi.getMyOrders({
+          currency,
+          page: ordersPage,
+          pageSize: ORDERS_PAGE_SIZE,
+          status: ordersStatusFilter,
+          sort: ordersSort,
+          signal: controller.signal,
+        });
 
         setOrders(ordersResponse.items);
-        setOrderStats(statsResponse);
+        setOrdersTotalCount(ordersResponse.totalCount);
         setOrdersError(null);
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -59,7 +76,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         }
 
         setOrders([]);
-        setOrderStats(null);
+        setOrdersTotalCount(0);
         setOrdersError('Orders could not be loaded right now.');
       }
     }
@@ -67,7 +84,38 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     void loadOrders();
 
     return () => controller.abort();
+  }, [currency, ordersPage, ordersSort, ordersStatusFilter]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadOrderStats() {
+      try {
+        const statsResponse = await sellerApi.getMyOrderStats(currency, controller.signal);
+        setOrderStats(statsResponse);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setOrderStats(null);
+      }
+    }
+
+    void loadOrderStats();
+
+    return () => controller.abort();
   }, [currency]);
+
+  function handleOrdersStatusChange(status: SellerOrderStatusFilter) {
+    setOrdersStatusFilter(status);
+    setOrdersPage(1);
+  }
+
+  function handleOrdersSortChange(sort: SellerOrderSort) {
+    setOrdersSort(sort);
+    setOrdersPage(1);
+  }
 
   return (
     <PageSkeleton
@@ -92,7 +140,19 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
             onDeleteListing={(listingId) => setListings((prev) => prev.filter((l) => l.listingId !== listingId))}
           />
         ) : (
-          <OrdersTable error={ordersError} orders={orders} priceFormatter={priceFormatter} />
+          <OrdersTable
+            error={ordersError}
+            orders={orders}
+            page={ordersPage}
+            pageSize={ORDERS_PAGE_SIZE}
+            priceFormatter={priceFormatter}
+            sort={ordersSort}
+            statusFilter={ordersStatusFilter}
+            totalCount={ordersTotalCount}
+            onPageChange={setOrdersPage}
+            onSortChange={handleOrdersSortChange}
+            onStatusFilterChange={handleOrdersStatusChange}
+          />
         )}
       </section>
     </PageSkeleton>

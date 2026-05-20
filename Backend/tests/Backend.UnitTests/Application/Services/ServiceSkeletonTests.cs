@@ -11,7 +11,7 @@ public sealed class ServiceSkeletonTests
     [Fact]
     public async Task ProductService_GetByIdAsync_Throws_NotImplementedException()
     {
-        var service = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeUnitOfWork(), new FakeCurrencyConversionService());
+        var service = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeUnitOfWork(), new FakeCurrencyConversionService());
 
         var result = await service.GetByIdAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 

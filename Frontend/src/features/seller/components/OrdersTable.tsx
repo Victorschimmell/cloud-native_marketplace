@@ -1,19 +1,21 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { OrderStatus } from '../../orders/types';
-import type { SellerOrderSummary } from '../api/sellerApi';
+import type { SellerOrderSort, SellerOrderStatusFilter, SellerOrderSummary } from '../api/sellerApi';
 
 interface OrdersTableProps {
   error?: string | null;
   orders: SellerOrderSummary[];
+  page: number;
+  pageSize: number;
   priceFormatter: Intl.NumberFormat;
+  sort: SellerOrderSort;
+  statusFilter: SellerOrderStatusFilter;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+  onSortChange: (sort: SellerOrderSort) => void;
+  onStatusFilterChange: (status: SellerOrderStatusFilter) => void;
 }
 
-type SortKey = 'date' | 'total' | 'status';
-type StatusFilter = 'all' | OrderStatus;
-type SortOption = 'newest' | 'oldest' | 'total-high' | 'total-low' | 'status';
-
-const statusOptions: StatusFilter[] = [
+const statusOptions: SellerOrderStatusFilter[] = [
   'all',
   'Pending',
   'Approved',
@@ -24,17 +26,22 @@ const statusOptions: StatusFilter[] = [
   'Returned',
 ];
 
-export default function OrdersTable({ error, orders, priceFormatter }: OrdersTableProps) {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-
-  const visibleOrders = useMemo(() => {
-    const filteredOrders = statusFilter === 'all'
-      ? orders
-      : orders.filter((order) => order.orderStatus === statusFilter);
-
-    return sortOrders(filteredOrders, sortBy);
-  }, [orders, statusFilter, sortBy]);
+export default function OrdersTable({
+  error,
+  orders,
+  page,
+  pageSize,
+  priceFormatter,
+  sort,
+  statusFilter,
+  totalCount,
+  onPageChange,
+  onSortChange,
+  onStatusFilterChange,
+}: OrdersTableProps) {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const firstVisible = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
+  const lastVisible = Math.min(page * pageSize, totalCount);
 
   return (
     <div className="seller-dashboard__panel">
@@ -49,7 +56,7 @@ export default function OrdersTable({ error, orders, priceFormatter }: OrdersTab
             Status:
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+              onChange={(event) => onStatusFilterChange(event.target.value as SellerOrderStatusFilter)}
             >
               {statusOptions.map((status) => (
                 <option key={status} value={status}>
@@ -62,14 +69,13 @@ export default function OrdersTable({ error, orders, priceFormatter }: OrdersTab
           <label className="seller-dashboard__filter">
             Sort:
             <select
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value as SortOption)}
+              value={sort}
+              onChange={(event) => onSortChange(event.target.value as SellerOrderSort)}
             >
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
               <option value="total-high">Total: high to low</option>
               <option value="total-low">Total: low to high</option>
-              <option value="status">Status</option>
             </select>
           </label>
         </div>
@@ -78,28 +84,54 @@ export default function OrdersTable({ error, orders, priceFormatter }: OrdersTab
       {error ? (
         <p className="seller-dashboard__empty">{error}</p>
       ) : orders.length === 0 ? (
-        <p className="seller-dashboard__empty">No orders yet.</p>
-      ) : visibleOrders.length === 0 ? (
-        <p className="seller-dashboard__empty">No orders match the current filters.</p>
+        <p className="seller-dashboard__empty">
+          {statusFilter === 'all' ? 'No orders yet.' : 'No orders match the current filters.'}
+        </p>
       ) : (
-        <table className="seller-dashboard__table">
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Tracking</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleOrders.map((order) => (
-              <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="seller-dashboard__table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Tracking</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <OrderRow key={order.id} order={order} priceFormatter={priceFormatter} />
+              ))}
+            </tbody>
+          </table>
+
+          <div className="seller-dashboard__pagination">
+            <span>
+              Showing {firstVisible}-{lastVisible} of {totalCount}
+            </span>
+            <div className="seller-dashboard__pagination-actions">
+              <button
+                type="button"
+                className="seller-dashboard__page-button"
+                disabled={page <= 1}
+                onClick={() => onPageChange(page - 1)}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="seller-dashboard__page-button"
+                disabled={page >= totalPages}
+                onClick={() => onPageChange(page + 1)}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -133,50 +165,6 @@ function OrderRow({ order, priceFormatter }: { order: SellerOrderSummary; priceF
       </td>
     </tr>
   );
-}
-
-function sortOrders(orders: SellerOrderSummary[], sortBy: SortOption): SellerOrderSummary[] {
-  const statusRank: Record<OrderStatus, number> = {
-    Pending: 0,
-    Approved: 1,
-    Processing: 2,
-    Shipped: 3,
-    Delivered: 4,
-    Cancelled: 5,
-    Returned: 6,
-  };
-  const sortKey = getSortKey(sortBy);
-  const sortDirection = getSortDirection(sortBy);
-
-  const sorted = [...orders].sort((a, b) => {
-    let result = 0;
-    if (sortKey === 'date') {
-      result = a.orderPurchaseTimestampUtc.localeCompare(b.orderPurchaseTimestampUtc);
-    } else if (sortKey === 'total') {
-      result = a.totalAmount - b.totalAmount;
-    } else if (sortKey === 'status') {
-      result = statusRank[a.orderStatus] - statusRank[b.orderStatus];
-    }
-    return sortDirection === 'asc' ? result : -result;
-  });
-
-  return sorted;
-}
-
-function getSortKey(sortBy: SortOption): SortKey {
-  if (sortBy === 'total-high' || sortBy === 'total-low') {
-    return 'total';
-  }
-
-  if (sortBy === 'status') {
-    return 'status';
-  }
-
-  return 'date';
-}
-
-function getSortDirection(sortBy: SortOption): 'asc' | 'desc' {
-  return sortBy === 'oldest' || sortBy === 'total-low' || sortBy === 'status' ? 'asc' : 'desc';
 }
 
 function formatDate(isoDate: string): string {

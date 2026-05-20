@@ -8,6 +8,7 @@ using Backend.Domain.Entities.Orders;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
+using DomainVerificationStatus = Backend.Domain.Enums.VerificationStatus;
 
 namespace Backend.IntegrationTests;
 
@@ -214,6 +215,32 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task UpdateListing_WhenCategoryDoesNotExist_ReturnsNotFound()
+    {
+        // Arrange
+        var seed = await SeedSharedProductListingAsync();
+        AuthenticateAs(seed.SellerUserId);
+        var updateRequest = new UpdateProductRequest
+        {
+            ProductName = "Seller-specific product",
+            CategoryId = Guid.NewGuid(),
+            Description = "Updated only for the authenticated seller.",
+            Price = 42m,
+            InventoryQuantity = 7,
+            VisibilityStatus = "Published"
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync(
+            $"/api/products/listings/{seed.SellerListingId}",
+            updateRequest,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task DeleteListing_WhenOwned_DoesNotDeleteSharedProductOrOtherSellerListing()
     {
         // Arrange
@@ -310,8 +337,10 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
         var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        seller.VerificationStatus = DomainVerificationStatus.Verified;
         var otherSellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
         var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        otherSeller.VerificationStatus = DomainVerificationStatus.Verified;
         var category = TestEntityFactory.CreateCategory("shared_category", "Shared category");
         var product = TestEntityFactory.CreateProduct(category.Id, "Shared product");
         var sellerListing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"SELLER-{Guid.NewGuid():N}", 25m);

@@ -60,6 +60,7 @@ export interface SellerOrderSummary {
   freightAmount: number;
   totalAmount: number;
   currencyCode: CurrencyCode;
+  canUpdateStatus: boolean;
   items: OrderItem[];
   shipments: Shipment[];
 }
@@ -69,6 +70,18 @@ export interface SellerOrderStats {
   activeOrders: number;
   totalRevenue: number;
   currencyCode: CurrencyCode;
+}
+
+export type SellerOrderStatusFilter = 'all' | OrderStatus;
+export type SellerOrderSort = 'newest' | 'oldest' | 'total-high' | 'total-low';
+
+export interface GetMyOrdersOptions {
+  currency: CurrencyCode;
+  page?: number;
+  pageSize?: number;
+  status?: SellerOrderStatusFilter;
+  sort?: SellerOrderSort;
+  signal?: AbortSignal;
 }
 
 export const sellerApi = {
@@ -84,18 +97,24 @@ export const sellerApi = {
     return request<SellerListing[]>('/api/products/my-listings', { signal });
   },
 
-  getMyOrders: async (
-    currency: CurrencyCode,
+  getMyOrders: async ({
+    currency,
     page = 1,
-    pageSize = 50,
-    signal?: AbortSignal,
-  ): Promise<PageResponse<SellerOrderSummary>> => {
+    pageSize = 25,
+    status = 'all',
+    sort = 'newest',
+    signal,
+  }: GetMyOrdersOptions): Promise<PageResponse<SellerOrderSummary>> => {
     const params = new URLSearchParams({
       currency,
       page: page.toString(),
       pageSize: pageSize.toString(),
-      sort: 'newest',
+      sort,
     });
+
+    if (status !== 'all') {
+      params.set('status', status);
+    }
 
     return request<PageResponse<SellerOrderSummary>>(`/api/sellers/me/orders?${params}`, { signal });
   },

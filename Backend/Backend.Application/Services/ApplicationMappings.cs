@@ -307,6 +307,7 @@ internal static class ApplicationMappings
             priceConverter(sellerItems.Sum(item => item.FreightValue)),
             priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity + item.FreightValue)),
             currencyCode,
+            order.Items.All(item => item.SellerId == sellerId),
             sellerItems.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             sellerShipments);
     }

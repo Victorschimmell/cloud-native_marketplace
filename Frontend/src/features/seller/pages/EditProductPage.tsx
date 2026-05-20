@@ -66,7 +66,11 @@ export default function EditProductPage() {
         }
       })
       .catch(() => {})
-      .finally(() => setLoadingListing(false));
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoadingListing(false);
+        }
+      });
     return () => controller.abort();
   }, [listingId, state?.listing]);
 
@@ -98,7 +102,7 @@ export default function EditProductPage() {
     return (
       <PageSkeleton title="Edit Product" titleId="edit-product-page-title" summary="">
         <section className="add-product">
-          <p>Loading product…</p>
+          <p>Loading product...</p>
         </section>
       </PageSkeleton>
     );

@@ -55,7 +55,10 @@ export default function SellerOrderDetailsPage() {
     return () => controller.abort();
   }, [currency, id]);
 
-  const actions = useMemo(() => getStatusActions(order?.orderStatus), [order?.orderStatus]);
+  const actions = useMemo(
+    () => (order?.canUpdateStatus ? getStatusActions(order.orderStatus) : []),
+    [order?.canUpdateStatus, order?.orderStatus],
+  );
   const itemCount = order?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
   const earliestShippingLimit = useMemo(() => {
     const limits = order?.items
@@ -222,7 +225,11 @@ export default function SellerOrderDetailsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="seller-order-details__muted">No seller status actions are available for this order.</p>
+                  <p className="seller-order-details__muted">
+                    {order.canUpdateStatus
+                      ? 'No seller status actions are available for this order.'
+                      : 'This order includes items from another seller, so order-level status changes are unavailable.'}
+                  </p>
                 )}
 
                 {actions.map((action) => (

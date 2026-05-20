@@ -159,6 +159,10 @@ public sealed class OrderService : IOrderService
         {
             return Result<PagedResult<SellerOrderSummaryDto>>.NotFound("Seller profile was not found for the authenticated user.");
         }
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+        {
+            return Result<PagedResult<SellerOrderSummaryDto>>.Forbidden("Seller must be verified to manage orders.");
+        }
 
         var orders = await _orderRepository.GetBySellerIdAsync(seller.Id, request.Page, request.PageSize, status, sort, cancellationToken);
         var mappedOrders = orders.Items
@@ -185,6 +189,10 @@ public sealed class OrderService : IOrderService
         {
             return Result<SellerOrderSummaryDto>.NotFound("Seller profile was not found for the authenticated user.");
         }
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+        {
+            return Result<SellerOrderSummaryDto>.Forbidden("Seller must be verified to manage orders.");
+        }
 
         var order = await _orderRepository.GetByIdWithDetailsAsync(orderId, cancellationToken);
         if (order is null || !order.Items.Any(item => item.SellerId == seller.Id))
@@ -209,6 +217,10 @@ public sealed class OrderService : IOrderService
         if (seller is null)
         {
             return Result<SellerOrderStatsDto>.NotFound("Seller profile was not found for the authenticated user.");
+        }
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+        {
+            return Result<SellerOrderStatsDto>.Forbidden("Seller must be verified to manage orders.");
         }
 
         var aggregate = await _orderRepository.GetSellerOrderAggregateAsync(seller.Id, cancellationToken);
@@ -245,11 +257,19 @@ public sealed class OrderService : IOrderService
         {
             return Result<SellerOrderSummaryDto>.NotFound("Seller profile was not found for the authenticated user.");
         }
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+        {
+            return Result<SellerOrderSummaryDto>.Forbidden("Seller must be verified to manage orders.");
+        }
 
         var order = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
         if (order is null || !order.Items.Any(item => item.SellerId == seller.Id))
         {
             return Result<SellerOrderSummaryDto>.NotFound("Order was not found for the authenticated seller.");
+        }
+        if (order.Items.Any(item => item.SellerId != seller.Id))
+        {
+            return Result<SellerOrderSummaryDto>.ValidationFailure("Order contains items from another seller and cannot be updated with order-level seller status.");
         }
 
         if (!CanSellerMoveOrderToStatus(order.OrderStatus, request.Status))

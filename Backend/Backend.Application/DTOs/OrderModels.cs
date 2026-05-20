@@ -120,6 +120,7 @@ public sealed record SellerOrderSummaryDto(
     decimal FreightAmount,
     decimal TotalAmount,
     string CurrencyCode,
+    bool CanUpdateStatus,
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<ShipmentDto> Shipments);
 

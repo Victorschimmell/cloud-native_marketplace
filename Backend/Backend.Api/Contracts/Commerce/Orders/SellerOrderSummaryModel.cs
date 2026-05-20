@@ -20,6 +20,7 @@ public sealed record SellerOrderSummaryModel
     public required decimal FreightAmount { get; init; }
     public required decimal TotalAmount { get; init; }
     public required string CurrencyCode { get; init; }
+    public required bool CanUpdateStatus { get; init; }
     public required IReadOnlyList<OrderItemModel> Items { get; init; }
     public required IReadOnlyList<ShipmentModel> Shipments { get; init; }
 }

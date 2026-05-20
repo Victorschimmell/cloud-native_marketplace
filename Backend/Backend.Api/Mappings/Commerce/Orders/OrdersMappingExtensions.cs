@@ -74,6 +74,7 @@ public static class OrdersMappingExtensions
             FreightAmount = order.FreightAmount,
             TotalAmount = order.TotalAmount,
             CurrencyCode = order.CurrencyCode,
+            CanUpdateStatus = order.CanUpdateStatus,
             Items = order.Items.Select(i => i.ToModel()).ToArray(),
             Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
         };

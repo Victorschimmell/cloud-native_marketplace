@@ -13,6 +13,7 @@ public sealed class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IProductListingRepository _productListingRepository;
+    private readonly IProductCategoryRepository _productCategoryRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly ICurrentUserProvider _currentUserProvider;
     private readonly IUnitOfWork _unitOfWork;
@@ -21,6 +22,7 @@ public sealed class ProductService : IProductService
     public ProductService(
         IProductRepository productRepository,
         IProductListingRepository productListingRepository,
+        IProductCategoryRepository productCategoryRepository,
         ISellerRepository sellerRepository,
         ICurrentUserProvider currentUserProvider,
         IUnitOfWork unitOfWork,
@@ -28,6 +30,7 @@ public sealed class ProductService : IProductService
     {
         ArgumentNullException.ThrowIfNull(productRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
+        ArgumentNullException.ThrowIfNull(productCategoryRepository);
         ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currentUserProvider);
         ArgumentNullException.ThrowIfNull(unitOfWork);
@@ -35,6 +38,7 @@ public sealed class ProductService : IProductService
 
         _productRepository = productRepository;
         _productListingRepository = productListingRepository;
+        _productCategoryRepository = productCategoryRepository;
         _sellerRepository = sellerRepository;
         _currentUserProvider = currentUserProvider;
         _unitOfWork = unitOfWork;
@@ -115,6 +119,11 @@ public sealed class ProductService : IProductService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is null)
             return Result<ProductDto>.NotFound("Seller profile not found.");
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+            return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+
+        if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
+            return Result<ProductDto>.NotFound("Product category was not found.");
 
         var product = CreateProductEntity(request);
         await _productRepository.AddAsync(product, cancellationToken);
@@ -144,6 +153,8 @@ public sealed class ProductService : IProductService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is null)
             return Result<IReadOnlyList<SellerListingDto>>.NotFound("Seller profile not found.");
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+            return Result<IReadOnlyList<SellerListingDto>>.Forbidden("Seller must be verified to manage product listings.");
 
         var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, int.MaxValue, cancellationToken);
         return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto()).ToArray());
@@ -171,6 +182,11 @@ public sealed class ProductService : IProductService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is null)
             return Result<ProductDto>.NotFound("Seller profile not found.");
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+            return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+
+        if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
+            return Result<ProductDto>.NotFound("Product category was not found.");
 
         var listing = await _productListingRepository.GetByIdAsync(request.ListingId, cancellationToken);
         if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)
@@ -212,6 +228,8 @@ public sealed class ProductService : IProductService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is null)
             return Result.NotFound("Seller profile not found.");
+        if (seller.VerificationStatus != VerificationStatus.Verified)
+            return Result.Forbidden("Seller must be verified to manage product listings.");
 
         var listing = await _productListingRepository.GetByIdAsync(listingId, cancellationToken);
         if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)
@@ -221,6 +239,12 @@ public sealed class ProductService : IProductService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    private async Task<bool> CategoryExistsAsync(Guid categoryId, CancellationToken cancellationToken)
+    {
+        var category = await _productCategoryRepository.GetByIdAsync(categoryId, cancellationToken);
+        return category is not null;
     }
 
     private static Product CreateProductEntity(CreateProductRequest request) =>
