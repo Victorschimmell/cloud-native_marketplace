@@ -124,6 +124,32 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
         return new PagedResult<Order>(orders, page, pageSize, totalCount);
     }
 
+    public async Task<SellerOrderAggregate> GetSellerOrderAggregateAsync(Guid sellerId, CancellationToken cancellationToken = default)
+    {
+        var sellerOrders = dbContext.Orders
+            .AsNoTracking()
+            .Where(o => o.Items.Any(i => i.SellerId == sellerId));
+
+        var totalOrders = await sellerOrders.CountAsync(cancellationToken);
+        var activeOrders = await sellerOrders
+            .CountAsync(
+                o => o.OrderStatus != OrderStatus.Cancelled &&
+                     o.OrderStatus != OrderStatus.Delivered &&
+                     o.OrderStatus != OrderStatus.Returned,
+                cancellationToken);
+
+        var totalRevenue = await dbContext.OrderItems
+            .AsNoTracking()
+            .Where(i =>
+                i.SellerId == sellerId &&
+                i.Order != null &&
+                i.Order.OrderStatus != OrderStatus.Cancelled &&
+                i.Order.OrderStatus != OrderStatus.Returned)
+            .SumAsync(i => i.UnitPrice * i.Quantity + i.FreightValue, cancellationToken);
+
+        return new SellerOrderAggregate(totalOrders, activeOrders, totalRevenue);
+    }
+
     public async Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Orders.AsNoTracking();

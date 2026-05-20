@@ -85,6 +85,21 @@ public class SellersController : ApiControllerBase
             });
     }
 
+    [Authorize]
+    [HttpGet("me/order-stats")]
+    public async Task<ActionResult<SellerOrderStatsModel>> GetMyOrderStatsAsync(
+        [FromQuery] string? currency,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetCurrentUserId(out var authenticatedUserId))
+        {
+            return Unauthorized(new { Error = "Authenticated user id is missing." });
+        }
+
+        var result = await _orderService.GetStatsBySellerUserAsync(authenticatedUserId, currency, cancellationToken);
+        return HandleResult(result, stats => stats.ToSellerStatsModel());
+    }
+
     private bool TryGetCurrentUserId(out Guid userId)
     {
         if (_currentUserProvider.UserId is { } currentUserId)

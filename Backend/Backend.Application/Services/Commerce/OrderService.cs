@@ -169,6 +169,30 @@ public sealed class OrderService : IOrderService
             new PagedResult<SellerOrderSummaryDto>(mappedOrders, orders.Page, orders.PageSize, orders.TotalCount));
     }
 
+    public async Task<Result<SellerOrderStatsDto>> GetStatsBySellerUserAsync(
+        Guid authenticatedUserId,
+        string? currency,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        {
+            return Result<SellerOrderStatsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        var seller = await _sellerRepository.GetByUserIdAsync(authenticatedUserId, cancellationToken);
+        if (seller is null)
+        {
+            return Result<SellerOrderStatsDto>.NotFound("Seller profile was not found for the authenticated user.");
+        }
+
+        var aggregate = await _orderRepository.GetSellerOrderAggregateAsync(seller.Id, cancellationToken);
+        return Result<SellerOrderStatsDto>.Success(new SellerOrderStatsDto(
+            aggregate.TotalOrders,
+            aggregate.ActiveOrders,
+            priceConverter(aggregate.TotalRevenue),
+            currencyCode));
+    }
+
     public Task<Result<IReadOnlyList<OrderItemDto>>> GetOrderItemsAsync(Guid orderId, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(Result<IReadOnlyList<OrderItemDto>>.NotImplemented());

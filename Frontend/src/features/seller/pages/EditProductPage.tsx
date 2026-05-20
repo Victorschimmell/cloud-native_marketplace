@@ -76,7 +76,7 @@ export default function EditProductPage() {
     if (!listing) return;
     setSubmitError(null);
     try {
-      await sellerApi.updateProduct(listing.productId, {
+      await sellerApi.updateProduct(listing.listingId, {
         categoryId: form.categoryId,
         productName: form.name,
         description: form.description,

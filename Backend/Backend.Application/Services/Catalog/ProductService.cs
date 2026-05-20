@@ -97,8 +97,16 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Price < 0)
-            return Result<ProductDto>.ValidationFailure("Price must be non-negative.");
+        var validationError = ValidateProductMutation(
+            request.ProductName,
+            request.Description,
+            request.Price,
+            request.InventoryQuantity,
+            visibilityStatus: null);
+        if (validationError is not null)
+        {
+            return Result<ProductDto>.ValidationFailure(validationError);
+        }
 
         var userId = _currentUserProvider.UserId;
         if (userId is null)
@@ -108,20 +116,7 @@ public sealed class ProductService : IProductService
         if (seller is null)
             return Result<ProductDto>.NotFound("Seller profile not found.");
 
-        var product = new Product
-        {
-            CategoryId = request.CategoryId,
-            ProductName = request.ProductName,
-            Description = request.Description,
-            ProductNameLength = request.ProductName.Length,
-            ProductDescriptionLength = request.Description.Length,
-            ProductPhotosQty = request.ProductPhotosQty,
-            ProductWeightG = request.ProductWeightG,
-            ProductLengthCm = request.ProductLengthCm,
-            ProductHeightCm = request.ProductHeightCm,
-            ProductWidthCm = request.ProductWidthCm,
-        };
-
+        var product = CreateProductEntity(request);
         await _productRepository.AddAsync(product, cancellationToken);
 
         var listing = new ProductListing
@@ -156,6 +151,19 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default)
     {
+        var validationError = ValidateProductMutation(
+            request.ProductName,
+            request.Description,
+            request.Price,
+            request.InventoryQuantity,
+            request.VisibilityStatus);
+        if (validationError is not null)
+        {
+            return Result<ProductDto>.ValidationFailure(validationError);
+        }
+
+        var parsedStatus = Enum.Parse<ListingVisibilityStatus>(request.VisibilityStatus, ignoreCase: true);
+
         var userId = _currentUserProvider.UserId;
         if (userId is null)
             return Result<ProductDto>.Unauthorized("User is not authenticated.");
@@ -164,42 +172,38 @@ public sealed class ProductService : IProductService
         if (seller is null)
             return Result<ProductDto>.NotFound("Seller profile not found.");
 
-        var listings = await _productListingRepository.GetByProductIdAsync(request.ProductId, cancellationToken);
-        var listing = listings.FirstOrDefault(l => l.SellerId == seller.Id);
-        if (listing is null)
+        var listing = await _productListingRepository.GetByIdAsync(request.ListingId, cancellationToken);
+        if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)
             return Result<ProductDto>.NotFound("Product listing not found or not owned by this seller.");
 
-        var product = await _productRepository.GetByIdAsync(request.ProductId, cancellationToken);
+        var product = await _productRepository.GetByIdAsync(listing.ProductId, cancellationToken);
         if (product is null)
             return Result<ProductDto>.NotFound("Product not found.");
 
-        product.CategoryId = request.CategoryId;
-        product.ProductName = request.ProductName;
-        product.Description = request.Description;
-        product.ProductNameLength = request.ProductName.Length;
-        product.ProductDescriptionLength = request.Description.Length;
-        product.ProductPhotosQty = request.ProductPhotosQty;
-        product.ProductWeightG = request.ProductWeightG;
-        product.ProductLengthCm = request.ProductLengthCm;
-        product.ProductHeightCm = request.ProductHeightCm;
-        product.ProductWidthCm = request.ProductWidthCm;
+        var activeProductListings = await _productListingRepository.GetByProductIdAsync(product.Id, cancellationToken);
+        if (activeProductListings.Any(l => l.Id != listing.Id))
+        {
+            product = CreateProductEntity(request);
+            await _productRepository.AddAsync(product, cancellationToken);
+            listing.ProductId = product.Id;
+        }
+        else
+        {
+            ApplyProductChanges(product, request);
+            await _productRepository.UpdateAsync(product, cancellationToken);
+        }
 
         listing.ListingPrice = request.Price;
         listing.InventoryQuantity = request.InventoryQuantity;
-        if (Enum.TryParse<ListingVisibilityStatus>(request.VisibilityStatus, ignoreCase: true, out var parsedStatus)
-            && (parsedStatus == ListingVisibilityStatus.Draft || parsedStatus == ListingVisibilityStatus.Published))
-        {
-            listing.VisibilityStatus = parsedStatus;
-        }
+        listing.VisibilityStatus = parsedStatus;
 
-        await _productRepository.UpdateAsync(product, cancellationToken);
         await _productListingRepository.UpdateAsync(listing, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result<ProductDto>.Success(product.ToProductDto());
     }
 
-    public async Task<Result> DeleteAsync(Guid productId, CancellationToken cancellationToken = default)
+    public async Task<Result> DeleteListingAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
         var userId = _currentUserProvider.UserId;
         if (userId is null)
@@ -209,20 +213,94 @@ public sealed class ProductService : IProductService
         if (seller is null)
             return Result.NotFound("Seller profile not found.");
 
-        var listings = await _productListingRepository.GetByProductIdAsync(productId, cancellationToken);
-        var listing = listings.FirstOrDefault(l => l.SellerId == seller.Id);
-        if (listing is null)
+        var listing = await _productListingRepository.GetByIdAsync(listingId, cancellationToken);
+        if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)
             return Result.NotFound("Product listing not found or not owned by this seller.");
 
-        var product = await _productRepository.GetByIdAsync(productId, cancellationToken);
-        if (product is null)
-            return Result.NotFound("Product not found.");
-
         await _productListingRepository.DeleteAsync(listing, cancellationToken);
-        await _productRepository.DeleteAsync(product, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
-}
 
+    private static Product CreateProductEntity(CreateProductRequest request) =>
+        new()
+        {
+            CategoryId = request.CategoryId,
+            ProductName = request.ProductName.Trim(),
+            Description = request.Description.Trim(),
+            ProductNameLength = request.ProductName.Trim().Length,
+            ProductDescriptionLength = request.Description.Trim().Length,
+            ProductPhotosQty = request.ProductPhotosQty,
+            ProductWeightG = request.ProductWeightG,
+            ProductLengthCm = request.ProductLengthCm,
+            ProductHeightCm = request.ProductHeightCm,
+            ProductWidthCm = request.ProductWidthCm,
+        };
+
+    private static Product CreateProductEntity(UpdateProductRequest request) =>
+        new()
+        {
+            CategoryId = request.CategoryId,
+            ProductName = request.ProductName.Trim(),
+            Description = request.Description.Trim(),
+            ProductNameLength = request.ProductName.Trim().Length,
+            ProductDescriptionLength = request.Description.Trim().Length,
+            ProductPhotosQty = request.ProductPhotosQty,
+            ProductWeightG = request.ProductWeightG,
+            ProductLengthCm = request.ProductLengthCm,
+            ProductHeightCm = request.ProductHeightCm,
+            ProductWidthCm = request.ProductWidthCm,
+        };
+
+    private static void ApplyProductChanges(Product product, UpdateProductRequest request)
+    {
+        product.CategoryId = request.CategoryId;
+        product.ProductName = request.ProductName.Trim();
+        product.Description = request.Description.Trim();
+        product.ProductNameLength = product.ProductName.Length;
+        product.ProductDescriptionLength = product.Description.Length;
+        product.ProductPhotosQty = request.ProductPhotosQty;
+        product.ProductWeightG = request.ProductWeightG;
+        product.ProductLengthCm = request.ProductLengthCm;
+        product.ProductHeightCm = request.ProductHeightCm;
+        product.ProductWidthCm = request.ProductWidthCm;
+    }
+
+    private static string? ValidateProductMutation(
+        string productName,
+        string description,
+        decimal price,
+        int inventoryQuantity,
+        string? visibilityStatus)
+    {
+        if (string.IsNullOrWhiteSpace(productName))
+        {
+            return "Product name is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return "Description is required.";
+        }
+
+        if (price < 0)
+        {
+            return "Price must be non-negative.";
+        }
+
+        if (inventoryQuantity < 0)
+        {
+            return "Inventory quantity must be non-negative.";
+        }
+
+        if (visibilityStatus is not null &&
+            (!Enum.TryParse<ListingVisibilityStatus>(visibilityStatus, ignoreCase: true, out var parsedStatus) ||
+             parsedStatus is not (ListingVisibilityStatus.Draft or ListingVisibilityStatus.Published)))
+        {
+            return "Visibility status must be Draft or Published.";
+        }
+
+        return null;
+    }
+}

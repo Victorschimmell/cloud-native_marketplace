@@ -82,13 +82,13 @@ public static class ProductsMappingExtensions
             ProductHeightCm: request.ProductHeightCm,
             ProductWidthCm: request.ProductWidthCm,
             Price: request.Price,
-            InventoryQuantity: request.InStock ? 1 : 0);
+            InventoryQuantity: request.InventoryQuantity);
     }
 
-    public static App.UpdateProductRequest ToDto(this UpdateProductRequest request, Guid productId)
+    public static App.UpdateProductRequest ToDto(this UpdateProductRequest request, Guid listingId)
     {
         return new App.UpdateProductRequest(
-            ProductId: productId,
+            ListingId: listingId,
             CategoryId: request.CategoryId,
             ProductName: request.ProductName,
             Description: request.Description,

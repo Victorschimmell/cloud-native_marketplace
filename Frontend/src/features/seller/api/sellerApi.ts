@@ -8,7 +8,7 @@ export interface CreateProductRequest {
   productName: string;
   description: string;
   price: number;
-  inStock: boolean;
+  inventoryQuantity: number;
 }
 
 export interface UpdateProductRequest {
@@ -60,6 +60,13 @@ export interface SellerOrderSummary {
   shipments: Shipment[];
 }
 
+export interface SellerOrderStats {
+  totalOrders: number;
+  activeOrders: number;
+  totalRevenue: number;
+  currencyCode: CurrencyCode;
+}
+
 export const sellerApi = {
   createProduct: async (data: CreateProductRequest): Promise<ProductResponse> => {
     return request<ProductResponse>('/api/products', {
@@ -89,15 +96,20 @@ export const sellerApi = {
     return request<PageResponse<SellerOrderSummary>>(`/api/sellers/me/orders?${params}`, { signal });
   },
 
-  updateProduct: async (productId: string, data: UpdateProductRequest): Promise<ProductResponse> => {
-    return request<ProductResponse>(`/api/products/${productId}`, {
+  getMyOrderStats: async (currency: CurrencyCode, signal?: AbortSignal): Promise<SellerOrderStats> => {
+    const params = new URLSearchParams({ currency });
+    return request<SellerOrderStats>(`/api/sellers/me/order-stats?${params}`, { signal });
+  },
+
+  updateProduct: async (listingId: string, data: UpdateProductRequest): Promise<ProductResponse> => {
+    return request<ProductResponse>(`/api/products/listings/${listingId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
   },
 
-  deleteProduct: async (productId: string): Promise<void> => {
-    await request<void>(`/api/products/${productId}`, { method: 'DELETE' });
+  deleteProduct: async (listingId: string): Promise<void> => {
+    await request<void>(`/api/products/listings/${listingId}`, { method: 'DELETE' });
   },
 };

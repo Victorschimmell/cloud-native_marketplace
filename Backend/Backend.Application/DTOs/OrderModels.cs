@@ -122,6 +122,12 @@ public sealed record SellerOrderSummaryDto(
     IReadOnlyList<OrderItemDto> Items,
     IReadOnlyList<ShipmentDto> Shipments);
 
+public sealed record SellerOrderStatsDto(
+    int TotalOrders,
+    int ActiveOrders,
+    decimal TotalRevenue,
+    string CurrencyCode);
+
 public sealed record UpdateOrderStatusRequest(Guid OrderId, OrderStatus Status);
 
 public sealed record CancelOrderRequest(Guid OrderId, string? Reason);

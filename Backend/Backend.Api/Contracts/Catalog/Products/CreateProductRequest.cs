@@ -9,13 +9,22 @@ public sealed record CreateProductRequest
     public required Guid CategoryId { get; init; }
 
     [MaxLength(500)]
+    [MinLength(1)]
     public required string ProductName { get; init; }
+    [MinLength(1)]
     public required string Description { get; init; }
+    [Range(0, double.MaxValue)]
     public required decimal Price { get; init; }
-    public required bool InStock { get; init; }
+    [Range(0, int.MaxValue)]
+    public required int InventoryQuantity { get; init; }
+    [Range(0, int.MaxValue)]
     public int ProductPhotosQty { get; init; } = 0;
+    [Range(0, int.MaxValue)]
     public int ProductWeightG { get; init; } = 0;
+    [Range(0, int.MaxValue)]
     public int ProductLengthCm { get; init; } = 0;
+    [Range(0, int.MaxValue)]
     public int ProductHeightCm { get; init; } = 0;
+    [Range(0, int.MaxValue)]
     public int ProductWidthCm { get; init; } = 0;
 }

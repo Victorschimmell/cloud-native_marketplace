@@ -78,6 +78,15 @@ public static class OrdersMappingExtensions
             Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
         };
 
+    public static SellerOrderStatsModel ToSellerStatsModel(this App.SellerOrderStatsDto stats) =>
+        new()
+        {
+            TotalOrders = stats.TotalOrders,
+            ActiveOrders = stats.ActiveOrders,
+            TotalRevenue = stats.TotalRevenue,
+            CurrencyCode = stats.CurrencyCode
+        };
+
     public static OrderItemModel ToModel(this App.OrderItemDto item) =>
         new()
         {

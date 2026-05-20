@@ -73,7 +73,7 @@ public sealed record CreateProductRequest(
     int InventoryQuantity);
 
 public sealed record UpdateProductRequest(
-    Guid ProductId,
+    Guid ListingId,
     Guid CategoryId,
     string ProductName,
     string Description,

@@ -112,7 +112,7 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
             CategoryId = Guid.NewGuid(),
             Description = "Test Description",
             Price = 9.99m,
-            InStock = true,
+            InventoryQuantity = 10,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,

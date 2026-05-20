@@ -13,7 +13,7 @@ interface ProductFormState {
   price: string;
   categoryId: string;
   imageUrl: string;
-  inStock: boolean;
+  inventoryQuantity: string;
 }
 
 const INITIAL_STATE: ProductFormState = {
@@ -22,7 +22,7 @@ const INITIAL_STATE: ProductFormState = {
   price: '',
   categoryId: '',
   imageUrl: '',
-  inStock: true,
+  inventoryQuantity: '0',
 };
 
 export default function AddProductPage() {
@@ -51,7 +51,7 @@ export default function AddProductPage() {
         productName: form.name,
         description: form.description,
         price: parseFloat(form.price),
-        inStock: form.inStock,
+        inventoryQuantity: parseInt(form.inventoryQuantity, 10),
       });
       navigate('/seller/products');
     } catch (error) {
@@ -144,25 +144,31 @@ export default function AddProductPage() {
 
             <label className="add-product__field">
               <span className="add-product__field-label">
-                Product Image URL <span className="add-product__required">*</span>
+                Product Image URL
               </span>
               <input
                 className="add-product__input"
                 type="url"
-                required
                 placeholder="https://example.com/image.jpg"
                 value={form.imageUrl}
                 onChange={(event) => updateField('imageUrl', event.target.value)}
               />
             </label>
 
-            <label className="add-product__checkbox">
+            <label className="add-product__field">
+              <span className="add-product__field-label">
+                Inventory Quantity <span className="add-product__required">*</span>
+              </span>
               <input
-                type="checkbox"
-                checked={form.inStock}
-                onChange={(event) => updateField('inStock', event.target.checked)}
+                className="add-product__input"
+                type="number"
+                min="0"
+                step="1"
+                required
+                placeholder="0"
+                value={form.inventoryQuantity}
+                onChange={(event) => updateField('inventoryQuantity', event.target.value)}
               />
-              Product is in stock
             </label>
 
             <div className="add-product__actions">

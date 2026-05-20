@@ -73,6 +73,19 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(5m, order.FreightAmount);
         Assert.Equal(55m, order.TotalAmount);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
+
+        var statsResponse = await _client.GetAsync(
+            "/api/sellers/me/order-stats?currency=BRL",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, statsResponse.StatusCode);
+
+        var stats = await statsResponse.Content.ReadFromJsonAsync<SellerOrderStatsModel>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(stats);
+        Assert.Equal(1, stats.TotalOrders);
+        Assert.Equal(1, stats.ActiveOrders);
+        Assert.Equal(55m, stats.TotalRevenue);
     }
 
     private async Task<(Guid SellerUserId, string ExpectedOrderNumber)> SeedSellerOrdersAsync()

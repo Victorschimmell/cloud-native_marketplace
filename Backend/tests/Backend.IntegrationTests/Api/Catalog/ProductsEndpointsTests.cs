@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
@@ -113,7 +114,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             CategoryId = Guid.NewGuid(),
             Description = "Test Description",
             Price = 9.99m,
-            InStock = true,
+            InventoryQuantity = 10,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,
@@ -148,7 +149,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/products/{productId}", updateRequest, TestContext.Current.CancellationToken);
+        var response = await _client.PutAsJsonAsync($"/api/products/listings/{productId}", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -159,10 +160,84 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     {
         // Act
         var productId = Guid.NewGuid();
-        var response = await _client.DeleteAsync($"/api/products/{productId}", TestContext.Current.CancellationToken);
+        var response = await _client.DeleteAsync($"/api/products/listings/{productId}", TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateListing_WhenProductIsShared_ForksProductForSellerListing()
+    {
+        // Arrange
+        var seed = await SeedSharedProductListingAsync();
+        AuthenticateAs(seed.SellerUserId);
+        var updateRequest = new UpdateProductRequest
+        {
+            ProductName = "Seller-specific product",
+            CategoryId = seed.CategoryId,
+            Description = "Updated only for the authenticated seller.",
+            Price = 42m,
+            InventoryQuantity = 7,
+            VisibilityStatus = "Published"
+        };
+
+        // Act
+        var response = await _client.PutAsJsonAsync(
+            $"/api/products/listings/{seed.SellerListingId}",
+            updateRequest,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerListing = await dbContext.ProductListings.FindAsync([seed.SellerListingId], TestContext.Current.CancellationToken);
+        var otherSellerListing = await dbContext.ProductListings.FindAsync([seed.OtherSellerListingId], TestContext.Current.CancellationToken);
+        var originalProduct = await dbContext.Products.FindAsync([seed.SharedProductId], TestContext.Current.CancellationToken);
+
+        Assert.NotNull(sellerListing);
+        Assert.NotNull(otherSellerListing);
+        Assert.NotNull(originalProduct);
+        Assert.NotEqual(seed.SharedProductId, sellerListing.ProductId);
+        Assert.Equal(seed.SharedProductId, otherSellerListing.ProductId);
+        Assert.Equal("Shared product", originalProduct.ProductName);
+        Assert.Equal(42m, sellerListing.ListingPrice);
+        Assert.Equal(7, sellerListing.InventoryQuantity);
+
+        var sellerProduct = await dbContext.Products.FindAsync([sellerListing.ProductId], TestContext.Current.CancellationToken);
+        Assert.NotNull(sellerProduct);
+        Assert.Equal("Seller-specific product", sellerProduct.ProductName);
+    }
+
+    [Fact]
+    public async Task DeleteListing_WhenOwned_DoesNotDeleteSharedProductOrOtherSellerListing()
+    {
+        // Arrange
+        var seed = await SeedSharedProductListingAsync();
+        AuthenticateAs(seed.SellerUserId);
+
+        // Act
+        var response = await _client.DeleteAsync(
+            $"/api/products/listings/{seed.SellerListingId}",
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerListing = await dbContext.ProductListings.FindAsync([seed.SellerListingId], TestContext.Current.CancellationToken);
+        var otherSellerListing = await dbContext.ProductListings.FindAsync([seed.OtherSellerListingId], TestContext.Current.CancellationToken);
+        var sharedProduct = await dbContext.Products.FindAsync([seed.SharedProductId], TestContext.Current.CancellationToken);
+
+        Assert.NotNull(sellerListing);
+        Assert.NotNull(otherSellerListing);
+        Assert.NotNull(sharedProduct);
+        Assert.True(sellerListing.IsDeleted);
+        Assert.False(otherSellerListing.IsDeleted);
+        Assert.Equal(seed.SharedProductId, otherSellerListing.ProductId);
     }
 
     [Fact]
@@ -225,4 +300,47 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         return (product.Id, listing.Id);
     }
+
+    private async Task<SharedListingSeed> SeedSharedProductListingAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var otherSellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
+        var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        var category = TestEntityFactory.CreateCategory("shared_category", "Shared category");
+        var product = TestEntityFactory.CreateProduct(category.Id, "Shared product");
+        var sellerListing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"SELLER-{Guid.NewGuid():N}", 25m);
+        var otherSellerListing = TestEntityFactory.CreateListing(otherSeller.Id, product.Id, $"OTHER-{Guid.NewGuid():N}", 30m);
+
+        dbContext.UserAccounts.AddRange(sellerUser, otherSellerUser);
+        dbContext.Sellers.AddRange(seller, otherSeller);
+        dbContext.ProductCategories.Add(category);
+        dbContext.Products.Add(product);
+        dbContext.ProductListings.AddRange(sellerListing, otherSellerListing);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return new SharedListingSeed(
+            sellerUser.Id,
+            category.Id,
+            product.Id,
+            sellerListing.Id,
+            otherSellerListing.Id);
+    }
+
+    private void AuthenticateAs(Guid userId)
+    {
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            IntegrationTestAuth.CreateBearerToken(userId));
+    }
+
+    private sealed record SharedListingSeed(
+        Guid SellerUserId,
+        Guid CategoryId,
+        Guid SharedProductId,
+        Guid SellerListingId,
+        Guid OtherSellerListingId);
 }

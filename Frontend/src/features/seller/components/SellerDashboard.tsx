@@ -6,7 +6,7 @@ import { getCurrencyLocale } from '../../../shared/currency/currency';
 import { useCurrency } from '../../../shared/currency/useCurrency';
 import ProductInventoryTable from './ProductInventoryTable';
 import OrdersTable from './OrdersTable';
-import { sellerApi, type SellerListing, type SellerOrderSummary } from '../api/sellerApi';
+import { sellerApi, type SellerListing, type SellerOrderStats, type SellerOrderSummary } from '../api/sellerApi';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
@@ -31,6 +31,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
   );
   const [listings, setListings] = useState<SellerListing[]>([]);
   const [orders, setOrders] = useState<SellerOrderSummary[]>([]);
+  const [orderStats, setOrderStats] = useState<SellerOrderStats | null>(null);
   const [ordersError, setOrdersError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,17 +44,27 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     const controller = new AbortController();
     setOrdersError(null);
 
-    sellerApi
-      .getMyOrders(currency, 1, 50, controller.signal)
-      .then((response) => setOrders(response.items))
-      .catch((error) => {
+    async function loadOrders() {
+      try {
+        const [ordersResponse, statsResponse] = await Promise.all([
+          sellerApi.getMyOrders(currency, 1, 50, controller.signal),
+          sellerApi.getMyOrderStats(currency, controller.signal),
+        ]);
+
+        setOrders(ordersResponse.items);
+        setOrderStats(statsResponse);
+      } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
 
         setOrders([]);
+        setOrderStats(null);
         setOrdersError('Orders could not be loaded right now.');
-      });
+      }
+    }
+
+    void loadOrders();
 
     return () => controller.abort();
   }, [currency]);
@@ -71,7 +82,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
           </Link>
         </div>
 
-        <StatsRow listings={listings} orders={orders} priceFormatter={priceFormatter} />
+        <StatsRow listings={listings} orderStats={orderStats} priceFormatter={priceFormatter} />
         <TabBar activeTab={selectedTab} />
 
         {selectedTab === 'products' ? (
@@ -92,24 +103,19 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
 function StatsRow({
   listings,
-  orders,
+  orderStats,
   priceFormatter,
 }: {
   listings: SellerListing[];
-  orders: SellerOrderSummary[];
+  orderStats: SellerOrderStats | null;
   priceFormatter: Intl.NumberFormat;
 }) {
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const activeOrders = orders.filter(
-    (order) => !['Cancelled', 'Delivered', 'Returned'].includes(order.orderStatus),
-  ).length;
-
   return (
     <div className="seller-dashboard__stats">
       <StatCard label="Total Products" value={listings.length.toString()} />
-      <StatCard label="Total Revenue" value={priceFormatter.format(totalRevenue)} />
-      <StatCard label="Total Orders" value={orders.length.toString()} />
-      <StatCard label="Active Orders" value={activeOrders.toString()} />
+      <StatCard label="Total Revenue" value={priceFormatter.format(orderStats?.totalRevenue ?? 0)} />
+      <StatCard label="Total Orders" value={(orderStats?.totalOrders ?? 0).toString()} />
+      <StatCard label="Active Orders" value={(orderStats?.activeOrders ?? 0).toString()} />
     </div>
   );
 }

@@ -118,7 +118,7 @@ function ProductRow({
     }
 
     try {
-      await sellerApi.deleteProduct(product.productId);
+      await sellerApi.deleteProduct(product.listingId);
       onDeleteListing(product.listingId);
     } catch {
       alert('Failed to delete product. Please try again.');

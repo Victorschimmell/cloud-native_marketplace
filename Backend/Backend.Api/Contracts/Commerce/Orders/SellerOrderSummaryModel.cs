@@ -23,3 +23,11 @@ public sealed record SellerOrderSummaryModel
     public required IReadOnlyList<OrderItemModel> Items { get; init; }
     public required IReadOnlyList<ShipmentModel> Shipments { get; init; }
 }
+
+public sealed record SellerOrderStatsModel
+{
+    public required int TotalOrders { get; init; }
+    public required int ActiveOrders { get; init; }
+    public required decimal TotalRevenue { get; init; }
+    public required string CurrencyCode { get; init; }
+}

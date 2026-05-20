@@ -95,19 +95,19 @@ public class ProductsController : ApiControllerBase
         return HandleResult(result, product => product.ToResponse());
     }
 
-    [HttpPut("{productId:guid}")]
+    [HttpPut("listings/{listingId:guid}")]
     [Authorize]
-    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid productId, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
     {
-        var result = await _productService.UpdateAsync(request.ToDto(productId), cancellationToken);
+        var result = await _productService.UpdateAsync(request.ToDto(listingId), cancellationToken);
         return HandleResult(result, product => product.ToResponse());
     }
 
-    [HttpDelete("{productId:guid}")]
+    [HttpDelete("listings/{listingId:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeleteProductAsync([NotEmptyGuid] Guid productId, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteProductAsync([NotEmptyGuid] Guid listingId, CancellationToken cancellationToken)
     {
-        var result = await _productService.DeleteAsync(productId, cancellationToken);
+        var result = await _productService.DeleteListingAsync(listingId, cancellationToken);
         return HandleResult(result);
     }
 
