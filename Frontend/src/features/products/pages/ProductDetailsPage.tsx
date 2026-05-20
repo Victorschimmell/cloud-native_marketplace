@@ -255,10 +255,6 @@ export default function ProductDetailsPage() {
                 <p className="product-details-page__reviews-notice" role="alert">{reviewsError}</p>
               ) : null}
 
-              {!reviewsError && reviews.length === 0 ? (
-                <p className="product-details-page__reviews-empty">No reviews yet.</p>
-              ) : null}
-
               {reviews.length > 0 ? (
                 <div className="product-details-page__review-list">
                   {reviews.map((review) => (

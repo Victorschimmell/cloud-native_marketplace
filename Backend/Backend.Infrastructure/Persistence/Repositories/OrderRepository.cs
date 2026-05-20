@@ -36,17 +36,35 @@ internal sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRe
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Order>> GetByCustomerIdAsync(
+        Guid customerId,
+        int page,
+        int pageSize,
+        OrderStatus? status = null,
+        CustomerOrderSort sort = CustomerOrderSort.Newest,
+        CancellationToken cancellationToken = default)
     {
-        var query = dbContext.Orders
+        IQueryable<Order> query = dbContext.Orders
             .Where(o => o.CustomerId == customerId)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
             .Include(o => o.Shipments);
 
+        if (status.HasValue)
+        {
+            query = query.Where(o => o.OrderStatus == status.Value);
+        }
+
         var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
-            .OrderByDescending(o => o.OrderPurchaseTimestampUtc)
+        var orderedQuery = sort switch
+        {
+            CustomerOrderSort.Oldest => query.OrderBy(o => o.OrderPurchaseTimestampUtc),
+            CustomerOrderSort.TotalHigh => query.OrderByDescending(o => o.TotalAmount),
+            CustomerOrderSort.TotalLow => query.OrderBy(o => o.TotalAmount),
+            _ => query.OrderByDescending(o => o.OrderPurchaseTimestampUtc)
+        };
+
+        var orders = await orderedQuery
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

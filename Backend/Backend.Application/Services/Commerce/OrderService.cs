@@ -72,7 +72,13 @@ public sealed class OrderService : IOrderService
         return Task.FromResult(Result<PagedResult<OrderDto>>.NotImplemented());
     }
 
-    public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
+    public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(
+        Guid authenticatedUserId,
+        PagedRequest request,
+        string? currency,
+        OrderStatus? status = null,
+        CustomerOrderSort sort = CustomerOrderSort.Newest,
+        CancellationToken cancellationToken = default)
     {
         if (request.Page < 1 || request.PageSize < 1)
         {
@@ -90,7 +96,7 @@ public sealed class OrderService : IOrderService
             return Result<PagedResult<OrderSummaryDto>>.NotFound("Customer profile was not found for the authenticated user.");
         }
 
-        var orders = await _orderRepository.GetByCustomerIdAsync(customer.Id, request.Page, request.PageSize, cancellationToken);
+        var orders = await _orderRepository.GetByCustomerIdAsync(customer.Id, request.Page, request.PageSize, status, sort, cancellationToken);
         var mappedOrders = orders.Items
             .Select(order => order.ToOrderSummaryDto(authenticatedUserId, currencyCode, priceConverter))
             .ToArray();

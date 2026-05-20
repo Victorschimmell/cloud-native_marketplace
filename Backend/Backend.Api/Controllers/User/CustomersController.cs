@@ -5,10 +5,13 @@ using Backend.Api.Contracts.User.Registration;
 using Backend.Api.Mappings.Commerce.Orders;
 using Backend.Api.Mappings.Common;
 using Backend.Api.Mappings.User.Registration;
+using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ApiOrderStatus = Backend.Api.Contracts.Commerce.Orders.OrderStatus;
+using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
 
 namespace Backend.Api.Controllers.User;
 
@@ -74,6 +77,8 @@ public class CustomersController : ApiControllerBase
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
+        [FromQuery] ApiOrderStatus? status,
+        [FromQuery] string? sort,
         CancellationToken cancellationToken)
     {
         if (!TryGetCurrentUserId(out var authenticatedUserId))
@@ -86,7 +91,18 @@ public class CustomersController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access orders for another customer." });
         }
 
-        var result = await _orderService.GetSummaryByCustomerUserAsync(userId, pageRequest.ToAppRequest(), currency, cancellationToken);
+        if (!TryParseOrderSort(sort, out var orderSort))
+        {
+            return BadRequest(new { Error = $"Unsupported order sort '{sort}'." });
+        }
+
+        var result = await _orderService.GetSummaryByCustomerUserAsync(
+            userId,
+            pageRequest.ToAppRequest(),
+            currency,
+            status.HasValue ? (DomainOrderStatus)(int)status.Value : null,
+            orderSort,
+            cancellationToken);
         return HandleResult(
             result,
             page => new PageResponse<OrderSummaryModel>
@@ -108,5 +124,28 @@ public class CustomersController : ApiControllerBase
 
         userId = Guid.Empty;
         return false;
+    }
+
+    private static bool TryParseOrderSort(string? sort, out CustomerOrderSort orderSort)
+    {
+        if (string.IsNullOrWhiteSpace(sort))
+        {
+            orderSort = CustomerOrderSort.Newest;
+            return true;
+        }
+
+        orderSort = sort.Trim().ToLowerInvariant() switch
+        {
+            "newest" => CustomerOrderSort.Newest,
+            "oldest" => CustomerOrderSort.Oldest,
+            "total-high" => CustomerOrderSort.TotalHigh,
+            "total-low" => CustomerOrderSort.TotalLow,
+            _ => CustomerOrderSort.Newest
+        };
+
+        return sort.Trim().Equals("newest", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("oldest", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("total-high", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("total-low", StringComparison.OrdinalIgnoreCase);
     }
 }
