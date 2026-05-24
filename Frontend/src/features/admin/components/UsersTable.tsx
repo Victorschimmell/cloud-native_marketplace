@@ -10,6 +10,7 @@ interface UsersTableProps {
   } | null;
   onApproveVerification: (user: AdminUser) => void;
   onBlock: (user: AdminUser) => void;
+  onOpenUser: (user: AdminUser) => void;
   onRejectVerification: (user: AdminUser) => void;
   onUnblock: (user: AdminUser) => void;
 }
@@ -20,6 +21,7 @@ export default function UsersTable({
   pendingAction = null,
   onApproveVerification,
   onBlock,
+  onOpenUser,
   onRejectVerification,
   onUnblock,
 }: UsersTableProps) {
@@ -43,6 +45,7 @@ export default function UsersTable({
               pendingAction={pendingAction?.userId === user.id ? pendingAction.action : null}
               onApproveVerification={onApproveVerification}
               onBlock={onBlock}
+              onOpenUser={onOpenUser}
               onRejectVerification={onRejectVerification}
               onUnblock={onUnblock}
             />
@@ -58,6 +61,7 @@ interface UserRowProps {
   pendingAction: UserTableAction | null;
   onApproveVerification: (user: AdminUser) => void;
   onBlock: (user: AdminUser) => void;
+  onOpenUser: (user: AdminUser) => void;
   onRejectVerification: (user: AdminUser) => void;
   onUnblock: (user: AdminUser) => void;
 }
@@ -67,6 +71,7 @@ function UserRow({
   pendingAction,
   onApproveVerification,
   onBlock,
+  onOpenUser,
   onRejectVerification,
   onUnblock,
 }: UserRowProps) {
@@ -79,7 +84,13 @@ function UserRow({
     <tr>
       <td>
         <div className="admin-users-page__user-cell">
-          <p className="admin-users-page__user-name">{user.name}</p>
+          <button
+            type="button"
+            className="admin-users-page__user-name-button"
+            onClick={() => onOpenUser(user)}
+          >
+            {user.name}
+          </button>
           <p className="admin-users-page__user-email">{user.email}</p>
           {user.company ? <p className="admin-users-page__user-company">{user.company}</p> : null}
         </div>

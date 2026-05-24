@@ -136,6 +136,18 @@
   outline: 0;
 }
 
+.modal__button--danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.modal__button--danger:hover,
+.modal__button--danger:focus-visible {
+  background: #b91c1c;
+  outline: 0;
+}
+
 @media (max-width: 680px) {
   .modal {
     padding: 20px;

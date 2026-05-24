@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import Pagination from '../../../shared/components/Pagination';
+import AdminUserDetailsDialog from '../components/AdminUserDetailsDialog';
 import UsersTable from '../components/UsersTable';
 import {
   adminApi,
@@ -35,6 +36,7 @@ export default function AdminUsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / usersPageSize)), [totalCount]);
 
@@ -47,7 +49,15 @@ export default function AdminUsersPage() {
         status: statusToApi(statusFilter),
         signal,
       });
-      setUsers(response.items.map(toAdminUser));
+      const mappedUsers = response.items.map(toAdminUser);
+      setUsers(mappedUsers);
+      setSelectedUser((current) => {
+        if (!current) {
+          return null;
+        }
+
+        return mappedUsers.find((user) => user.id === current.id) ?? null;
+      });
       setTotalCount(response.totalCount);
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === 'AbortError') {
@@ -186,6 +196,7 @@ export default function AdminUsersPage() {
                 pendingAction={pendingAction}
                 onApproveVerification={(user) => void runUserAction(user, 'approve')}
                 onBlock={(user) => void runUserAction(user, 'block')}
+                onOpenUser={setSelectedUser}
                 onRejectVerification={(user) => void runUserAction(user, 'reject')}
                 onUnblock={(user) => void runUserAction(user, 'unblock')}
               />
@@ -200,6 +211,17 @@ export default function AdminUsersPage() {
             </>
           )}
         </div>
+        {selectedUser ? (
+          <AdminUserDetailsDialog
+            user={selectedUser}
+            pendingAction={pendingAction?.userId === selectedUser.id ? pendingAction.action : null}
+            onApproveVerification={(user) => void runUserAction(user, 'approve')}
+            onBlock={(user) => void runUserAction(user, 'block')}
+            onClose={() => setSelectedUser(null)}
+            onRejectVerification={(user) => void runUserAction(user, 'reject')}
+            onUnblock={(user) => void runUserAction(user, 'unblock')}
+          />
+        ) : null}
       </div>
     </PageSkeleton>
   );

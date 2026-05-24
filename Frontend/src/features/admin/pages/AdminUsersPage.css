@@ -125,6 +125,29 @@
   font-weight: 600;
 }
 
+.admin-users-page__user-name-button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: var(--admin-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.admin-users-page__user-name-button:hover,
+.admin-users-page__user-name-button:focus-visible {
+  color: #1d4ed8;
+  outline: 0;
+  text-decoration-color: currentColor;
+}
+
 .admin-users-page__user-email {
   margin: 0;
   font-size: 13px;
