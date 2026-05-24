@@ -99,6 +99,7 @@
   min-height: 42px;
   min-width: 112px;
   padding: 0 16px;
+  text-decoration: none;
 }
 
 .modal__button:disabled {

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Modal from '../../../shared/components/Modal';
 import type { SellerListing } from '../api/sellerApi';
 import './SellerProductDialog.css';
@@ -41,6 +42,12 @@ export default function SellerProductDetailsDialog({
           <button type="button" className="modal__button modal__button--secondary" onClick={onClose}>
             Close
           </button>
+          <Link
+            className="modal__button modal__button--primary"
+            to={`/products/${product.productId}?listingId=${product.listingId}`}
+          >
+            View product page
+          </Link>
           <button type="button" className="modal__button modal__button--danger" onClick={() => onDelete(product)}>
             Delete
           </button>
