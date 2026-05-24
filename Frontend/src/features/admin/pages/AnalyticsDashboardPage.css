@@ -119,6 +119,30 @@
   font-size: 15px;
 }
 
+.admin-dashboard-page__list-primary-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: #111827;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.admin-dashboard-page__list-primary-link:hover,
+.admin-dashboard-page__list-primary-link:focus-visible {
+  color: #1d4ed8;
+  outline: 0;
+  text-decoration-color: currentColor;
+}
+
 .admin-dashboard-page__list-secondary {
   margin: 0;
   font-size: 14px;

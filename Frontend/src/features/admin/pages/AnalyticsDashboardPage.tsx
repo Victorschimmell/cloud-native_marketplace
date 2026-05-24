@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
@@ -8,8 +9,11 @@ import {
   adminApi,
   type AdminPaymentResponse,
   type DashboardStatsResponse,
-  type IssueResponse,
 } from '../api/adminApi';
+import AdminIssueDetailsDialog from '../components/AdminIssueDetailsDialog';
+import AdminIssueResolveDialog from '../components/AdminIssueResolveDialog';
+import { toAdminIssue } from '../api/issueMapping';
+import type { AdminIssue } from '../types';
 import './AnalyticsDashboardPage.css';
 
 // Admin dashboard. Stats row on top, then the Recent Payments and Unresolved Issues panels.
@@ -22,8 +26,15 @@ export default function AnalyticsDashboardPage() {
 
   const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
   const [payments, setPayments] = useState<AdminPaymentResponse[]>([]);
-  const [unresolvedIssues, setUnresolvedIssues] = useState<IssueResponse[]>([]);
+  const [unresolvedIssues, setUnresolvedIssues] = useState<AdminIssue[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [pendingIssueId, setPendingIssueId] = useState<string | null>(null);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
+  const [resolutionText, setResolutionText] = useState('');
+
+  const selectedIssue = selectedIssueId ? unresolvedIssues.find((issue) => issue.id === selectedIssueId) : null;
+  const resolvingIssue = resolvingIssueId ? unresolvedIssues.find((issue) => issue.id === resolvingIssueId) : null;
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -38,7 +49,7 @@ export default function AnalyticsDashboardPage() {
         ]);
         setStats(statsResponse);
         setPayments(paymentsResponse.items);
-        setUnresolvedIssues(issuesResponse.items);
+        setUnresolvedIssues(issuesResponse.items.map(toAdminIssue));
       } catch (requestError) {
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return;
@@ -51,6 +62,56 @@ export default function AnalyticsDashboardPage() {
     return () => abortController.abort();
   }, [currency]);
 
+  async function handleAssign(issueId: string) {
+    setError(null);
+    setPendingIssueId(issueId);
+    try {
+      const updated = await adminApi.assignIssue(issueId);
+      setUnresolvedIssues((current) => current.map((issue) => (issue.id === issueId ? toAdminIssue(updated) : issue)));
+    } catch {
+      setError('Could not assign issue.');
+    } finally {
+      setPendingIssueId(null);
+    }
+  }
+
+  function openResolveDialog(issueId: string) {
+    setSelectedIssueId(null);
+    setResolutionText('');
+    setResolvingIssueId(issueId);
+  }
+
+  function closeResolveDialog() {
+    if (pendingIssueId === resolvingIssueId) {
+      return;
+    }
+
+    setResolvingIssueId(null);
+    setResolutionText('');
+  }
+
+  async function submitResolution(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!resolvingIssueId) {
+      return;
+    }
+
+    setError(null);
+    setPendingIssueId(resolvingIssueId);
+    try {
+      await adminApi.resolveIssue(resolvingIssueId, resolutionText.trim() || undefined);
+      setUnresolvedIssues((current) => current.filter((issue) => issue.id !== resolvingIssueId));
+      setStats((current) => current ? { ...current, unresolvedIssues: Math.max(0, current.unresolvedIssues - 1) } : current);
+      setResolvingIssueId(null);
+      setResolutionText('');
+    } catch {
+      setError('Could not resolve issue.');
+    } finally {
+      setPendingIssueId(null);
+    }
+  }
+
   return (
     <PageSkeleton title="Admin Dashboard" summary="Analytics overview, recent payments and unresolved issues at a glance.">
       <div className="admin-dashboard-page">
@@ -60,8 +121,28 @@ export default function AnalyticsDashboardPage() {
 
         <div className="admin-dashboard-page__columns">
           <RecentPaymentsPanel payments={payments} priceFormatter={priceFormatter} />
-          <UnresolvedIssuesPanel issues={unresolvedIssues} />
+          <UnresolvedIssuesPanel issues={unresolvedIssues} onOpenIssue={setSelectedIssueId} />
         </div>
+
+        {selectedIssue ? (
+          <AdminIssueDetailsDialog
+            issue={selectedIssue}
+            isPending={pendingIssueId === selectedIssue.id}
+            onAssign={handleAssign}
+            onClose={() => setSelectedIssueId(null)}
+            onResolve={openResolveDialog}
+          />
+        ) : null}
+        {resolvingIssue ? (
+          <AdminIssueResolveDialog
+            issue={resolvingIssue}
+            isPending={pendingIssueId === resolvingIssue.id}
+            resolutionText={resolutionText}
+            onChangeResolution={setResolutionText}
+            onClose={closeResolveDialog}
+            onSubmit={submitResolution}
+          />
+        ) : null}
       </div>
     </PageSkeleton>
   );
@@ -133,7 +214,13 @@ function RecentPaymentsPanel({ payments, priceFormatter }: { payments: AdminPaym
   );
 }
 
-function UnresolvedIssuesPanel({ issues }: { issues: IssueResponse[] }) {
+function UnresolvedIssuesPanel({
+  issues,
+  onOpenIssue,
+}: {
+  issues: AdminIssue[];
+  onOpenIssue: (issueId: string) => void;
+}) {
   return (
     <div className="admin-dashboard-page__panel">
       <div className="admin-dashboard-page__panel-header">
@@ -148,13 +235,19 @@ function UnresolvedIssuesPanel({ issues }: { issues: IssueResponse[] }) {
           {issues.map((issue) => (
             <li key={issue.id} className="admin-dashboard-page__list-item">
               <div className="admin-dashboard-page__list-row">
-                <p className="admin-dashboard-page__list-primary">{issue.title}</p>
-                <span className={`admin-dashboard-page__badge admin-dashboard-page__badge--${issue.priority.toLowerCase()}`}>
-                  {issue.priority.toLowerCase()}
+                <button
+                  type="button"
+                  className="admin-dashboard-page__list-primary-link"
+                  onClick={() => onOpenIssue(issue.id)}
+                >
+                  {issue.title}
+                </button>
+                <span className={`admin-dashboard-page__badge admin-dashboard-page__badge--${issue.priority}`}>
+                  {issue.priority}
                 </span>
               </div>
               <p className="admin-dashboard-page__list-secondary">{issue.description}</p>
-              <p className="admin-dashboard-page__list-meta">{formatDate(issue.createdAtUtc)} - {formatIssueType(issue.type)}</p>
+              <p className="admin-dashboard-page__list-meta">{formatDate(issue.date)} - {issue.type}</p>
             </li>
           ))}
         </ul>
@@ -167,6 +260,3 @@ function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString('en-GB');
 }
 
-function formatIssueType(type: string): string {
-  return type.replace(/([A-Z])/g, ' $1').trim().toLowerCase();
-}

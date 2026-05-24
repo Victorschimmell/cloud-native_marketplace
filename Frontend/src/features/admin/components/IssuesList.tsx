@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import Modal from '../../../shared/components/Modal';
+import AdminIssueDetailsDialog from './AdminIssueDetailsDialog';
 import type { AdminIssue } from '../types';
 
 interface IssuesListProps {
@@ -68,7 +68,7 @@ export default function IssuesList({
 
       {pagination}
       {selectedIssue ? (
-        <IssueDetailsDialog
+        <AdminIssueDetailsDialog
           issue={selectedIssue}
           isPending={pendingId === selectedIssue.id}
           onAssign={onAssign}
@@ -154,106 +154,6 @@ function IssueRow({ issue, isPending, onOpen, onAssign, onResolve }: IssueRowPro
         </div>
       </td>
     </tr>
-  );
-}
-
-interface IssueDetailsDialogProps {
-  issue: AdminIssue;
-  isPending: boolean;
-  onAssign?: (issueId: string) => void;
-  onClose: () => void;
-  onResolve?: (issueId: string) => void;
-}
-
-function IssueDetailsDialog({ issue, isPending, onAssign, onClose, onResolve }: IssueDetailsDialogProps) {
-  const canAssign = issue.status === 'open';
-  const canResolve = issue.status === 'in progress';
-
-  return (
-    <Modal
-      title={issue.title}
-      subtitle={<span className="admin-issues-page__modal-subtitle">{issue.type}</span>}
-      onClose={onClose}
-      footer={(
-        <>
-          <button type="button" className="modal__button modal__button--secondary" onClick={onClose}>
-            Close
-          </button>
-          {canAssign ? (
-            <button
-              type="button"
-              className="modal__button modal__button--primary"
-              disabled={isPending}
-              onClick={() => onAssign?.(issue.id)}
-            >
-              {isPending ? 'Working...' : 'Assign me'}
-            </button>
-          ) : null}
-          {canResolve ? (
-            <button
-              type="button"
-              className="modal__button modal__button--success"
-              disabled={isPending}
-              onClick={() => {
-                onClose();
-                onResolve?.(issue.id);
-              }}
-            >
-              {isPending ? 'Working...' : 'Resolve'}
-            </button>
-          ) : null}
-        </>
-      )}
-    >
-      <div className="admin-issues-page__modal-badges">
-          <span className={`admin-issues-page__badge admin-issues-page__badge--${issue.priority}`}>
-            {issue.priority}
-          </span>
-          <span className={`admin-issues-page__badge admin-issues-page__badge--${badgeKey(issue.status)}`}>
-            {issue.status}
-          </span>
-      </div>
-
-      <p className="admin-issues-page__modal-description">{issue.description}</p>
-
-      <dl className="admin-issues-page__modal-details">
-        <div>
-          <dt>Reported by</dt>
-          <dd>{issue.reportedBy}</dd>
-        </div>
-        <div>
-          <dt>Assignee</dt>
-          <dd>{issue.assignee ?? 'Unassigned'}</dd>
-        </div>
-        {issue.resolvedBy ? (
-          <div>
-            <dt>Resolved by</dt>
-            <dd>{issue.resolvedBy}</dd>
-          </div>
-        ) : null}
-        {issue.resolvedAt ? (
-          <div>
-            <dt>Resolved on</dt>
-            <dd>{formatDate(issue.resolvedAt)}</dd>
-          </div>
-        ) : null}
-        <div>
-          <dt>Date</dt>
-          <dd>{formatDate(issue.date)}</dd>
-        </div>
-        <div>
-          <dt>Issue ID</dt>
-          <dd>{issue.id}</dd>
-        </div>
-      </dl>
-
-      {issue.resolution ? (
-        <div className="admin-issues-page__modal-resolution">
-          <h4>Resolution</h4>
-          <p>{issue.resolution}</p>
-        </div>
-      ) : null}
-    </Modal>
   );
 }
 

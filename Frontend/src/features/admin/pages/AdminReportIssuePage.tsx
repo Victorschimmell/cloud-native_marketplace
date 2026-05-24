@@ -3,8 +3,8 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
-import Modal from '../../../shared/components/Modal';
 import Pagination from '../../../shared/components/Pagination';
+import AdminIssueResolveDialog from '../components/AdminIssueResolveDialog';
 import IssuesList from '../components/IssuesList';
 import { adminApi } from '../api/adminApi';
 import { toAdminIssue } from '../api/issueMapping';
@@ -142,7 +142,7 @@ export default function AdminReportIssuePage() {
           onResolve={openResolveDialog}
         />
         {resolvingIssue ? (
-          <ResolveIssueDialog
+          <AdminIssueResolveDialog
             issue={resolvingIssue}
             isPending={pendingId === resolvingIssue.id}
             resolutionText={resolutionText}
@@ -153,54 +153,6 @@ export default function AdminReportIssuePage() {
         ) : null}
       </div>
     </PageSkeleton>
-  );
-}
-
-interface ResolveIssueDialogProps {
-  issue: AdminIssue;
-  isPending: boolean;
-  resolutionText: string;
-  onChangeResolution: (value: string) => void;
-  onClose: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-}
-
-function ResolveIssueDialog({
-  issue,
-  isPending,
-  resolutionText,
-  onChangeResolution,
-  onClose,
-  onSubmit,
-}: ResolveIssueDialogProps) {
-  return (
-    <Modal
-      title="Resolve issue"
-      subtitle={issue.title}
-      onClose={onClose}
-      footer={(
-        <>
-          <button type="button" className="modal__button modal__button--secondary" disabled={isPending} onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" form="admin-issue-resolution-form" className="modal__button modal__button--success" disabled={isPending}>
-            {isPending ? 'Working...' : 'Resolve'}
-          </button>
-        </>
-      )}
-    >
-      <form id="admin-issue-resolution-form" className="admin-issues-page__resolution-form" onSubmit={onSubmit}>
-        <label htmlFor="admin-issue-resolution">Resolution description</label>
-        <textarea
-          id="admin-issue-resolution"
-          value={resolutionText}
-          onChange={(event) => onChangeResolution(event.target.value)}
-          placeholder="Describe what was done or why this issue can be closed."
-          disabled={isPending}
-          rows={5}
-        />
-      </form>
-    </Modal>
   );
 }
 
