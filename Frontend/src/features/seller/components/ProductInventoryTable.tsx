@@ -8,6 +8,7 @@ interface ProductInventoryTableProps {
   onDeleteProduct: (product: SellerListing) => void;
   onEditProduct: (product: SellerListing) => void;
   onOpenProduct: (product: SellerListing) => void;
+  onPublishProduct: (product: SellerListing) => void;
 }
 
 type ProductSortOption = 'name' | 'category' | 'price-high' | 'price-low' | 'stock-high' | 'stock-low' | 'status';
@@ -19,6 +20,7 @@ export default function ProductInventoryTable({
   onDeleteProduct,
   onEditProduct,
   onOpenProduct,
+  onPublishProduct,
 }: ProductInventoryTableProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<ProductSortOption>('name');
@@ -99,6 +101,7 @@ export default function ProductInventoryTable({
                 onDeleteProduct={onDeleteProduct}
                 onEditProduct={onEditProduct}
                 onOpenProduct={onOpenProduct}
+                onPublishProduct={onPublishProduct}
               />
             ))}
           </tbody>
@@ -115,6 +118,7 @@ function ProductRow({
   onDeleteProduct,
   onEditProduct,
   onOpenProduct,
+  onPublishProduct,
 }: {
   isPending: boolean;
   priceFormatter: Intl.NumberFormat;
@@ -122,7 +126,10 @@ function ProductRow({
   onDeleteProduct: (product: SellerListing) => void;
   onEditProduct: (product: SellerListing) => void;
   onOpenProduct: (product: SellerListing) => void;
+  onPublishProduct: (product: SellerListing) => void;
 }) {
+  const isDraft = product.visibilityStatus.toLowerCase() === 'draft';
+
   return (
     <tr>
       <td data-label="Product">
@@ -140,6 +147,16 @@ function ProductRow({
       <td data-label="Status">{product.visibilityStatus}</td>
       <td data-label="Actions">
         <div className="seller-dashboard__row-actions">
+          {isDraft ? (
+            <button
+              type="button"
+              className="seller-dashboard__action seller-dashboard__action--publish"
+              disabled={isPending}
+              onClick={() => onPublishProduct(product)}
+            >
+              Publish
+            </button>
+          ) : null}
           <button
             type="button"
             className="seller-dashboard__action seller-dashboard__action--edit"

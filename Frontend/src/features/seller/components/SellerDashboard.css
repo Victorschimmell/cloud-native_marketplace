@@ -318,6 +318,10 @@
   color: var(--primary-color);
 }
 
+.seller-dashboard__action--publish {
+  color: #16a34a;
+}
+
 .seller-dashboard__action--delete {
   color: #dc2626;
 }

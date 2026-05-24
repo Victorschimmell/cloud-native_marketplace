@@ -10,6 +10,7 @@ import ProductInventoryTable from './ProductInventoryTable';
 import SellerProductDeleteDialog from './SellerProductDeleteDialog';
 import SellerProductDetailsDialog from './SellerProductDetailsDialog';
 import SellerProductEditDialog, { type SellerProductEditFormValues } from './SellerProductEditDialog';
+import SellerProductPublishDialog from './SellerProductPublishDialog';
 import OrdersTable from './OrdersTable';
 import {
   sellerApi,
@@ -27,7 +28,7 @@ const ORDERS_PAGE_SIZE = 25;
 
 type PendingProductAction = {
   listingId: string;
-  action: 'delete' | 'update';
+  action: 'delete' | 'publish' | 'update';
 } | null;
 
 interface SellerDashboardProps {
@@ -60,6 +61,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
   const [selectedProduct, setSelectedProduct] = useState<SellerListing | null>(null);
   const [editingProduct, setEditingProduct] = useState<SellerListing | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<SellerListing | null>(null);
+  const [publishingProduct, setPublishingProduct] = useState<SellerListing | null>(null);
   const [pendingProductAction, setPendingProductAction] = useState<PendingProductAction>(null);
   const [productActionError, setProductActionError] = useState<string | null>(null);
 
@@ -161,6 +163,12 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     setDeletingProduct(product);
   }
 
+  function openPublishProduct(product: SellerListing) {
+    setProductActionError(null);
+    setSelectedProduct(null);
+    setPublishingProduct(product);
+  }
+
   function closeProductDialogs() {
     if (pendingProductAction) {
       return;
@@ -169,6 +177,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     setSelectedProduct(null);
     setEditingProduct(null);
     setDeletingProduct(null);
+    setPublishingProduct(null);
     setProductActionError(null);
   }
 
@@ -238,6 +247,41 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
     }
   }
 
+  async function publishProduct() {
+    if (!publishingProduct) {
+      return;
+    }
+
+    setPendingProductAction({ listingId: publishingProduct.listingId, action: 'publish' });
+    setProductActionError(null);
+
+    try {
+      await sellerApi.updateProduct(publishingProduct.listingId, {
+        categoryId: publishingProduct.categoryId,
+        description: publishingProduct.description,
+        imageUrl: publishingProduct.imageUrl ?? null,
+        inventoryQuantity: publishingProduct.inventoryQuantity,
+        price: publishingProduct.listingPrice,
+        productName: publishingProduct.productName,
+        visibilityStatus: 'Published',
+      });
+
+      const updatedProduct = {
+        ...publishingProduct,
+        visibilityStatus: 'Published',
+      };
+
+      setListings((current) => current.map((listing) => (
+        listing.listingId === updatedProduct.listingId ? updatedProduct : listing
+      )));
+      setPublishingProduct(null);
+    } catch (error) {
+      setProductActionError(error instanceof Error ? error.message : 'Failed to publish product.');
+    } finally {
+      setPendingProductAction(null);
+    }
+  }
+
   return (
     <PageSkeleton
       summary="Manage product inventory, seller performance and fulfillment activity."
@@ -262,6 +306,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
             onDeleteProduct={openDeleteProduct}
             onEditProduct={openEditProduct}
             onOpenProduct={openProductDetails}
+            onPublishProduct={openPublishProduct}
           />
         ) : (
           <OrdersTable
@@ -305,6 +350,15 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
             product={deletingProduct}
             onClose={closeProductDialogs}
             onConfirm={deleteProduct}
+          />
+        ) : null}
+        {publishingProduct ? (
+          <SellerProductPublishDialog
+            error={productActionError}
+            isPending={pendingProductAction?.listingId === publishingProduct.listingId && pendingProductAction.action === 'publish'}
+            product={publishingProduct}
+            onClose={closeProductDialogs}
+            onConfirm={publishProduct}
           />
         ) : null}
       </section>
