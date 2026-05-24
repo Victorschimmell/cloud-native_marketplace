@@ -277,9 +277,27 @@
   min-width: 0;
 }
 
-.admin-issues-page__issue-title {
+.admin-issues-page__issue-title-button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: var(--admin-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
   margin: 0;
-  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.admin-issues-page__issue-title-button:hover,
+.admin-issues-page__issue-title-button:focus-visible {
+  color: #1d4ed8;
+  outline: 0;
+  text-decoration-color: currentColor;
 }
 
 .admin-issues-page__issue-description {
@@ -358,6 +376,208 @@
   color: #166534;
 }
 
+.admin-issues-page__modal-backdrop {
+  align-items: center;
+  background: rgba(17, 24, 39, 0.42);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 50;
+}
+
+.admin-issues-page__modal {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
+  max-height: min(720px, calc(100vh - 48px));
+  max-width: 640px;
+  overflow: auto;
+  padding: 24px;
+  width: min(100%, 640px);
+}
+
+.admin-issues-page__modal-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.admin-issues-page__modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.admin-issues-page__modal-subtitle {
+  color: var(--admin-muted);
+  font-size: 13px;
+  margin: 6px 0 0;
+  text-transform: capitalize;
+}
+
+.admin-issues-page__modal-close {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  height: 36px;
+  justify-content: center;
+  line-height: 1;
+  width: 36px;
+}
+
+.admin-issues-page__modal-close:hover,
+.admin-issues-page__modal-close:focus-visible {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: var(--admin-text);
+  outline: 0;
+}
+
+.admin-issues-page__modal-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.admin-issues-page__modal-description {
+  color: #374151;
+  line-height: 1.6;
+  margin: 20px 0;
+  white-space: pre-wrap;
+}
+
+.admin-issues-page__modal-details {
+  background: var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 1px;
+  grid-template-columns: 1fr 1fr;
+  margin: 0;
+  overflow: hidden;
+}
+
+.admin-issues-page__modal-details div {
+  background: #ffffff;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.admin-issues-page__modal-details dt {
+  color: var(--admin-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.admin-issues-page__modal-details dd {
+  color: var(--admin-text);
+  font-size: 14px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-issues-page__modal-resolution {
+  background: #f8fafc;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  margin-top: 16px;
+  padding: 14px 16px;
+}
+
+.admin-issues-page__modal-resolution h4 {
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.admin-issues-page__modal-resolution p {
+  color: #374151;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.admin-issues-page__modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.admin-issues-page__modal-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 42px;
+  min-width: 112px;
+  padding: 0 16px;
+}
+
+.admin-issues-page__modal-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.admin-issues-page__modal-button--secondary {
+  background: #ffffff;
+  border-color: var(--admin-border);
+  color: var(--admin-text);
+}
+
+.admin-issues-page__modal-button--secondary:hover,
+.admin-issues-page__modal-button--secondary:focus-visible {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  outline: 0;
+}
+
+.admin-issues-page__modal-button--assign {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+
+.admin-issues-page__modal-button--assign:hover,
+.admin-issues-page__modal-button--assign:focus-visible {
+  background: #4338ca;
+  outline: 0;
+}
+
+.admin-issues-page__modal-button--resolve {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+.admin-issues-page__modal-button--resolve:hover,
+.admin-issues-page__modal-button--resolve:focus-visible {
+  background: #15803d;
+  outline: 0;
+}
+
 .admin-issues-page .pagination {
   border-top: 1px solid var(--admin-border);
   margin-top: 0;
@@ -402,5 +622,18 @@
   .admin-issues-page__form-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-issues-page__modal {
+    padding: 20px;
+  }
+
+  .admin-issues-page__modal-details {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-issues-page__modal-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
   }
 }

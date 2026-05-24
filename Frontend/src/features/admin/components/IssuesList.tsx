@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AdminIssue } from '../types';
 
@@ -19,6 +20,9 @@ export default function IssuesList({
   onAssign,
   onResolve,
 }: IssuesListProps) {
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const selectedIssue = selectedIssueId ? issues.find((issue) => issue.id === selectedIssueId) : null;
+
   return (
     <div className="admin-issues-page__panel">
       <div className="admin-issues-page__panel-header">
@@ -51,6 +55,7 @@ export default function IssuesList({
                   key={issue.id}
                   issue={issue}
                   isPending={pendingId === issue.id}
+                  onOpen={setSelectedIssueId}
                   onAssign={onAssign}
                   onResolve={onResolve}
                 />
@@ -61,6 +66,15 @@ export default function IssuesList({
       )}
 
       {pagination}
+      {selectedIssue ? (
+        <IssueDetailsDialog
+          issue={selectedIssue}
+          isPending={pendingId === selectedIssue.id}
+          onAssign={onAssign}
+          onClose={() => setSelectedIssueId(null)}
+          onResolve={onResolve}
+        />
+      ) : null}
     </div>
   );
 }
@@ -68,11 +82,12 @@ export default function IssuesList({
 interface IssueRowProps {
   issue: AdminIssue;
   isPending: boolean;
+  onOpen: (issueId: string) => void;
   onAssign?: (issueId: string) => void;
   onResolve?: (issueId: string) => void;
 }
 
-function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
+function IssueRow({ issue, isPending, onOpen, onAssign, onResolve }: IssueRowProps) {
   const isOpen = issue.status === 'open';
   const isAssigned = issue.status === 'in progress';
 
@@ -80,7 +95,13 @@ function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
     <tr>
       <td>
         <div className="admin-issues-page__issue-cell">
-          <p className="admin-issues-page__issue-title">{issue.title}</p>
+          <button
+            type="button"
+            className="admin-issues-page__issue-title-button"
+            onClick={() => onOpen(issue.id)}
+          >
+            {issue.title}
+          </button>
           <p className="admin-issues-page__issue-description">{issue.description}</p>
         </div>
       </td>
@@ -132,6 +153,128 @@ function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
         </div>
       </td>
     </tr>
+  );
+}
+
+interface IssueDetailsDialogProps {
+  issue: AdminIssue;
+  isPending: boolean;
+  onAssign?: (issueId: string) => void;
+  onClose: () => void;
+  onResolve?: (issueId: string) => void;
+}
+
+function IssueDetailsDialog({ issue, isPending, onAssign, onClose, onResolve }: IssueDetailsDialogProps) {
+  const titleId = useId();
+  const canAssign = issue.status === 'open';
+  const canResolve = issue.status === 'in progress';
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div className="admin-issues-page__modal-backdrop" onClick={onClose}>
+      <section
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="admin-issues-page__modal"
+        role="dialog"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="admin-issues-page__modal-header">
+          <div>
+            <h3 className="admin-issues-page__modal-title" id={titleId}>{issue.title}</h3>
+            <p className="admin-issues-page__modal-subtitle">{issue.type}</p>
+          </div>
+          <button type="button" className="admin-issues-page__modal-close" aria-label="Close issue details" onClick={onClose}>
+            x
+          </button>
+        </div>
+
+        <div className="admin-issues-page__modal-badges">
+          <span className={`admin-issues-page__badge admin-issues-page__badge--${issue.priority}`}>
+            {issue.priority}
+          </span>
+          <span className={`admin-issues-page__badge admin-issues-page__badge--${badgeKey(issue.status)}`}>
+            {issue.status}
+          </span>
+        </div>
+
+        <p className="admin-issues-page__modal-description">{issue.description}</p>
+
+        <dl className="admin-issues-page__modal-details">
+          <div>
+            <dt>Reported by</dt>
+            <dd>{issue.reportedBy}</dd>
+          </div>
+          <div>
+            <dt>Assignee</dt>
+            <dd>{issue.assignee ?? 'Unassigned'}</dd>
+          </div>
+          {issue.resolvedBy ? (
+            <div>
+              <dt>Resolved by</dt>
+              <dd>{issue.resolvedBy}</dd>
+            </div>
+          ) : null}
+          {issue.resolvedAt ? (
+            <div>
+              <dt>Resolved on</dt>
+              <dd>{formatDate(issue.resolvedAt)}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>Date</dt>
+            <dd>{formatDate(issue.date)}</dd>
+          </div>
+          <div>
+            <dt>Issue ID</dt>
+            <dd>{issue.id}</dd>
+          </div>
+        </dl>
+
+        {issue.resolution ? (
+          <div className="admin-issues-page__modal-resolution">
+            <h4>Resolution</h4>
+            <p>{issue.resolution}</p>
+          </div>
+        ) : null}
+
+        <div className="admin-issues-page__modal-actions">
+          <button type="button" className="admin-issues-page__modal-button admin-issues-page__modal-button--secondary" onClick={onClose}>
+            Close
+          </button>
+          {canAssign ? (
+            <button
+              type="button"
+              className="admin-issues-page__modal-button admin-issues-page__modal-button--assign"
+              disabled={isPending}
+              onClick={() => onAssign?.(issue.id)}
+            >
+              {isPending ? 'Working...' : 'Assign me'}
+            </button>
+          ) : null}
+          {canResolve ? (
+            <button
+              type="button"
+              className="admin-issues-page__modal-button admin-issues-page__modal-button--resolve"
+              disabled={isPending}
+              onClick={() => onResolve?.(issue.id)}
+            >
+              {isPending ? 'Working...' : 'Resolve'}
+            </button>
+          ) : null}
+        </div>
+      </section>
+    </div>
   );
 }
 
