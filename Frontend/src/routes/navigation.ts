@@ -14,7 +14,6 @@ export interface NavigationItem {
 export const primaryNavigationItems: NavigationItem[] = [
   { label: 'Home', to: '/', audience: 'all', end: true },
   { label: 'Browse Products', to: '/products', audience: 'public', showForAdmin: true },
-  { label: 'Categories', to: '/categories', audience: 'public' },
   { label: 'Orders', to: '/orders', audience: 'customer' },
   { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
   {
