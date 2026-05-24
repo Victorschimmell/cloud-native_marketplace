@@ -318,7 +318,7 @@ internal static class ApplicationMappings
 
     private static bool CanSellerUpdateItems(OrderStatus orderStatus, IReadOnlyCollection<OrderItem> sellerItems) =>
         orderStatus is not (OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned) &&
-        sellerItems.Any(item => item.FulfillmentStatus is not (OrderStatus.Cancelled or OrderStatus.Shipped or OrderStatus.Delivered or OrderStatus.Returned));
+        sellerItems.Any(item => item.FulfillmentStatus is not (OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned));
 
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(

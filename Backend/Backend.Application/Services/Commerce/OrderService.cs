@@ -373,8 +373,9 @@ public sealed class OrderService : IOrderService
         return currentStatus switch
         {
             OrderStatus.Pending => nextStatus == OrderStatus.Approved,
-            OrderStatus.Approved => nextStatus is OrderStatus.Processing or OrderStatus.Shipped,
+            OrderStatus.Approved => nextStatus == OrderStatus.Processing,
             OrderStatus.Processing => nextStatus == OrderStatus.Shipped,
+            OrderStatus.Shipped => nextStatus == OrderStatus.Delivered,
             _ => false
         };
     }
@@ -383,17 +384,17 @@ public sealed class OrderService : IOrderService
     {
         item.FulfillmentStatus = status;
 
-        if (status is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped)
+        if (status is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped or OrderStatus.Delivered)
         {
             item.FulfillmentApprovedAtUtc ??= now;
         }
 
-        if (status is OrderStatus.Processing or OrderStatus.Shipped)
+        if (status is OrderStatus.Processing or OrderStatus.Shipped or OrderStatus.Delivered)
         {
             item.FulfillmentProcessingAtUtc ??= now;
         }
 
-        if (status == OrderStatus.Shipped)
+        if (status is OrderStatus.Shipped or OrderStatus.Delivered)
         {
             item.FulfillmentShippedAtUtc ??= now;
         }
@@ -404,14 +405,19 @@ public sealed class OrderService : IOrderService
         var derivedStatus = DeriveOrderStatusFromItems(order.Items);
         order.OrderStatus = derivedStatus;
 
-        if (derivedStatus is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped)
+        if (derivedStatus is OrderStatus.Approved or OrderStatus.Processing or OrderStatus.Shipped or OrderStatus.Delivered)
         {
             order.OrderApprovedAtUtc ??= now;
         }
 
-        if (derivedStatus == OrderStatus.Shipped)
+        if (derivedStatus is OrderStatus.Shipped or OrderStatus.Delivered)
         {
             order.OrderDeliveredCarrierDateUtc ??= now;
+        }
+
+        if (derivedStatus == OrderStatus.Delivered)
+        {
+            order.OrderDeliveredCustomerDateUtc ??= now;
         }
     }
 
@@ -421,6 +427,11 @@ public sealed class OrderService : IOrderService
         if (itemStatuses.Length == 0)
         {
             return OrderStatus.Pending;
+        }
+
+        if (itemStatuses.All(status => IsAtLeast(status, OrderStatus.Delivered)))
+        {
+            return OrderStatus.Delivered;
         }
 
         if (itemStatuses.All(status => IsAtLeast(status, OrderStatus.Shipped)))
@@ -449,7 +460,8 @@ public sealed class OrderService : IOrderService
         {
             OrderStatus.Approved => 2,
             OrderStatus.Processing => 3,
-            OrderStatus.Shipped or OrderStatus.Delivered => 4,
+            OrderStatus.Shipped => 4,
+            OrderStatus.Delivered => 5,
             _ => 1
         };
 }
