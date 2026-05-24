@@ -5,6 +5,7 @@ import { ApiError } from '../../../shared/api/request';
 import Pagination from '../../../shared/components/Pagination';
 import AdminUserAccountActionDialog from '../components/AdminUserAccountActionDialog';
 import AdminUserDetailsDialog from '../components/AdminUserDetailsDialog';
+import AdminSellerVerificationActionDialog from '../components/AdminSellerVerificationActionDialog';
 import UsersTable from '../components/UsersTable';
 import {
   adminApi,
@@ -29,6 +30,10 @@ type AccountActionDialogState = {
   user: AdminUser;
   action: 'block' | 'unblock';
 } | null;
+type VerificationActionDialogState = {
+  user: AdminUser;
+  action: 'approve' | 'reject';
+} | null;
 
 const usersPageSize = 10;
 
@@ -45,6 +50,8 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [accountActionDialog, setAccountActionDialog] = useState<AccountActionDialogState>(null);
   const [accountActionReason, setAccountActionReason] = useState('');
+  const [verificationActionDialog, setVerificationActionDialog] = useState<VerificationActionDialogState>(null);
+  const [verificationActionText, setVerificationActionText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / usersPageSize)), [totalCount]);
 
@@ -137,37 +144,61 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function runUserAction(user: AdminUser, action: 'approve' | 'reject') {
+  function openVerificationActionDialog(user: AdminUser, action: 'approve' | 'reject') {
+    setError(null);
+    setActionMessage(null);
+    setSelectedUser(null);
+    setVerificationActionText('');
+    setVerificationActionDialog({ user, action });
+  }
+
+  function closeVerificationActionDialog() {
+    if (pendingAction) {
+      return;
+    }
+
+    setVerificationActionDialog(null);
+    setVerificationActionText('');
+  }
+
+  async function submitVerificationAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!verificationActionDialog) {
+      return;
+    }
+
+    const { user, action } = verificationActionDialog;
     setError(null);
     setActionMessage(null);
     setPendingAction({ userId: user.id, action });
 
     try {
+      if (!user.sellerId || !user.pendingVerificationRequestId) {
+        throw new Error('This seller does not have a pending verification request.');
+      }
+
       if (action === 'approve') {
-        if (!user.sellerId || !user.pendingVerificationRequestId) {
-          throw new Error('This seller does not have a pending verification request.');
-        }
-        const reviewNotes = window.prompt('Review notes (optional):') ?? undefined;
         await adminApi.verifySeller(user.sellerId, user.pendingVerificationRequestId, {
           approve: true,
-          reviewNotes: reviewNotes || undefined,
+          reviewNotes: verificationActionText.trim() || undefined,
         });
         setActionMessage(`${user.name} has been approved as a seller.`);
       } else {
-        if (!user.sellerId || !user.pendingVerificationRequestId) {
-          throw new Error('This seller does not have a pending verification request.');
-        }
-        const rejectionReason = window.prompt('Rejection reason:');
-        if (!rejectionReason?.trim()) {
+        const rejectionReason = verificationActionText.trim();
+        if (!rejectionReason) {
           return;
         }
+
         await adminApi.verifySeller(user.sellerId, user.pendingVerificationRequestId, {
           approve: false,
-          rejectionReason: rejectionReason.trim(),
+          rejectionReason,
         });
         setActionMessage(`${user.name} has been rejected as a seller.`);
       }
 
+      setVerificationActionDialog(null);
+      setVerificationActionText('');
       await loadUsers(page);
     } catch (requestError) {
       setError(`Could not ${action} user: ${getErrorMessage(requestError)}`);
@@ -244,10 +275,10 @@ export default function AdminUsersPage() {
               <UsersTable
                 users={users}
                 pendingAction={pendingAction}
-                onApproveVerification={(user) => void runUserAction(user, 'approve')}
+                onApproveVerification={(user) => openVerificationActionDialog(user, 'approve')}
                 onBlock={(user) => openAccountActionDialog(user, 'block')}
                 onOpenUser={setSelectedUser}
-                onRejectVerification={(user) => void runUserAction(user, 'reject')}
+                onRejectVerification={(user) => openVerificationActionDialog(user, 'reject')}
                 onUnblock={(user) => openAccountActionDialog(user, 'unblock')}
               />
               <Pagination
@@ -265,10 +296,10 @@ export default function AdminUsersPage() {
           <AdminUserDetailsDialog
             user={selectedUser}
             pendingAction={pendingAction?.userId === selectedUser.id ? pendingAction.action : null}
-            onApproveVerification={(user) => void runUserAction(user, 'approve')}
+            onApproveVerification={(user) => openVerificationActionDialog(user, 'approve')}
             onBlock={(user) => openAccountActionDialog(user, 'block')}
             onClose={() => setSelectedUser(null)}
-            onRejectVerification={(user) => void runUserAction(user, 'reject')}
+            onRejectVerification={(user) => openVerificationActionDialog(user, 'reject')}
             onUnblock={(user) => openAccountActionDialog(user, 'unblock')}
           />
         ) : null}
@@ -281,6 +312,17 @@ export default function AdminUsersPage() {
             onChangeReason={setAccountActionReason}
             onClose={closeAccountActionDialog}
             onSubmit={submitAccountAction}
+          />
+        ) : null}
+        {verificationActionDialog ? (
+          <AdminSellerVerificationActionDialog
+            action={verificationActionDialog.action}
+            isPending={pendingAction?.userId === verificationActionDialog.user.id && pendingAction.action === verificationActionDialog.action}
+            text={verificationActionText}
+            user={verificationActionDialog.user}
+            onChangeText={setVerificationActionText}
+            onClose={closeVerificationActionDialog}
+            onSubmit={submitVerificationAction}
           />
         ) : null}
       </div>

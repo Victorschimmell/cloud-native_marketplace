@@ -24,10 +24,11 @@ export default function AdminUserDetailsDialog({
   onUnblock,
 }: AdminUserDetailsDialogProps) {
   const isBlocked = user.status === 'blocked';
-  const canReviewSeller = user.status === 'pending verification'
+  const isPendingVerification = user.status === 'pending verification';
+  const canReviewSeller = isPendingVerification
     && Boolean(user.sellerId)
     && Boolean(user.pendingVerificationRequestId);
-  const hasAccountAction = canReviewSeller || isBlocked || user.role !== 'Admin';
+  const hasAccountAction = canReviewSeller || (!isPendingVerification && (isBlocked || user.role !== 'Admin'));
 
   return (
     <Modal
@@ -59,7 +60,7 @@ export default function AdminUserDetailsDialog({
               </button>
             </>
           ) : null}
-          {isBlocked ? (
+          {!isPendingVerification && isBlocked ? (
             <button
               type="button"
               className="modal__button modal__button--success"
@@ -68,7 +69,7 @@ export default function AdminUserDetailsDialog({
             >
               {pendingAction === 'unblock' ? 'Working...' : 'Unblock'}
             </button>
-          ) : user.role !== 'Admin' ? (
+          ) : !isPendingVerification && user.role !== 'Admin' ? (
             <button
               type="button"
               className="modal__button modal__button--danger"
@@ -115,12 +116,6 @@ export default function AdminUserDetailsDialog({
           <div>
             <dt>Seller ID</dt>
             <dd>{user.sellerId}</dd>
-          </div>
-        ) : null}
-        {user.pendingVerificationRequestId ? (
-          <div>
-            <dt>Verification request</dt>
-            <dd>{user.pendingVerificationRequestId}</dd>
           </div>
         ) : null}
       </dl>

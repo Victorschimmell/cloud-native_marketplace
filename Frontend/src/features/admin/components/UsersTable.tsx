@@ -76,9 +76,12 @@ function UserRow({
   onUnblock,
 }: UserRowProps) {
   const isBlocked = user.status === 'blocked';
-  const canReviewSeller = user.status === 'pending verification'
+  const isPendingVerification = user.status === 'pending verification';
+  const canReviewSeller = isPendingVerification
     && Boolean(user.sellerId)
     && Boolean(user.pendingVerificationRequestId);
+  const hasNoActions = (isPendingVerification && !canReviewSeller)
+    || (!isPendingVerification && !isBlocked && user.role === 'Admin');
 
   return (
     <tr>
@@ -125,7 +128,7 @@ function UserRow({
             </>
           ) : null}
 
-          {isBlocked ? (
+          {!isPendingVerification && isBlocked ? (
             <button
               type="button"
               className="admin-users-page__action admin-users-page__action--unblock"
@@ -134,7 +137,7 @@ function UserRow({
             >
               {pendingAction === 'unblock' ? 'Working...' : 'Unblock'}
             </button>
-          ) : user.role !== 'Admin' ? (
+          ) : !isPendingVerification && user.role !== 'Admin' ? (
             <button
               type="button"
               className="admin-users-page__action admin-users-page__action--block"
@@ -145,7 +148,7 @@ function UserRow({
             </button>
           ) : null}
 
-          {!canReviewSeller && !isBlocked && user.role === 'Admin' ? (
+          {hasNoActions ? (
             <span className="admin-users-page__no-action">No actions</span>
           ) : null}
         </div>
