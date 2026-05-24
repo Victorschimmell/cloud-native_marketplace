@@ -5,12 +5,13 @@ import './Modal.css';
 interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
+  headerAction?: ReactNode;
   onClose: () => void;
   subtitle?: ReactNode;
   title: ReactNode;
 }
 
-export default function Modal({ children, footer, onClose, subtitle, title }: ModalProps) {
+export default function Modal({ children, footer, headerAction, onClose, subtitle, title }: ModalProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -38,9 +39,12 @@ export default function Modal({ children, footer, onClose, subtitle, title }: Mo
             <h3 className="modal__title" id={titleId}>{title}</h3>
             {subtitle ? <p className="modal__subtitle">{subtitle}</p> : null}
           </div>
-          <button type="button" className="modal__close" aria-label="Close" onClick={onClose}>
-            x
-          </button>
+          <div className="modal__header-actions">
+            {headerAction}
+            <button type="button" className="modal__close" aria-label="Close" onClick={onClose}>
+              x
+            </button>
+          </div>
         </div>
 
         <div className="modal__body">{children}</div>

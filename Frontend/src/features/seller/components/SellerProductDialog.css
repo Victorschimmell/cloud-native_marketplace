@@ -3,6 +3,37 @@
   gap: 18px;
 }
 
+.seller-product-dialog__icon-action {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: var(--primary-color, #1e40af);
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+}
+
+.seller-product-dialog__icon-action:hover,
+.seller-product-dialog__icon-action:focus-visible {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  outline: 0;
+}
+
+.seller-product-dialog__icon-action svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 18px;
+}
+
 .seller-product-dialog__image {
   aspect-ratio: 16 / 9;
   background: #f3f4f6;

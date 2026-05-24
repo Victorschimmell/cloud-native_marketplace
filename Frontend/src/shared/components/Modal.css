@@ -41,6 +41,13 @@
   margin: 6px 0 0;
 }
 
+.modal__header-actions {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
 .modal__close {
   align-items: center;
   background: #ffffff;
