@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 
 import HomePage from '../pages/HomePage';
@@ -16,8 +16,8 @@ import SellersPage from '../features/seller/pages/SellersPage';
 import ReviewsPage from '../pages/ReviewsPage';
 import AnalyticsDashboardPage from '../features/admin/pages/AnalyticsDashboardPage';
 import SellerDashboard from '../features/seller/components/SellerDashboard';
+import SellerVerificationGuard from '../features/seller/components/SellerVerificationGuard';
 import SellerOrderDetailsPage from '../features/seller/pages/SellerOrderDetailsPage';
-import SellerVerificationPage from '../features/seller/pages/SellerVerificationPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../features/admin/pages/AdminUsersPage';
 import AdminSellerVerificationsPage from '../features/admin/pages/AdminSellerVerificationsPage';
@@ -56,18 +56,18 @@ export const router = createBrowserRouter([
       { path: 'sellers/:id', element: <SellersPage /> },
       { path: 'reviews', element: <ReviewsPage /> },
       {
-        element: <ProtectedRoute capability="sellerVerification" />,
+        element: <ProtectedRoute capability="seller" />,
         children: [
-          { path: 'seller/verification', element: <SellerVerificationPage /> },
-        ],
-      },
-      {
-        element: <ProtectedRoute capability="verifiedSeller" />,
-        children: [
-          { path: 'seller/products', element: <SellerDashboard /> },
-          { path: 'seller/products/new', element: <AddProductPage /> },
-          { path: 'seller/orders', element: <SellerDashboard /> },
-          { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
+          { path: 'seller/verification', element: <Navigate replace to="/seller/products" /> },
+          {
+            element: <SellerVerificationGuard />,
+            children: [
+              { path: 'seller/products', element: <SellerDashboard /> },
+              { path: 'seller/products/new', element: <AddProductPage /> },
+              { path: 'seller/orders', element: <SellerDashboard /> },
+              { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
+            ],
+          },
         ],
       },
       {

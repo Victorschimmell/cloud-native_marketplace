@@ -15,11 +15,10 @@ export const primaryNavigationItems: NavigationItem[] = [
   { label: 'Home', to: '/', audience: 'all', end: true },
   { label: 'Browse Products', to: '/products', audience: 'public', showForAdmin: true },
   { label: 'Orders', to: '/orders', audience: 'customer' },
-  { label: 'Seller Verification', to: '/seller/verification', audience: 'sellerVerification' },
   {
     label: 'Seller Dashboard',
     to: '/seller/products',
-    audience: 'verifiedSeller',
+    audience: 'seller',
     activePathPrefixes: ['/seller/products', '/seller/orders'],
   },
   { label: 'Admin Dashboard', to: '/admin/dashboard', audience: 'admin' },
@@ -35,8 +34,6 @@ export function canUseCapability(capabilities: AuthCapabilities, capability: Aut
       return capabilities.isCustomer;
     case 'seller':
       return capabilities.isSeller;
-    case 'sellerVerification':
-      return capabilities.needsSellerVerification;
     case 'verifiedSeller':
       return capabilities.isVerifiedSeller;
     case 'admin':
