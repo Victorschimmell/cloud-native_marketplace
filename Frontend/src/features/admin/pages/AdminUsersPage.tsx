@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import Pagination from '../../../shared/components/Pagination';
+import AdminUserAccountActionDialog from '../components/AdminUserAccountActionDialog';
 import AdminUserDetailsDialog from '../components/AdminUserDetailsDialog';
 import UsersTable from '../components/UsersTable';
 import {
@@ -23,6 +25,10 @@ type PendingAction = {
   userId: string;
   action: 'block' | 'unblock' | 'approve' | 'reject';
 } | null;
+type AccountActionDialogState = {
+  user: AdminUser;
+  action: 'block' | 'unblock';
+} | null;
 
 const usersPageSize = 10;
 
@@ -37,6 +43,8 @@ export default function AdminUsersPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [accountActionDialog, setAccountActionDialog] = useState<AccountActionDialogState>(null);
+  const [accountActionReason, setAccountActionReason] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / usersPageSize)), [totalCount]);
 
@@ -79,21 +87,63 @@ export default function AdminUsersPage() {
     return () => abortController.abort();
   }, [loadUsers, page]);
 
-  async function runUserAction(user: AdminUser, action: Exclude<PendingAction, null>['action']) {
+  function openAccountActionDialog(user: AdminUser, action: 'block' | 'unblock') {
+    setError(null);
+    setActionMessage(null);
+    setSelectedUser(null);
+    setAccountActionReason('');
+    setAccountActionDialog({ user, action });
+  }
+
+  function closeAccountActionDialog() {
+    if (pendingAction) {
+      return;
+    }
+
+    setAccountActionDialog(null);
+    setAccountActionReason('');
+  }
+
+  async function submitAccountAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!accountActionDialog) {
+      return;
+    }
+
+    const { user, action } = accountActionDialog;
+    const reason = accountActionReason.trim() || undefined;
+
     setError(null);
     setActionMessage(null);
     setPendingAction({ userId: user.id, action });
 
     try {
       if (action === 'block') {
-        const reason = window.prompt('Block reason (optional):') ?? undefined;
-        await adminApi.blockUser(user.id, reason || undefined);
+        await adminApi.blockUser(user.id, reason);
         setActionMessage(`${user.name} has been blocked.`);
-      } else if (action === 'unblock') {
-        const reason = window.prompt('Unblock reason (optional):') ?? undefined;
-        await adminApi.unblockUser(user.id, reason || undefined);
+      } else {
+        await adminApi.unblockUser(user.id, reason);
         setActionMessage(`${user.name} has been unblocked.`);
-      } else if (action === 'approve') {
+      }
+
+      setAccountActionDialog(null);
+      setAccountActionReason('');
+      await loadUsers(page);
+    } catch (requestError) {
+      setError(`Could not ${action} user: ${getErrorMessage(requestError)}`);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function runUserAction(user: AdminUser, action: 'approve' | 'reject') {
+    setError(null);
+    setActionMessage(null);
+    setPendingAction({ userId: user.id, action });
+
+    try {
+      if (action === 'approve') {
         if (!user.sellerId || !user.pendingVerificationRequestId) {
           throw new Error('This seller does not have a pending verification request.');
         }
@@ -195,10 +245,10 @@ export default function AdminUsersPage() {
                 users={users}
                 pendingAction={pendingAction}
                 onApproveVerification={(user) => void runUserAction(user, 'approve')}
-                onBlock={(user) => void runUserAction(user, 'block')}
+                onBlock={(user) => openAccountActionDialog(user, 'block')}
                 onOpenUser={setSelectedUser}
                 onRejectVerification={(user) => void runUserAction(user, 'reject')}
-                onUnblock={(user) => void runUserAction(user, 'unblock')}
+                onUnblock={(user) => openAccountActionDialog(user, 'unblock')}
               />
               <Pagination
                 currentPage={page}
@@ -216,10 +266,21 @@ export default function AdminUsersPage() {
             user={selectedUser}
             pendingAction={pendingAction?.userId === selectedUser.id ? pendingAction.action : null}
             onApproveVerification={(user) => void runUserAction(user, 'approve')}
-            onBlock={(user) => void runUserAction(user, 'block')}
+            onBlock={(user) => openAccountActionDialog(user, 'block')}
             onClose={() => setSelectedUser(null)}
             onRejectVerification={(user) => void runUserAction(user, 'reject')}
-            onUnblock={(user) => void runUserAction(user, 'unblock')}
+            onUnblock={(user) => openAccountActionDialog(user, 'unblock')}
+          />
+        ) : null}
+        {accountActionDialog ? (
+          <AdminUserAccountActionDialog
+            action={accountActionDialog.action}
+            isPending={pendingAction?.userId === accountActionDialog.user.id && pendingAction.action === accountActionDialog.action}
+            reasonText={accountActionReason}
+            user={accountActionDialog.user}
+            onChangeReason={setAccountActionReason}
+            onClose={closeAccountActionDialog}
+            onSubmit={submitAccountAction}
           />
         ) : null}
       </div>
