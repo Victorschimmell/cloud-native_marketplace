@@ -27,7 +27,6 @@ import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
 import AdminCreateIssuePage from '../features/admin/pages/AdminCreateIssuePage';
 import AdminPaymentsPage from '../features/admin/pages/AdminPaymentsPage';
 import AddProductPage from '../features/seller/pages/AddProductPage';
-import EditProductPage from '../features/seller/pages/EditProductPage';
 
 export const router = createBrowserRouter([
   {
@@ -69,7 +68,6 @@ export const router = createBrowserRouter([
         children: [
           { path: 'seller/products', element: <SellerDashboard /> },
           { path: 'seller/products/new', element: <AddProductPage /> },
-          { path: 'seller/products/:listingId/edit', element: <EditProductPage /> },
           { path: 'seller/orders', element: <SellerDashboard /> },
           { path: 'seller/orders/:id', element: <SellerOrderDetailsPage /> },
         ],

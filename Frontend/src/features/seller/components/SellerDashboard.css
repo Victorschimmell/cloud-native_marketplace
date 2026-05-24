@@ -207,6 +207,26 @@
   font-weight: 700;
 }
 
+.seller-dashboard__product-button {
+  background: none;
+  border: 0;
+  color: var(--seller-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.seller-dashboard__product-button:hover,
+.seller-dashboard__product-button:focus-visible {
+  outline: 0;
+  text-decoration-color: currentColor;
+}
+
 .seller-dashboard__stock {
   font-weight: 600;
 }
@@ -277,6 +297,21 @@
   font: inherit;
   cursor: pointer;
   font-weight: 600;
+}
+
+.seller-dashboard__action:hover {
+  text-decoration: underline;
+}
+
+.seller-dashboard__action--view:hover,
+.seller-dashboard__action--view:focus-visible {
+  text-decoration: underline;
+}
+
+.seller-dashboard__action:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  text-decoration: none;
 }
 
 .seller-dashboard__action--edit {

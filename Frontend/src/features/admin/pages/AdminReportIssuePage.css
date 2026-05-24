@@ -332,6 +332,16 @@
   color: #16a34a;
 }
 
+.admin-issues-page__action:hover {
+  text-decoration: underline;
+}
+
+.admin-issues-page__action:disabled {
+  color: var(--admin-muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
 .admin-issues-page__no-action {
   color: var(--admin-muted);
   font-size: 13px;

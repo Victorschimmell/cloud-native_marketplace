@@ -1,17 +1,25 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { SellerListing } from '../api/sellerApi';
-import { sellerApi } from '../api/sellerApi';
 
 interface ProductInventoryTableProps {
+  pendingListingId?: string | null;
   priceFormatter: Intl.NumberFormat;
   products: SellerListing[];
-  onDeleteListing: (listingId: string) => void;
+  onDeleteProduct: (product: SellerListing) => void;
+  onEditProduct: (product: SellerListing) => void;
+  onOpenProduct: (product: SellerListing) => void;
 }
 
 type ProductSortOption = 'name' | 'category' | 'price-high' | 'price-low' | 'stock-high' | 'stock-low' | 'status';
 
-export default function ProductInventoryTable({ priceFormatter, products, onDeleteListing }: ProductInventoryTableProps) {
+export default function ProductInventoryTable({
+  pendingListingId = null,
+  priceFormatter,
+  products,
+  onDeleteProduct,
+  onEditProduct,
+  onOpenProduct,
+}: ProductInventoryTableProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<ProductSortOption>('name');
 
@@ -85,9 +93,12 @@ export default function ProductInventoryTable({ priceFormatter, products, onDele
             {visibleProducts.map((product) => (
               <ProductRow
                 key={product.listingId}
+                isPending={pendingListingId === product.listingId}
                 priceFormatter={priceFormatter}
                 product={product}
-                onDeleteListing={onDeleteListing}
+                onDeleteProduct={onDeleteProduct}
+                onEditProduct={onEditProduct}
+                onOpenProduct={onOpenProduct}
               />
             ))}
           </tbody>
@@ -98,37 +109,30 @@ export default function ProductInventoryTable({ priceFormatter, products, onDele
 }
 
 function ProductRow({
+  isPending,
   priceFormatter,
   product,
-  onDeleteListing,
+  onDeleteProduct,
+  onEditProduct,
+  onOpenProduct,
 }: {
+  isPending: boolean;
   priceFormatter: Intl.NumberFormat;
   product: SellerListing;
-  onDeleteListing: (listingId: string) => void;
+  onDeleteProduct: (product: SellerListing) => void;
+  onEditProduct: (product: SellerListing) => void;
+  onOpenProduct: (product: SellerListing) => void;
 }) {
-  const navigate = useNavigate();
-
-  function handleEdit() {
-    navigate(`/seller/products/${product.listingId}/edit`, { state: { listing: product } });
-  }
-
-  async function handleDelete() {
-    if (!window.confirm(`Are you sure you want to delete "${product.productName}"? This cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await sellerApi.deleteProduct(product.listingId);
-      onDeleteListing(product.listingId);
-    } catch {
-      alert('Failed to delete product. Please try again.');
-    }
-  }
-
   return (
     <tr>
       <td data-label="Product">
-        <span>{product.productName}</span>
+        <button
+          type="button"
+          className="seller-dashboard__product-button"
+          onClick={() => onOpenProduct(product)}
+        >
+          {product.productName}
+        </button>
       </td>
       <td data-label="Category">{product.categoryName ?? '-'}</td>
       <td className="seller-dashboard__price" data-label="Price">{priceFormatter.format(product.listingPrice)}</td>
@@ -139,16 +143,18 @@ function ProductRow({
           <button
             type="button"
             className="seller-dashboard__action seller-dashboard__action--edit"
-            onClick={handleEdit}
+            disabled={isPending}
+            onClick={() => onEditProduct(product)}
           >
             Edit
           </button>
           <button
             type="button"
             className="seller-dashboard__action seller-dashboard__action--delete"
-            onClick={handleDelete}
+            disabled={isPending}
+            onClick={() => onDeleteProduct(product)}
           >
-            Delete
+            {isPending ? 'Working...' : 'Delete'}
           </button>
         </div>
       </td>
