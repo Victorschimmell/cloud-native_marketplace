@@ -8,7 +8,7 @@ public sealed class ServiceConstructorTests
     [Fact]
     public void ProductService_Throws_When_ProductRepository_Is_Null()
     {
-        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeUnitOfWork(), new FakeCurrencyConversionService()));
+        Assert.Throws<ArgumentNullException>(() => new ProductService(null!, new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeAuditLogService(), new FakeUnitOfWork(), new FakeCurrencyConversionService()));
     }
 
     [Fact]
@@ -28,11 +28,11 @@ public sealed class ServiceConstructorTests
     {
         _ = new CustomerService(new FakeCustomerRepository());
         _ = new SellerService(new FakeSellerRepository());
-        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeUnitOfWork(), new FakeCurrencyConversionService());
+        _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeAuditLogService(), new FakeUnitOfWork(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
         _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
-        _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
-        _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeCustomerRepository(), new FakeDateTimeProvider(), new FakeUnitOfWork());
+        _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
+        _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeCustomerRepository(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());
         _ = new CheckoutService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeOrderNumberRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeAddressRepository(), new FakePaymentService(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new AddressService(new FakeAddressRepository(), new FakeCustomerRepository(), new FakeUnitOfWork());
@@ -58,7 +58,7 @@ public sealed class ServiceConstructorTests
             new FakeUnitOfWork());
         _ = new AdminDashboardService(new FakeAdminDashboardRepository(), new FakeCurrencyConversionService(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
         _ = new SellerVerificationService(new FakeSellerVerificationRequestRepository(), new FakeSellerRepository(), new FakeUserAccountRepository(), new FakeCurrentUserProvider(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
-        _ = new ShipmentService(new FakeShipmentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider());
+        _ = new ShipmentService(new FakeShipmentRepository(), new FakeOrderRepository(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new AuditLogService(new FakeAuditLogRepository(), new FakeDateTimeProvider(), new FakeCurrentUserProvider());
     }
 }
