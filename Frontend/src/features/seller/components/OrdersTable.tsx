@@ -142,7 +142,11 @@ function OrderRow({ order, priceFormatter }: { order: SellerOrderSummary; priceF
 
   return (
     <tr>
-      <td data-label="Order ID"><strong>{order.orderNumber}</strong></td>
+      <td data-label="Order ID">
+        <Link to={`/seller/orders/${order.id}`} className="seller-dashboard__product-button">
+          {order.orderNumber}
+        </Link>
+      </td>
       <td data-label="Customer">
         <p className="seller-dashboard__customer-name">{order.customerName}</p>
         <p className="seller-dashboard__customer-email">{order.customerEmail}</p>
