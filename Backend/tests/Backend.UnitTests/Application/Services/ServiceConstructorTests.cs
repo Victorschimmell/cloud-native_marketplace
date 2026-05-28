@@ -27,10 +27,9 @@ public sealed class ServiceConstructorTests
     public void Application_Services_Can_Be_Constructed_With_Application_Only_Fakes()
     {
         _ = new CustomerService(new FakeCustomerRepository());
-        _ = new SellerService(new FakeSellerRepository());
         _ = new ProductService(new FakeProductRepository(), new FakeProductListingRepository(), new FakeProductCategoryRepository(), new FakeSellerRepository(), new FakeCurrentUserProvider(), new FakeAuditLogService(), new FakeUnitOfWork(), new FakeCurrencyConversionService());
         _ = new CategoryService(new FakeProductCategoryRepository());
-        _ = new OrderService(new FakeOrderRepository(), new FakeOrderItemRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
+        _ = new OrderService(new FakeOrderRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeCurrencyConversionService(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new PaymentService(new FakePaymentRepository(), new FakeOrderRepository(), new FakeCurrencyRepository(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new ReviewService(new FakeOrderReviewRepository(), new FakeOrderRepository(), new FakeCustomerRepository(), new FakeDateTimeProvider(), new FakeAuditLogService(), new FakeUnitOfWork());
         _ = new CartService(new FakeCartRepository(), new FakeProductListingRepository(), new FakeCustomerRepository(), new FakeSellerRepository(), new FakeDateTimeProvider(), new FakeCurrencyConversionService(), new FakeUnitOfWork());

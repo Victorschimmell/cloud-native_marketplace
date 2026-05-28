@@ -384,10 +384,22 @@ internal sealed class FakeOrderItemRepository : IOrderItemRepository
 
 internal sealed class FakePaymentService : IPaymentService
 {
-    public Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string currencyCode, CancellationToken cancellationToken = default) => Task.FromResult(Result<CurrencyDto>.NotImplemented());
-    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<PaymentDto>>.NotImplemented());
-    public Task<Result<PaymentDto>> RecordCheckoutPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
-    public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.NotImplemented());
+    public Task<Result<CurrencyDto>> GetCurrencyByCodeAsync(string currencyCode, CancellationToken cancellationToken = default) => Task.FromResult(Result<CurrencyDto>.Success(new CurrencyDto(Guid.NewGuid(), currencyCode, currencyCode, currencyCode)));
+    public Task<Result<IReadOnlyList<PaymentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<PaymentDto>>.Success([]));
+    public Task<Result<PaymentDto>> RecordCheckoutPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.Success(ToPaymentDto(request)));
+    public Task<Result<PaymentDto>> RecordPaymentAsync(RecordPaymentRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PaymentDto>.Success(ToPaymentDto(request)));
+
+    private static PaymentDto ToPaymentDto(RecordPaymentRequest request) =>
+        new(
+            request.OrderId,
+            1,
+            request.PaymentDetails.CurrencyId,
+            request.PaymentDetails.PaymentType,
+            request.PaymentDetails.PaymentInstallments,
+            request.PaymentDetails.PaymentValue,
+            PaymentStatus.Pending,
+            request.PaymentDetails.ExternalPaymentReference,
+            null);
 }
 
 internal sealed class FakePaymentRepository : IPaymentRepository
@@ -566,8 +578,6 @@ internal sealed class FakeAuditLogService : IAuditLogService
 {
     public List<WriteAuditLogEntryRequest> Entries { get; } = [];
 
-    public Task<Result<PagedResult<AuditLogEntryDto>>> GetByActorUserAsync(Guid actorUserId, PagedRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PagedResult<AuditLogEntryDto>>.NotImplemented());
-    public Task<Result<IReadOnlyList<AuditLogEntryDto>>> GetByTargetEntityAsync(string entityType, string entityId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<AuditLogEntryDto>>.NotImplemented());
     public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default)
     {
         Entries.Add(request);

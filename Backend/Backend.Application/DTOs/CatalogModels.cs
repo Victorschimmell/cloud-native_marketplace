@@ -91,10 +91,6 @@ public sealed record UpdateProductRequest(
     int InventoryQuantity,
     string VisibilityStatus);
 
-public sealed record CreateCategoryRequest(string CategoryNamePt, string? CategoryNameEn);
-
-public sealed record UpdateCategoryRequest(Guid CategoryId, string CategoryNamePt, string? CategoryNameEn);
-
 public sealed record SellerListingDto(
     Guid ListingId,
     Guid ProductId,
