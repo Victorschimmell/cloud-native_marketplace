@@ -11,7 +11,6 @@ namespace Backend.Application.Services;
 public sealed class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
-    private readonly IOrderItemRepository _orderItemRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
@@ -20,7 +19,6 @@ public sealed class OrderService : IOrderService
 
     public OrderService(
         IOrderRepository orderRepository,
-        IOrderItemRepository orderItemRepository,
         ICustomerRepository customerRepository,
         ISellerRepository sellerRepository,
         ICurrencyConversionService currencyConversionService,
@@ -28,7 +26,6 @@ public sealed class OrderService : IOrderService
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
-        ArgumentNullException.ThrowIfNull(orderItemRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
@@ -36,17 +33,11 @@ public sealed class OrderService : IOrderService
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _orderRepository = orderRepository;
-        _orderItemRepository = orderItemRepository;
         _customerRepository = customerRepository;
         _sellerRepository = sellerRepository;
         _currencyConversionService = currencyConversionService;
         _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
-    }
-
-    public Task<Result<OrderDto>> GetByIdAsync(Guid orderId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<OrderDto>.NotImplemented());
     }
 
     public async Task<Result<OrderDto>> GetByIdForCustomerAsync(Guid orderId, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
@@ -69,11 +60,6 @@ public sealed class OrderService : IOrderService
         }
 
         return Result<OrderDto>.Success(order.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
-    }
-
-    public Task<Result<PagedResult<OrderDto>>> GetByCustomerAsync(Guid customerId, PagedRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<PagedResult<OrderDto>>.NotImplemented());
     }
 
     public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(
@@ -229,16 +215,6 @@ public sealed class OrderService : IOrderService
             aggregate.ActiveOrders,
             priceConverter(aggregate.TotalRevenue),
             currencyCode));
-    }
-
-    public Task<Result<IReadOnlyList<OrderItemDto>>> GetOrderItemsAsync(Guid orderId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<IReadOnlyList<OrderItemDto>>.NotImplemented());
-    }
-
-    public Task<Result<OrderDto>> UpdateStatusAsync(UpdateOrderStatusRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<OrderDto>.NotImplemented());
     }
 
     public async Task<Result<SellerOrderSummaryDto>> UpdateStatusForSellerUserAsync(

@@ -26,27 +26,6 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetSellers_ReturnsNotImplemented()
-    {
-        // Act
-        var response = await _client.GetAsync("/api/sellers", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetSellerById_ReturnsNotImplemented()
-    {
-        // Act
-        var sellerId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/sellers/{sellerId}", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
-    }
-
-    [Fact]
     public async Task GetMyOrders_WhenOrderContainsSellerItem_ReturnsOnlySellerOrdersAndLines()
     {
         // Arrange

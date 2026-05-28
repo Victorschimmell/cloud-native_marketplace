@@ -49,11 +49,6 @@ public sealed class ProductService : IProductService
         _currencyConversionService = currencyConversionService;
     }
 
-    public Task<Result<ProductDto>> GetByIdAsync(Guid productId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<ProductDto>.NotImplemented());
-    }
-
     public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, string? currency, CancellationToken cancellationToken = default)
     {
         if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
@@ -96,11 +91,6 @@ public sealed class ProductService : IProductService
 
         return Result<PagedResult<BrowseProductDto>>.Success(
             new PagedResult<BrowseProductDto>(products, listings.Page, listings.PageSize, listings.TotalCount));
-    }
-
-    public Task<Result<PagedResult<ProductDto>>> GetByCategoryAsync(Guid categoryId, PagedRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<PagedResult<ProductDto>>.NotImplemented());
     }
 
     public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)

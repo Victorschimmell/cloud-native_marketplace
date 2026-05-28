@@ -35,11 +35,6 @@ public sealed class ShipmentService : IShipmentService
         _unitOfWork = unitOfWork;
     }
 
-    public Task<Result<IReadOnlyList<ShipmentDto>>> GetByOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<IReadOnlyList<ShipmentDto>>.NotImplemented());
-    }
-
     public async Task<Result> RecordShipmentAsync(RecordShipmentRequest request, CancellationToken cancellationToken = default)
     {
         var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
@@ -104,10 +99,5 @@ public sealed class ShipmentService : IShipmentService
         ), cancellationToken);
 
         return Result.Success();
-    }
-
-    public Task<Result<ShipmentDto>> UpdateShipmentStatusAsync(UpdateShipmentStatusRequest request, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(Result<ShipmentDto>.NotImplemented());
     }
 }

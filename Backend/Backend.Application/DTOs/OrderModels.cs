@@ -162,5 +162,3 @@ public sealed record RecordShipmentRequest(
     string CarrierName,
     string TrackingNumber,
     ShipmentStatus ShipmentStatus);
-
-public sealed record UpdateShipmentStatusRequest(Guid ShipmentId, ShipmentStatus ShipmentStatus);

@@ -11,16 +11,12 @@ import CartPage from '../features/cart/pages/CartPage';
 import CheckoutPage from '../features/checkout/pages/CheckoutPage';
 import OrdersPage from '../features/orders/pages/OrdersPage';
 import OrderDetailsPage from '../features/orders/pages/OrderDetailsPage';
-import CustomerPage from '../pages/CustomerPage';
-import SellersPage from '../features/seller/pages/SellersPage';
-import ReviewsPage from '../pages/ReviewsPage';
 import AnalyticsDashboardPage from '../features/admin/pages/AnalyticsDashboardPage';
 import SellerDashboard from '../features/seller/components/SellerDashboard';
 import SellerVerificationGuard from '../features/seller/components/SellerVerificationGuard';
 import SellerOrderDetailsPage from '../features/seller/pages/SellerOrderDetailsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../features/admin/pages/AdminUsersPage';
-import AdminSellerVerificationsPage from '../features/admin/pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
 import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
 import AdminCreateIssuePage from '../features/admin/pages/AdminCreateIssuePage';
@@ -48,14 +44,6 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        element: <ProtectedRoute />,
-        children: [
-          { path: 'customers/:id', element: <CustomerPage /> },
-        ],
-      },
-      { path: 'sellers/:id', element: <SellersPage /> },
-      { path: 'reviews', element: <ReviewsPage /> },
-      {
         element: <ProtectedRoute capability="seller" />,
         children: [
           { path: 'seller/verification', element: <Navigate replace to="/seller/products" /> },
@@ -78,7 +66,6 @@ export const router = createBrowserRouter([
           { path: 'admin/issues', element: <AdminReportIssuePage /> },
           { path: 'admin/issues/new', element: <AdminCreateIssuePage /> },
           { path: 'admin/payments', element: <AdminPaymentsPage /> },
-          { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
           { path: 'admin/audit', element: <AdminAuditPage /> },
         ],
       },
