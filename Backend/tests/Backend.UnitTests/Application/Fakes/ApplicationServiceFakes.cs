@@ -292,19 +292,69 @@ internal sealed class FakeCartRepository : ICartRepository
 
 internal sealed class FakeOrderRepository : IOrderRepository
 {
-    public Task AddAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Order>>([]);
-    public Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, OrderStatus? status = null, CustomerOrderSort sort = CustomerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
-    public Task<PagedResult<Order>> GetByCustomerIdWithDetailsAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
-    public Task<PagedResult<Order>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, OrderStatus? status = null, SellerOrderSort sort = SellerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>([], page, pageSize, 0));
+    private Order? _order;
+
+    public Order? Order
+    {
+        get => _order;
+        set
+        {
+            _order = value;
+            Orders.Clear();
+            if (value is not null)
+            {
+                Orders.Add(value);
+            }
+        }
+    }
+
+    public List<Order> Orders { get; } = [];
+    public int AddCalls { get; private set; }
+    public int UpdateCalls { get; private set; }
+    public int DeleteCalls { get; private set; }
+
+    public Task AddAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        _order = order;
+        Orders.Add(order);
+        AddCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        Orders.RemoveAll(existing => existing.Id == order.Id);
+        DeleteCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<Order>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Order>>(Orders.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<PagedResult<Order>> GetByCustomerIdAsync(Guid customerId, int page, int pageSize, OrderStatus? status = null, CustomerOrderSort sort = CustomerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>(Orders.Where(order => order.CustomerId == customerId).Skip((page - 1) * pageSize).Take(pageSize).ToArray(), page, pageSize, Orders.Count(order => order.CustomerId == customerId)));
+    public Task<PagedResult<Order>> GetByCustomerIdWithDetailsAsync(Guid customerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>(Orders.Where(order => order.CustomerId == customerId).Skip((page - 1) * pageSize).Take(pageSize).ToArray(), page, pageSize, Orders.Count(order => order.CustomerId == customerId)));
+    public Task<PagedResult<Order>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, OrderStatus? status = null, SellerOrderSort sort = SellerOrderSort.Newest, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<Order>(Orders.Where(order => order.Items.Any(item => item.SellerId == sellerId)).Skip((page - 1) * pageSize).Take(pageSize).ToArray(), page, pageSize, Orders.Count(order => order.Items.Any(item => item.SellerId == sellerId))));
     public Task<SellerOrderAggregate> GetSellerOrderAggregateAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult(new SellerOrderAggregate(0, 0, 0m));
-    public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
-    public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
-    public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult<Order?>(null);
+    public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Orders.FirstOrDefault(order => order.Id == id));
+    public Task<Order?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Orders.FirstOrDefault(order => order.Id == id));
+    public Task<Order?> GetByOrderNumberAsync(string orderNumber, CancellationToken cancellationToken = default) => Task.FromResult(Orders.FirstOrDefault(order => order.OrderNumber == orderNumber));
     public Task<SalesAggregate> GetSalesAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new SalesAggregate(0, 0m));
     public Task<OrderStatusAggregate> GetOrderStatusAggregateAsync(DateTimeOffset? fromUtc, DateTimeOffset? toUtc, CancellationToken cancellationToken = default) => Task.FromResult(new OrderStatusAggregate(0, 0, 0));
-    public Task UpdateAsync(Order order, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task UpdateAsync(Order order, CancellationToken cancellationToken = default)
+    {
+        var index = Orders.FindIndex(existing => existing.Id == order.Id);
+        if (index >= 0)
+        {
+            Orders[index] = order;
+        }
+        else
+        {
+            Orders.Add(order);
+        }
+
+        _order = order;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeAdminDashboardRepository : IAdminDashboardRepository
@@ -343,15 +393,30 @@ internal sealed class FakePaymentService : IPaymentService
 internal sealed class FakePaymentRepository : IPaymentRepository
 {
     public List<OrderPayment> Payments { get; } = [];
+    public int AddCalls { get; private set; }
+    public int UpdateCalls { get; private set; }
+    public int DeleteCalls { get; private set; }
 
     public Task AddAsync(OrderPayment payment, CancellationToken cancellationToken = default)
     {
+        if (payment.PaymentSequential == 0)
+        {
+            payment.PaymentSequential = Payments.Count(existing => existing.OrderId == payment.OrderId) + 1;
+        }
+
         Payments.Add(payment);
+        AddCalls += 1;
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
+    public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default)
+    {
+        Payments.RemoveAll(existing => existing.OrderId == payment.OrderId && existing.PaymentSequential == payment.PaymentSequential);
+        DeleteCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult(Payments.FirstOrDefault(payment => payment.OrderId == orderId && payment.PaymentSequential == paymentSequential));
     public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>(Payments.Where(payment => payment.OrderId == orderId).ToArray());
     public Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
     {
@@ -372,17 +437,75 @@ internal sealed class FakePaymentRepository : IPaymentRepository
         return Task.FromResult(new PagedResult<OrderPayment>(items, page, pageSize, filtered.Count()));
     }
 
-    public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default)
+    {
+        var index = Payments.FindIndex(existing => existing.OrderId == payment.OrderId && existing.PaymentSequential == payment.PaymentSequential);
+        if (index >= 0)
+        {
+            Payments[index] = payment;
+        }
+        else
+        {
+            Payments.Add(payment);
+        }
+
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeCurrencyRepository : ICurrencyRepository
 {
-    public Task<Currency?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
-    public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult<Currency?>(null);
-    public Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Currency>>([]);
-    public Task AddAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    private Currency? _currency;
+
+    public Currency? Currency
+    {
+        get => _currency;
+        set
+        {
+            _currency = value;
+            Currencies.Clear();
+            if (value is not null)
+            {
+                Currencies.Add(value);
+            }
+        }
+    }
+
+    public List<Currency> Currencies { get; } = [];
+
+    public Task<Currency?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Currencies.FirstOrDefault(currency => currency.Id == id));
+    public Task<Currency?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) => Task.FromResult(Currencies.FirstOrDefault(currency => string.Equals(currency.Code, code, StringComparison.OrdinalIgnoreCase)));
+    public Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Currency>>(Currencies.ToArray());
+
+    public Task AddAsync(Currency currency, CancellationToken cancellationToken = default)
+    {
+        _currency = currency;
+        Currencies.Add(currency);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(Currency currency, CancellationToken cancellationToken = default)
+    {
+        var index = Currencies.FindIndex(existing => existing.Id == currency.Id);
+        if (index >= 0)
+        {
+            Currencies[index] = currency;
+        }
+        else
+        {
+            Currencies.Add(currency);
+        }
+
+        _currency = currency;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Currency currency, CancellationToken cancellationToken = default)
+    {
+        Currencies.RemoveAll(existing => existing.Id == currency.Id);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
@@ -399,12 +522,44 @@ internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
 
 internal sealed class FakeShipmentRepository : IShipmentRepository
 {
-    public Task AddAsync(Shipment shipment, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(Shipment shipment, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<Shipment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Shipment?>(null);
-    public Task<IReadOnlyList<Shipment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>([]);
-    public Task<IReadOnlyList<Shipment>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>([]);
-    public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public List<Shipment> Shipments { get; } = [];
+    public int AddCalls { get; private set; }
+    public int UpdateCalls { get; private set; }
+    public int DeleteCalls { get; private set; }
+
+    public Task AddAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    {
+        Shipments.Add(shipment);
+        AddCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    {
+        Shipments.RemoveAll(existing => existing.Id == shipment.Id);
+        DeleteCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task<Shipment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Shipments.FirstOrDefault(shipment => shipment.Id == id));
+    public Task<IReadOnlyList<Shipment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>(Shipments.Where(shipment => shipment.OrderId == orderId).ToArray());
+    public Task<IReadOnlyList<Shipment>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>(Shipments.Where(shipment => shipment.SellerId == sellerId).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+
+    public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
+    {
+        var index = Shipments.FindIndex(existing => existing.Id == shipment.Id);
+        if (index >= 0)
+        {
+            Shipments[index] = shipment;
+        }
+        else
+        {
+            Shipments.Add(shipment);
+        }
+
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeAuditLogService : IAuditLogService
