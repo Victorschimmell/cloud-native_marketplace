@@ -11,14 +11,12 @@ import CartPage from '../features/cart/pages/CartPage';
 import CheckoutPage from '../features/checkout/pages/CheckoutPage';
 import OrdersPage from '../features/orders/pages/OrdersPage';
 import OrderDetailsPage from '../features/orders/pages/OrderDetailsPage';
-import SellersPage from '../features/seller/pages/SellersPage';
 import AnalyticsDashboardPage from '../features/admin/pages/AnalyticsDashboardPage';
 import SellerDashboard from '../features/seller/components/SellerDashboard';
 import SellerVerificationGuard from '../features/seller/components/SellerVerificationGuard';
 import SellerOrderDetailsPage from '../features/seller/pages/SellerOrderDetailsPage';
 import NotFoundPage from '../pages/NotFoundPage';
 import AdminUsersPage from '../features/admin/pages/AdminUsersPage';
-import AdminSellerVerificationsPage from '../features/admin/pages/AdminSellerVerificationsPage';
 import AdminAuditPage from '../features/admin/pages/AdminAuditPage';
 import AdminReportIssuePage from '../features/admin/pages/AdminReportIssuePage';
 import AdminCreateIssuePage from '../features/admin/pages/AdminCreateIssuePage';
@@ -45,7 +43,6 @@ export const router = createBrowserRouter([
           { path: 'orders/:id', element: <OrderDetailsPage /> },
         ],
       },
-      { path: 'sellers/:id', element: <SellersPage /> },
       {
         element: <ProtectedRoute capability="seller" />,
         children: [
@@ -69,7 +66,6 @@ export const router = createBrowserRouter([
           { path: 'admin/issues', element: <AdminReportIssuePage /> },
           { path: 'admin/issues/new', element: <AdminCreateIssuePage /> },
           { path: 'admin/payments', element: <AdminPaymentsPage /> },
-          { path: 'admin/verifications', element: <AdminSellerVerificationsPage /> },
           { path: 'admin/audit', element: <AdminAuditPage /> },
         ],
       },
