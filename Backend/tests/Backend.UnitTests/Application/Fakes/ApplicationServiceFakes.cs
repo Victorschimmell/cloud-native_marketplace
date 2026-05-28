@@ -67,34 +67,209 @@ internal sealed class FakeSellerRepository : ISellerRepository
 
 internal sealed class FakeProductRepository : IProductRepository
 {
-    public Task AddAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<Product>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
-    public Task<IReadOnlyList<Product>> GetByCategoryIdAsync(Guid categoryId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>([]);
-    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<Product?>(null);
-    public Task UpdateAsync(Product product, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    private Product? _product;
+
+    public Product? Product
+    {
+        get => _product;
+        set
+        {
+            _product = value;
+            Products.Clear();
+            if (value is not null)
+            {
+                Products.Add(value);
+            }
+        }
+    }
+
+    public List<Product> Products { get; } = [];
+    public int AddCalls { get; private set; }
+    public int UpdateCalls { get; private set; }
+    public int DeleteCalls { get; private set; }
+
+    public Task AddAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        _product = product;
+        Products.Add(product);
+        AddCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        Products.RemoveAll(existing => existing.Id == product.Id);
+        DeleteCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<Product>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>(Products.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<IReadOnlyList<Product>> GetByCategoryIdAsync(Guid categoryId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Product>>(Products.Where(product => product.CategoryId == categoryId).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Products.FirstOrDefault(product => product.Id == id));
+
+    public Task UpdateAsync(Product product, CancellationToken cancellationToken = default)
+    {
+        var index = Products.FindIndex(existing => existing.Id == product.Id);
+        if (index >= 0)
+        {
+            Products[index] = product;
+        }
+        else
+        {
+            Products.Add(product);
+        }
+
+        _product = product;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeProductCategoryRepository : IProductCategoryRepository
 {
-    public Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(ProductCategory category, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<ProductCategory>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductCategory>>([]);
-    public Task<ProductCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<ProductCategory?>(null);
-    public Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    private ProductCategory? _category;
+
+    public ProductCategory? Category
+    {
+        get => _category;
+        set
+        {
+            _category = value;
+            Categories.Clear();
+            if (value is not null)
+            {
+                Categories.Add(value);
+            }
+        }
+    }
+
+    public List<ProductCategory> Categories { get; } = [];
+
+    public Task AddAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    {
+        _category = category;
+        Categories.Add(category);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    {
+        Categories.RemoveAll(existing => existing.Id == category.Id);
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<ProductCategory>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductCategory>>(Categories.ToArray());
+    public Task<ProductCategory?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Categories.FirstOrDefault(category => category.Id == id));
+
+    public Task UpdateAsync(ProductCategory category, CancellationToken cancellationToken = default)
+    {
+        var index = Categories.FindIndex(existing => existing.Id == category.Id);
+        if (index >= 0)
+        {
+            Categories[index] = category;
+        }
+        else
+        {
+            Categories.Add(category);
+        }
+
+        _category = category;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeProductListingRepository : IProductListingRepository
 {
-    public Task AddAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<ProductListing>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
-    public Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<ProductListing>([], request.Page, request.PageSize, 0));
-    public Task<ProductListing?> GetAvailableProductDetailAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default) => Task.FromResult<ProductListing?>(null);
-    public Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<ProductListing?>(null);
-    public Task<IReadOnlyList<ProductListing>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
-    public Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>([]);
-    public Task UpdateAsync(ProductListing listing, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    private ProductListing? _listing;
+
+    public ProductListing? Listing
+    {
+        get => _listing;
+        set
+        {
+            _listing = value;
+            Listings.Clear();
+            if (value is not null)
+            {
+                Listings.Add(value);
+            }
+        }
+    }
+
+    public List<ProductListing> Listings { get; } = [];
+    public int AddCalls { get; private set; }
+    public int UpdateCalls { get; private set; }
+    public int DeleteCalls { get; private set; }
+
+    public Task AddAsync(ProductListing listing, CancellationToken cancellationToken = default)
+    {
+        _listing = listing;
+        Listings.Add(listing);
+        AddCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(ProductListing listing, CancellationToken cancellationToken = default)
+    {
+        listing.IsDeleted = true;
+        DeleteCalls += 1;
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<ProductListing>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>(Listings.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+
+    public Task<PagedResult<ProductListing>> GetAvailableForBrowseAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
+    {
+        var filtered = Listings.Where(listing => !listing.IsDeleted && listing.VisibilityStatus == ListingVisibilityStatus.Published);
+        if (request.CategoryId.HasValue)
+        {
+            filtered = filtered.Where(listing => listing.Product?.CategoryId == request.CategoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            filtered = filtered.Where(listing => listing.Product?.ProductName.Contains(request.Search, StringComparison.OrdinalIgnoreCase) == true);
+        }
+
+        filtered = request.Sort switch
+        {
+            "price-asc" => filtered.OrderBy(listing => listing.ListingPrice),
+            "price-desc" => filtered.OrderByDescending(listing => listing.ListingPrice),
+            "name-asc" => filtered.OrderBy(listing => listing.Product?.ProductName),
+            _ => filtered.OrderByDescending(listing => listing.CreatedAtUtc)
+        };
+
+        var totalCount = filtered.Count();
+        var items = filtered.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToArray();
+        return Task.FromResult(new PagedResult<ProductListing>(items, request.Page, request.PageSize, totalCount));
+    }
+
+    public Task<ProductListing?> GetAvailableProductDetailAsync(Guid productId, Guid? listingId, CancellationToken cancellationToken = default) => Task.FromResult(Listings.FirstOrDefault(listing =>
+        !listing.IsDeleted &&
+        listing.VisibilityStatus == ListingVisibilityStatus.Published &&
+        listing.ProductId == productId &&
+        (!listingId.HasValue || listing.Id == listingId.Value)));
+
+    public Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Listings.FirstOrDefault(listing => listing.Id == id));
+    public Task<IReadOnlyList<ProductListing>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>(Listings.Where(listing => listing.ProductId == productId && !listing.IsDeleted).ToArray());
+    public Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ProductListing>>(Listings.Where(listing => listing.SellerId == sellerId && !listing.IsDeleted).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+
+    public Task UpdateAsync(ProductListing listing, CancellationToken cancellationToken = default)
+    {
+        var index = Listings.FindIndex(existing => existing.Id == listing.Id);
+        if (index >= 0)
+        {
+            Listings[index] = listing;
+        }
+        else
+        {
+            Listings.Add(listing);
+        }
+
+        _listing = listing;
+        UpdateCalls += 1;
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class FakeCartRepository : ICartRepository
@@ -366,21 +541,52 @@ internal sealed class FakeAuditLogRepository : IAuditLogRepository
 
 internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificationRequestRepository
 {
-    public SellerVerificationRequest? Request { get; set; }
+    private SellerVerificationRequest? _request;
+
+    public SellerVerificationRequest? Request
+    {
+        get => _request;
+        set
+        {
+            _request = value;
+            Requests.Clear();
+            if (value is not null)
+            {
+                Requests.Add(value);
+            }
+        }
+    }
+
+    public List<SellerVerificationRequest> Requests { get; } = [];
+    public int AddCalls { get; private set; }
     public int UpdateCalls { get; private set; }
 
     public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
-        Request = request;
+        _request = request;
+        Requests.Add(request);
+        AddCalls += 1;
         return Task.CompletedTask;
     }
-    public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>([]);
-    public Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Request is null ? 0 : 1);
-    public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Request is not null && Request.Id == id ? Request : null);
-    public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Request is not null && Request.SellerId == sellerId ? [Request] : []);
+
+    public Task<IReadOnlyList<SellerVerificationRequest>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Requests.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default) => Task.FromResult(Requests.Count);
+    public Task<SellerVerificationRequest?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Requests.FirstOrDefault(request => request.Id == id));
+    public Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<SellerVerificationRequest>>(Requests.Where(request => request.SellerId == sellerId).ToArray());
+
     public Task UpdateAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
-        Request = request;
+        var index = Requests.FindIndex(existing => existing.Id == request.Id);
+        if (index >= 0)
+        {
+            Requests[index] = request;
+        }
+        else
+        {
+            Requests.Add(request);
+        }
+
+        _request = request;
         UpdateCalls += 1;
         return Task.CompletedTask;
     }
