@@ -60,7 +60,7 @@ steps:
     inputs:
       command: 'test'
       projects: 'Backend/tests/Backend.UnitTests/Backend.UnitTests.csproj'
-      arguments: '--configuration $(buildConfiguration) --no-build'
+      arguments: '--configuration $(buildConfiguration) --no-build --collect "XPlat Code Coverage" --settings Backend/coverlet.runsettings --results-directory "$(Agent.TempDirectory)/coverage/unit"'
       publishTestResults: true
 
   # 5. Integration tests  (uses Docker Compose test Postgres)
@@ -69,8 +69,15 @@ steps:
     inputs:
       command: 'test'
       projects: 'Backend/tests/Backend.IntegrationTests/Backend.IntegrationTests.csproj'
-      arguments: '--configuration $(buildConfiguration) --no-build'
+      arguments: '--configuration $(buildConfiguration) --no-build --collect "XPlat Code Coverage" --settings Backend/coverlet.runsettings --results-directory "$(Agent.TempDirectory)/coverage/integration"'
       publishTestResults: true
+
+  - task: PublishCodeCoverageResults@2
+    displayName: 'Publish backend code coverage'
+    inputs:
+      summaryFileLocation: '$(Agent.TempDirectory)/coverage/**/coverage.cobertura.xml'
+      pathToSources: '$(Build.SourcesDirectory)'
+      failIfCoverageEmpty: true
 
   # ── Frontend ───────────────────────────────────────────────────────────────
 

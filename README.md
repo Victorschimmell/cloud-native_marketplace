@@ -65,6 +65,15 @@ Run backend tests:
 dotnet test Marketplace.slnx
 ```
 
+Run backend tests with coverage:
+
+```powershell
+dotnet test .\Backend\tests\Backend.UnitTests\Backend.UnitTests.csproj --collect:"XPlat Code Coverage" --settings .\Backend\coverlet.runsettings --results-directory .\TestResults\coverage\unit
+dotnet test .\Backend\tests\Backend.IntegrationTests\Backend.IntegrationTests.csproj --collect:"XPlat Code Coverage" --settings .\Backend\coverlet.runsettings --results-directory .\TestResults\coverage\integration
+```
+
+Coverage files are written as Cobertura XML under `TestResults/coverage/**/coverage.cobertura.xml`. Azure DevOps publishes those files to the pipeline Code Coverage tab.
+
 # Build frontend:
 
 ```powershell

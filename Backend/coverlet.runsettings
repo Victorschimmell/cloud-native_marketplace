@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Backend.Api]*,[Backend.Application]*,[Backend.Domain]*,[Backend.Infrastructure]*</Include>
+          <Exclude>[Backend.UnitTests]*,[Backend.IntegrationTests]*,[xunit.*]*</Exclude>
+          <ExcludeByFile>**/Migrations/*.cs,**/Migrations/*.Designer.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
