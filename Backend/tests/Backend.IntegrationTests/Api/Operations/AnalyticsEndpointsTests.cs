@@ -23,7 +23,7 @@ public class AnalyticsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetSalesStatistics_ReturnsNotImplemented()
+    public async Task GetSalesStatistics_WhenAdminIsAuthenticated_ReturnsAggregate()
     {
         // Arrange: seed orders in a year that belongs to this test only
         var adminId = await SeedUserAsync("analytics-sales-admin@example.com", isAdmin: true);
@@ -54,7 +54,7 @@ public class AnalyticsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetOrdersStatistics_ReturnsNotImplemented()
+    public async Task GetOrdersStatistics_WhenAdminIsAuthenticated_ReturnsAggregate()
     {
         // Arrange: seed orders in a year that belongs to this test only
         var adminId = await SeedUserAsync("analytics-orders-admin@example.com", isAdmin: true);

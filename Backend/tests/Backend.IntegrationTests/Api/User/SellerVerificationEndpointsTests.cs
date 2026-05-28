@@ -25,7 +25,7 @@ public class SellerVerificationEndpointsTests : IClassFixture<MarketplaceApiFact
     }
 
     [Fact]
-    public async Task SubmitSellerVerification_ReturnsNotImplemented()
+    public async Task SubmitSellerVerification_WhenRequestIsValid_CreatesSubmission()
     {
         // Arrange
         var sellerId = await SeedSellerAsync("seller-submit@example.com", DomainEnums.VerificationStatus.Unverified);
@@ -53,7 +53,7 @@ public class SellerVerificationEndpointsTests : IClassFixture<MarketplaceApiFact
     }
 
     [Fact]
-    public async Task GetSellerVerifications_ReturnsNotImplemented()
+    public async Task GetSellerVerifications_WhenRequestsExist_ReturnsSellerRequests()
     {
         // Arrange
         var sellerId = await SeedSellerAsync("seller-get@example.com", DomainEnums.VerificationStatus.Pending);

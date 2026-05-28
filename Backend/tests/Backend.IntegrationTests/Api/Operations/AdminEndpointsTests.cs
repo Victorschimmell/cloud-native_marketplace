@@ -27,7 +27,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task BlockUser_ReturnsNotImplemented()
+    public async Task BlockUser_WhenAdminIsAuthenticated_BlocksUser()
     {
         // Arrange
         var adminId = await SeedUserAsync("admin-block-admin@example.com", isAdmin: true);
@@ -58,7 +58,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task UnblockUser_ReturnsNotImplemented()
+    public async Task UnblockUser_WhenAdminIsAuthenticated_UnblocksUser()
     {
         // Arrange
         var adminId = await SeedUserAsync("admin-unblock-admin@example.com", isAdmin: true);
@@ -89,7 +89,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetSellerVerificationRequests_ReturnsNotImplemented()
+    public async Task GetSellerVerificationRequests_WhenAdminIsAuthenticated_ReturnsRequests()
     {
         // Arrange
         var adminId = await SeedUserAsync("admin-list-verifications@example.com", isAdmin: true);
@@ -110,7 +110,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task VerifySeller_ReturnsNotImplemented()
+    public async Task VerifySeller_WhenAdminApprovesRequest_VerifiesSeller()
     {
         // Arrange
         var adminId = await SeedUserAsync("admin-verify@example.com", isAdmin: true);

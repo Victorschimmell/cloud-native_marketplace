@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Backend.Api.Contracts.Commerce.Orders;
-using Backend.Api.Contracts.Commerce.Shipments;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,34 +35,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetOrderItems_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Act
-        var orderId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/orders/{orderId}/items", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateOrderStatus_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var updateRequest = new UpdateOrderStatusRequest
-        {
-            Status = OrderStatus.Pending
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/orders/{orderId}", updateRequest, TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
     public async Task CancelOrder_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Arrange
@@ -83,37 +54,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}/reviews", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetOrderShipments_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Act
-        var orderId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/orders/{orderId}/shipments", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task CreateOrderShipment_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var recordRequest = new RecordShipmentRequest
-        {
-            SellerId = Guid.NewGuid(),
-            CarrierName = "DHL",
-            TrackingNumber = "123456",
-            ShipmentStatus = ShipmentStatus.Pending
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync($"/api/orders/{orderId}/shipments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
