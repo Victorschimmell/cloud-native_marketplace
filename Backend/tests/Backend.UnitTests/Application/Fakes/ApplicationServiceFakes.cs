@@ -167,11 +167,36 @@ internal sealed class FakePaymentService : IPaymentService
 
 internal sealed class FakePaymentRepository : IPaymentRepository
 {
-    public Task AddAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public List<OrderPayment> Payments { get; } = [];
+
+    public Task AddAsync(OrderPayment payment, CancellationToken cancellationToken = default)
+    {
+        Payments.Add(payment);
+        return Task.CompletedTask;
+    }
+
     public Task DeleteAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<OrderPayment?> GetByIdAsync(Guid orderId, int paymentSequential, CancellationToken cancellationToken = default) => Task.FromResult<OrderPayment?>(null);
-    public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>([]);
-    public Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<OrderPayment>([], page, pageSize, 0));
+    public Task<IReadOnlyList<OrderPayment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderPayment>>(Payments.Where(payment => payment.OrderId == orderId).ToArray());
+    public Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var filtered = Payments.AsEnumerable();
+        filtered = status switch
+        {
+            AdminPaymentStatusFilter.Completed => filtered.Where(payment => payment.PaymentStatus is PaymentStatus.Paid or PaymentStatus.Refunded),
+            AdminPaymentStatusFilter.Pending => filtered.Where(payment => payment.PaymentStatus is PaymentStatus.Pending or PaymentStatus.Authorized),
+            AdminPaymentStatusFilter.Failed => filtered.Where(payment => payment.PaymentStatus is PaymentStatus.Failed or PaymentStatus.Cancelled),
+            _ => filtered
+        };
+
+        var items = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return Task.FromResult(new PagedResult<OrderPayment>(items, page, pageSize, filtered.Count()));
+    }
+
     public Task UpdateAsync(OrderPayment payment, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
@@ -307,10 +332,35 @@ internal sealed class FakeAuditLogRepository : IAuditLogRepository
         AddCalls += 1;
         return Task.CompletedTask;
     }
-    public Task<IReadOnlyList<AuditLog>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
-    public Task<IReadOnlyList<AuditLog>> GetByActorUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
-    public Task<IReadOnlyList<AuditLog>> GetByTargetEntityAsync(string entityType, string entityId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>([]);
-    public Task<PagedResult<AuditLog>> GetByFilterAsync(Guid? userId, string? entityType, string? entityId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AuditLog>([], page, pageSize, 0));
+    public Task<IReadOnlyList<AuditLog>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>(AddedLogs.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<IReadOnlyList<AuditLog>> GetByActorUserIdAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>(AddedLogs.Where(log => log.ActorUserId == userId).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<IReadOnlyList<AuditLog>> GetByTargetEntityAsync(string entityType, string entityId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<AuditLog>>(AddedLogs.Where(log => log.TargetEntityType == entityType && log.TargetEntityId == entityId).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<PagedResult<AuditLog>> GetByFilterAsync(Guid? userId, string? entityType, string? entityId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var filtered = AddedLogs.AsEnumerable();
+        if (userId.HasValue)
+        {
+            filtered = filtered.Where(log => log.ActorUserId == userId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+        {
+            filtered = filtered.Where(log => log.TargetEntityType == entityType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(entityId))
+        {
+            filtered = filtered.Where(log => log.TargetEntityId == entityId);
+        }
+
+        var items = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return Task.FromResult(new PagedResult<AuditLog>(items, page, pageSize, filtered.Count()));
+    }
+
     public Task<AuditLog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AuditLog?>(null);
 }
 
@@ -338,25 +388,78 @@ internal sealed class FakeSellerVerificationRequestRepository : ISellerVerificat
 
 internal sealed class FakeUserAccountRepository : IUserAccountRepository
 {
-    public UserAccount? UserAccount { get; set; }
+    private UserAccount? _userAccount;
+
+    public UserAccount? UserAccount
+    {
+        get => _userAccount;
+        set
+        {
+            _userAccount = value;
+            UserAccounts.Clear();
+            if (value is not null)
+            {
+                UserAccounts.Add(value);
+            }
+        }
+    }
+
+    public List<UserAccount> UserAccounts { get; } = [];
     public int AddCalls { get; private set; }
     public int UpdateCalls { get; private set; }
 
     public Task AddAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
     {
-        UserAccount = userAccount;
+        _userAccount = userAccount;
+        UserAccounts.Add(userAccount);
         AddCalls += 1;
         return Task.CompletedTask;
     }
     public Task DeleteAsync(UserAccount userAccount, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<UserAccount>>([]);
-    public Task<PagedResult<UserAccount>> GetByFilterAsync(AdminUserRoleFilter role, AdminUserStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<UserAccount>([], page, pageSize, 0));
-    public Task<int> CountActiveAsync(CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && !UserAccount.IsBlocked ? 1 : 0);
-    public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && string.Equals(UserAccount.Email.Value, email, StringComparison.OrdinalIgnoreCase) ? UserAccount : null);
-    public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(UserAccount is not null && UserAccount.Id == id ? UserAccount : null);
+    public Task<IReadOnlyList<UserAccount>> GetAllAsync(int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<UserAccount>>(UserAccounts.Skip((page - 1) * pageSize).Take(pageSize).ToArray());
+    public Task<PagedResult<UserAccount>> GetByFilterAsync(AdminUserRoleFilter role, AdminUserStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var filtered = UserAccounts.AsEnumerable();
+        filtered = role switch
+        {
+            AdminUserRoleFilter.Admin => filtered.Where(user => user.IsAdmin),
+            AdminUserRoleFilter.Seller => filtered.Where(user => user.SellerProfile is not null),
+            AdminUserRoleFilter.Customer => filtered.Where(user => user.CustomerProfile is not null && user.SellerProfile is null && !user.IsAdmin),
+            _ => filtered
+        };
+
+        filtered = status switch
+        {
+            AdminUserStatusFilter.Active => filtered.Where(user => !user.IsBlocked && user.AccountStatus != AccountStatus.Suspended && user.SellerProfile?.VerificationStatus != VerificationStatus.Pending),
+            AdminUserStatusFilter.PendingVerification => filtered.Where(user => user.SellerProfile?.VerificationStatus == VerificationStatus.Pending),
+            AdminUserStatusFilter.Blocked => filtered.Where(user => user.IsBlocked || user.AccountStatus == AccountStatus.Suspended),
+            _ => filtered
+        };
+
+        var items = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return Task.FromResult(new PagedResult<UserAccount>(items, page, pageSize, filtered.Count()));
+    }
+
+    public Task<int> CountActiveAsync(CancellationToken cancellationToken = default) => Task.FromResult(UserAccounts.Count(user => !user.IsBlocked));
+    public Task<UserAccount?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(UserAccounts.FirstOrDefault(user => string.Equals(user.Email.Value, email, StringComparison.OrdinalIgnoreCase)));
+    public Task<UserAccount?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(UserAccounts.FirstOrDefault(user => user.Id == id));
     public Task UpdateAsync(UserAccount userAccount, CancellationToken cancellationToken = default)
     {
-        UserAccount = userAccount;
+        var index = UserAccounts.FindIndex(existing => existing.Id == userAccount.Id);
+        if (index >= 0)
+        {
+            UserAccounts[index] = userAccount;
+        }
+        else
+        {
+            UserAccounts.Add(userAccount);
+        }
+
+        _userAccount = userAccount;
         UpdateCalls += 1;
         return Task.CompletedTask;
     }
@@ -369,15 +472,17 @@ internal sealed class FakeDateTimeProvider : IDateTimeProvider
 
 internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
 {
+    public bool ForceUnsupported { get; set; }
     public string BaseCurrency => "BRL";
     public string NormalizeOrDefault(string? currency) => string.IsNullOrWhiteSpace(currency) ? BaseCurrency : currency.Trim().ToUpperInvariant();
     public bool IsSupported(string currencyCode) => currencyCode is "BRL" or "USD" or "DKK";
     public decimal FromBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount * 0.5m, 2, MidpointRounding.AwayFromZero);
     public bool TryGetPriceConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
     {
-        currencyCode = displayCurrency ?? BaseCurrency;
-        priceConverter = amount => FromBaseCurrency(amount, BaseCurrency);
-        return true;
+        currencyCode = NormalizeOrDefault(displayCurrency);
+        var selectedCurrencyCode = currencyCode;
+        priceConverter = amount => FromBaseCurrency(amount, selectedCurrencyCode);
+        return !ForceUnsupported && IsSupported(currencyCode);
     }
 }
 
