@@ -7,7 +7,7 @@
           <Format>cobertura</Format>
           <Include>[Backend.Api]*,[Backend.Application]*,[Backend.Domain]*,[Backend.Infrastructure]*</Include>
           <Exclude>[Backend.UnitTests]*,[Backend.IntegrationTests]*,[xunit.*]*</Exclude>
-          <ExcludeByFile>**/Migrations/*.cs,**/Migrations/*.Designer.cs</ExcludeByFile>
+          <ExcludeByFile>**/obj/**/*.cs,**/Migrations/*.cs,**/Migrations/*.Designer.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>
