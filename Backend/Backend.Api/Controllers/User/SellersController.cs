@@ -1,7 +1,6 @@
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
-using Backend.Api.Contracts.User.Registration;
 using Backend.Api.Mappings.Commerce.Orders;
 using Backend.Api.Mappings.Common;
 using Backend.Application.Abstractions.Repositories;
@@ -18,34 +17,15 @@ namespace Backend.Api.Controllers.User;
 [Route("api/sellers")]
 public class SellersController : ApiControllerBase
 {
-    private readonly ISellerService _sellerService;
     private readonly IOrderService _orderService;
     private readonly ICurrentUserProvider _currentUserProvider;
 
     public SellersController(
-        ISellerService sellerService,
         IOrderService orderService,
         ICurrentUserProvider currentUserProvider)
     {
-        _sellerService = sellerService;
         _orderService = orderService;
         _currentUserProvider = currentUserProvider;
-    }
-
-    [HttpGet]
-    public async Task<ActionResult<SellerResponse>> GetSellersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
-    {
-        // var result = await _customerService.GetCustomersAsync(request.ToDto());
-        // return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
-    }
-
-    [HttpGet("{sellerId:guid}")]
-    public async Task<ActionResult<PageResponse<SellerResponse>>> GetByIdAsync([NotEmptyGuid] Guid sellerId, CancellationToken cancellationToken)
-    {
-        // var result = await _customerService.GetByIdAsync(customerId);
-        // return result.IsSuccess ? Ok(result.Value) : BadRequest(result.Error);
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
     }
 
     [Authorize]
