@@ -59,8 +59,8 @@ export default function SellerOrderDetailsPage() {
     () => (order ? getSellerFulfillmentStatusFromItems(order) : undefined),
     [order],
   );
-  const actions = useMemo(
-    () => (order?.canUpdateStatus ? getStatusActions(sellerFulfillmentStatus) : []),
+  const nextAction = useMemo(
+    () => (order?.canUpdateStatus ? getNextStatusAction(sellerFulfillmentStatus) : null),
     [order?.canUpdateStatus, sellerFulfillmentStatus],
   );
   const itemCount = order?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
@@ -215,19 +215,16 @@ export default function SellerOrderDetailsPage() {
                   </div>
                 </div>
 
-                {actions.length > 0 ? (
+                {nextAction ? (
                   <div className="seller-order-details__actions">
-                    {actions.map((action) => (
-                      <button
-                        className="seller-order-details__primary-action"
-                        disabled={pendingStatus !== null}
-                        key={action.status}
-                        onClick={() => void updateStatus(action.status)}
-                        type="button"
-                      >
-                        {pendingStatus === action.status ? 'Updating...' : action.label}
-                      </button>
-                    ))}
+                    <button
+                      className="seller-order-details__primary-action"
+                      disabled={pendingStatus !== null}
+                      onClick={() => void updateStatus(nextAction.status)}
+                      type="button"
+                    >
+                      {pendingStatus === nextAction.status ? 'Updating...' : nextAction.label}
+                    </button>
                   </div>
                 ) : (
                   <p className="seller-order-details__muted">
@@ -235,11 +232,11 @@ export default function SellerOrderDetailsPage() {
                   </p>
                 )}
 
-                {actions.map((action) => (
-                  <p className="seller-order-details__action-note" key={`${action.status}-note`}>
-                    {action.note}
+                {nextAction ? (
+                  <p className="seller-order-details__action-note">
+                    {nextAction.note}
                   </p>
-                ))}
+                ) : null}
               </article>
 
               <article className="seller-order-details__panel seller-order-details__panel--totals">
@@ -331,43 +328,40 @@ function StatusPathItem({
   );
 }
 
-function getStatusActions(status: OrderStatus | undefined): StatusAction[] {
+function getNextStatusAction(status: OrderStatus | undefined): StatusAction | null {
   if (status === 'Pending') {
-    return [
-      {
-        status: 'Approved',
-        label: 'Approve Seller Items',
-        note: 'Approves the products assigned to your seller account.',
-      },
-    ];
+    return {
+      status: 'Approved',
+      label: 'Approve Seller Items',
+      note: 'Approves the products assigned to your seller account.',
+    };
   }
 
   if (status === 'Approved') {
-    return [
-      {
-        status: 'Processing',
-        label: 'Start Processing',
-        note: 'Use this when seller-owned items are being prepared.',
-      },
-      {
-        status: 'Shipped',
-        label: 'Mark Seller Items Shipped',
-        note: 'Marks your products as shipped. The order moves once all products are shipped.',
-      },
-    ];
+    return {
+      status: 'Processing',
+      label: 'Start Processing',
+      note: 'Use this when seller-owned items are being prepared.',
+    };
   }
 
   if (status === 'Processing') {
-    return [
-      {
-        status: 'Shipped',
-        label: 'Mark Seller Items Shipped',
-        note: 'Use this once the seller-owned items have left your fulfillment queue.',
-      },
-    ];
+    return {
+      status: 'Shipped',
+      label: 'Ship Items On Order',
+      note: 'Use this once the seller-owned items have left your fulfillment queue.',
+    };
   }
 
-  return [];
+  if (status === 'Shipped') {
+    return {
+      status: 'Delivered',
+      label: 'Mark Items Delivered',
+      note: 'Use this once the seller-owned items have been delivered to the customer.',
+    };
+  }
+
+  return null;
 }
 
 function getOrderApprovalState(order: SellerOrderSummary): string {
@@ -391,9 +385,13 @@ function getOrderFulfillmentState(order: SellerOrderSummary): string {
 }
 
 function getSellerFulfillmentStatusFromItems(order: SellerOrderSummary): OrderStatus {
+  if (order.items.length === 0) {
+    return 'Pending';
+  }
+
   return order.items.reduce<OrderStatus>((lowestStatus, item) => (
     getStatusRank(item.fulfillmentStatus) < getStatusRank(lowestStatus) ? item.fulfillmentStatus : lowestStatus
-  ), 'Shipped');
+  ), 'Delivered');
 }
 
 function isAtLeastStatus(current: OrderStatus, target: OrderStatus): boolean {

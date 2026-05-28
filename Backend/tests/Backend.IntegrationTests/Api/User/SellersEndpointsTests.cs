@@ -197,6 +197,12 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         response = await _client.PatchAsJsonAsync(
             $"/api/sellers/me/orders/{seed.SellerOrderId}/status?currency=BRL",
+            new UpdateOrderStatusRequest { Status = OrderStatus.Shipped },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        response = await _client.PatchAsJsonAsync(
+            $"/api/sellers/me/orders/{seed.SellerOrderId}/status?currency=BRL",
             new UpdateOrderStatusRequest { Status = OrderStatus.Processing },
             TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -214,20 +220,36 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.NotNull(order);
         Assert.Equal(OrderStatus.Shipped, order.OrderStatus);
         Assert.NotNull(order.OrderDeliveredCarrierDateUtc);
-        Assert.False(order.CanUpdateStatus);
+        Assert.True(order.CanUpdateStatus);
         Assert.All(order.Items, item => Assert.Equal("Seller owned product", item.ProductName));
         Assert.All(order.Items, item => Assert.Equal(seed.SellerProductImageUrl, item.ImageUrl));
         Assert.All(order.Items, item => Assert.Equal(OrderStatus.Shipped, item.FulfillmentStatus));
+
+        response = await _client.PatchAsJsonAsync(
+            $"/api/sellers/me/orders/{seed.SellerOrderId}/status?currency=BRL",
+            new UpdateOrderStatusRequest { Status = OrderStatus.Delivered },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        order = await response.Content.ReadFromJsonAsync<SellerOrderSummaryModel>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(order);
+        Assert.Equal(OrderStatus.Delivered, order.OrderStatus);
+        Assert.NotNull(order.OrderDeliveredCustomerDateUtc);
+        Assert.False(order.CanUpdateStatus);
+        Assert.All(order.Items, item => Assert.Equal(OrderStatus.Delivered, item.FulfillmentStatus));
 
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var savedOrder = await dbContext.Orders.FindAsync([seed.SellerOrderId], TestContext.Current.CancellationToken);
         Assert.NotNull(savedOrder);
-        Assert.Equal(DomainOrderStatus.Shipped, savedOrder.OrderStatus);
+        Assert.Equal(DomainOrderStatus.Delivered, savedOrder.OrderStatus);
         Assert.NotNull(savedOrder.OrderDeliveredCarrierDateUtc);
+        Assert.NotNull(savedOrder.OrderDeliveredCustomerDateUtc);
         var savedItem = await dbContext.OrderItems.FindAsync([seed.SellerOrderId, 1], TestContext.Current.CancellationToken);
         Assert.NotNull(savedItem);
-        Assert.Equal(DomainOrderStatus.Shipped, savedItem.FulfillmentStatus);
+        Assert.Equal(DomainOrderStatus.Delivered, savedItem.FulfillmentStatus);
         Assert.NotNull(savedItem.FulfillmentApprovedAtUtc);
         Assert.NotNull(savedItem.FulfillmentProcessingAtUtc);
         Assert.NotNull(savedItem.FulfillmentShippedAtUtc);
