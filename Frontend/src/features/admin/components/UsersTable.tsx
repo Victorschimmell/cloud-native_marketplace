@@ -10,6 +10,7 @@ interface UsersTableProps {
   } | null;
   onApproveVerification: (user: AdminUser) => void;
   onBlock: (user: AdminUser) => void;
+  onOpenUser: (user: AdminUser) => void;
   onRejectVerification: (user: AdminUser) => void;
   onUnblock: (user: AdminUser) => void;
 }
@@ -20,6 +21,7 @@ export default function UsersTable({
   pendingAction = null,
   onApproveVerification,
   onBlock,
+  onOpenUser,
   onRejectVerification,
   onUnblock,
 }: UsersTableProps) {
@@ -43,6 +45,7 @@ export default function UsersTable({
               pendingAction={pendingAction?.userId === user.id ? pendingAction.action : null}
               onApproveVerification={onApproveVerification}
               onBlock={onBlock}
+              onOpenUser={onOpenUser}
               onRejectVerification={onRejectVerification}
               onUnblock={onUnblock}
             />
@@ -58,6 +61,7 @@ interface UserRowProps {
   pendingAction: UserTableAction | null;
   onApproveVerification: (user: AdminUser) => void;
   onBlock: (user: AdminUser) => void;
+  onOpenUser: (user: AdminUser) => void;
   onRejectVerification: (user: AdminUser) => void;
   onUnblock: (user: AdminUser) => void;
 }
@@ -67,19 +71,29 @@ function UserRow({
   pendingAction,
   onApproveVerification,
   onBlock,
+  onOpenUser,
   onRejectVerification,
   onUnblock,
 }: UserRowProps) {
   const isBlocked = user.status === 'blocked';
-  const canReviewSeller = user.status === 'pending verification'
+  const isPendingVerification = user.status === 'pending verification';
+  const canReviewSeller = isPendingVerification
     && Boolean(user.sellerId)
     && Boolean(user.pendingVerificationRequestId);
+  const hasNoActions = (isPendingVerification && !canReviewSeller)
+    || (!isPendingVerification && !isBlocked && user.role === 'Admin');
 
   return (
     <tr>
       <td>
         <div className="admin-users-page__user-cell">
-          <p className="admin-users-page__user-name">{user.name}</p>
+          <button
+            type="button"
+            className="admin-users-page__user-name-button"
+            onClick={() => onOpenUser(user)}
+          >
+            {user.name}
+          </button>
           <p className="admin-users-page__user-email">{user.email}</p>
           {user.company ? <p className="admin-users-page__user-company">{user.company}</p> : null}
         </div>
@@ -114,7 +128,7 @@ function UserRow({
             </>
           ) : null}
 
-          {isBlocked ? (
+          {!isPendingVerification && isBlocked ? (
             <button
               type="button"
               className="admin-users-page__action admin-users-page__action--unblock"
@@ -123,7 +137,7 @@ function UserRow({
             >
               {pendingAction === 'unblock' ? 'Working...' : 'Unblock'}
             </button>
-          ) : user.role !== 'Admin' ? (
+          ) : !isPendingVerification && user.role !== 'Admin' ? (
             <button
               type="button"
               className="admin-users-page__action admin-users-page__action--block"
@@ -134,7 +148,7 @@ function UserRow({
             </button>
           ) : null}
 
-          {!canReviewSeller && !isBlocked && user.role === 'Admin' ? (
+          {hasNoActions ? (
             <span className="admin-users-page__no-action">No actions</span>
           ) : null}
         </div>

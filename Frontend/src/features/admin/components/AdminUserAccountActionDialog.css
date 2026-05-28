@@ -1,0 +1,31 @@
+.admin-user-account-action__form {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-user-account-action__form label {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-user-account-action__form textarea {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #111827;
+  font: inherit;
+  line-height: 1.5;
+  min-height: 132px;
+  padding: 12px;
+  resize: vertical;
+  width: 100%;
+}
+
+.admin-user-account-action__form textarea:focus {
+  background: #ffffff;
+  border-color: var(--primary-color, #1e40af);
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
+  outline: 0;
+}

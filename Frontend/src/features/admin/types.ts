@@ -51,6 +51,9 @@ export interface AdminIssue {
   status: IssueStatus;
   reportedBy: string;
   assignee?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolution?: string;
   date: string;
 }
 

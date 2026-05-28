@@ -16,6 +16,7 @@ public sealed class ProductService : IProductService
     private readonly IProductCategoryRepository _productCategoryRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly ICurrentUserProvider _currentUserProvider;
+    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrencyConversionService _currencyConversionService;
 
@@ -25,6 +26,7 @@ public sealed class ProductService : IProductService
         IProductCategoryRepository productCategoryRepository,
         ISellerRepository sellerRepository,
         ICurrentUserProvider currentUserProvider,
+        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork,
         ICurrencyConversionService currencyConversionService)
     {
@@ -33,6 +35,7 @@ public sealed class ProductService : IProductService
         ArgumentNullException.ThrowIfNull(productCategoryRepository);
         ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currentUserProvider);
+        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
 
@@ -41,6 +44,7 @@ public sealed class ProductService : IProductService
         _productCategoryRepository = productCategoryRepository;
         _sellerRepository = sellerRepository;
         _currentUserProvider = currentUserProvider;
+        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
         _currencyConversionService = currencyConversionService;
     }
@@ -141,6 +145,14 @@ public sealed class ProductService : IProductService
         await _productListingRepository.AddAsync(listing, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Created,
+            TargetEntityType: nameof(ProductListing),
+            TargetEntityId: listing.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Seller {seller.Id} created product listing {listing.Id} for product {product.Id} with status {listing.VisibilityStatus}."
+        ), cancellationToken);
+
         return Result<ProductDto>.Success(product.ToProductDto());
     }
 
@@ -216,6 +228,14 @@ public sealed class ProductService : IProductService
         await _productListingRepository.UpdateAsync(listing, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Updated,
+            TargetEntityType: nameof(ProductListing),
+            TargetEntityId: listing.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Seller {seller.Id} updated product listing {listing.Id} for product {product.Id}. Visibility: {listing.VisibilityStatus}; inventory: {listing.InventoryQuantity}."
+        ), cancellationToken);
+
         return Result<ProductDto>.Success(product.ToProductDto());
     }
 
@@ -237,6 +257,14 @@ public sealed class ProductService : IProductService
 
         await _productListingRepository.DeleteAsync(listing, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Deleted,
+            TargetEntityType: nameof(ProductListing),
+            TargetEntityId: listing.Id.ToString(),
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Seller {seller.Id} deleted product listing {listing.Id} for product {listing.ProductId}."
+        ), cancellationToken);
 
         return Result.Success();
     }

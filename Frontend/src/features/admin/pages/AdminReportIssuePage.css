@@ -277,9 +277,27 @@
   min-width: 0;
 }
 
-.admin-issues-page__issue-title {
+.admin-issues-page__issue-title-button {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: var(--admin-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
   margin: 0;
-  font-weight: 600;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.admin-issues-page__issue-title-button:hover,
+.admin-issues-page__issue-title-button:focus-visible {
+  color: #1d4ed8;
+  outline: 0;
+  text-decoration-color: currentColor;
 }
 
 .admin-issues-page__issue-description {
@@ -312,6 +330,16 @@
 
 .admin-issues-page__action--resolve {
   color: #16a34a;
+}
+
+.admin-issues-page__action:hover {
+  text-decoration: underline;
+}
+
+.admin-issues-page__action:disabled {
+  color: var(--admin-muted);
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 .admin-issues-page__no-action {

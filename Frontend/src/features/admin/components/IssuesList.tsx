@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
+import AdminIssueDetailsDialog from './AdminIssueDetailsDialog';
 import type { AdminIssue } from '../types';
 
 interface IssuesListProps {
@@ -19,6 +21,9 @@ export default function IssuesList({
   onAssign,
   onResolve,
 }: IssuesListProps) {
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const selectedIssue = selectedIssueId ? issues.find((issue) => issue.id === selectedIssueId) : null;
+
   return (
     <div className="admin-issues-page__panel">
       <div className="admin-issues-page__panel-header">
@@ -51,6 +56,7 @@ export default function IssuesList({
                   key={issue.id}
                   issue={issue}
                   isPending={pendingId === issue.id}
+                  onOpen={setSelectedIssueId}
                   onAssign={onAssign}
                   onResolve={onResolve}
                 />
@@ -61,6 +67,15 @@ export default function IssuesList({
       )}
 
       {pagination}
+      {selectedIssue ? (
+        <AdminIssueDetailsDialog
+          issue={selectedIssue}
+          isPending={pendingId === selectedIssue.id}
+          onAssign={onAssign}
+          onClose={() => setSelectedIssueId(null)}
+          onResolve={onResolve}
+        />
+      ) : null}
     </div>
   );
 }
@@ -68,11 +83,12 @@ export default function IssuesList({
 interface IssueRowProps {
   issue: AdminIssue;
   isPending: boolean;
+  onOpen: (issueId: string) => void;
   onAssign?: (issueId: string) => void;
   onResolve?: (issueId: string) => void;
 }
 
-function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
+function IssueRow({ issue, isPending, onOpen, onAssign, onResolve }: IssueRowProps) {
   const isOpen = issue.status === 'open';
   const isAssigned = issue.status === 'in progress';
 
@@ -80,7 +96,13 @@ function IssueRow({ issue, isPending, onAssign, onResolve }: IssueRowProps) {
     <tr>
       <td>
         <div className="admin-issues-page__issue-cell">
-          <p className="admin-issues-page__issue-title">{issue.title}</p>
+          <button
+            type="button"
+            className="admin-issues-page__issue-title-button"
+            onClick={() => onOpen(issue.id)}
+          >
+            {issue.title}
+          </button>
           <p className="admin-issues-page__issue-description">{issue.description}</p>
         </div>
       </td>

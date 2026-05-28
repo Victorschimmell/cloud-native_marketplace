@@ -1,0 +1,158 @@
+.seller-product-dialog__details {
+  display: grid;
+  gap: 18px;
+}
+
+.seller-product-dialog__icon-action {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: var(--primary-color, #1e40af);
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+  width: 36px;
+}
+
+.seller-product-dialog__icon-action:hover,
+.seller-product-dialog__icon-action:focus-visible {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  outline: 0;
+}
+
+.seller-product-dialog__icon-action svg {
+  fill: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 18px;
+}
+
+.seller-product-dialog__image {
+  aspect-ratio: 16 / 9;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seller-product-dialog__description,
+.seller-product-dialog__confirm-text {
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.seller-product-dialog__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.seller-product-dialog__grid div {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.seller-product-dialog__grid dt {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.seller-product-dialog__grid dd {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.seller-product-dialog__form {
+  display: grid;
+  gap: 14px;
+}
+
+.seller-product-dialog__form-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.seller-product-dialog__field {
+  display: grid;
+  gap: 7px;
+}
+
+.seller-product-dialog__field span {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.seller-product-dialog__field input,
+.seller-product-dialog__field select,
+.seller-product-dialog__field textarea {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #111827;
+  font: inherit;
+  min-height: 42px;
+  padding: 10px 12px;
+  width: 100%;
+}
+
+.seller-product-dialog__field textarea {
+  line-height: 1.5;
+  min-height: 112px;
+  resize: vertical;
+}
+
+.seller-product-dialog__field input:focus,
+.seller-product-dialog__field select:focus,
+.seller-product-dialog__field textarea:focus {
+  background: #ffffff;
+  border-color: var(--primary-color, #1e40af);
+  box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.12);
+  outline: 0;
+}
+
+.seller-product-dialog__field input:disabled,
+.seller-product-dialog__field select:disabled,
+.seller-product-dialog__field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.seller-product-dialog__error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 14px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+}
+
+@media (max-width: 640px) {
+  .seller-product-dialog__form-row,
+  .seller-product-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+}

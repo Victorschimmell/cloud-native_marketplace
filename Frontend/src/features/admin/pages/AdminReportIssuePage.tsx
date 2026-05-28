@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import PageSkeleton from '../../../components/PageSkeleton';
 import { ApiError } from '../../../shared/api/request';
 import Pagination from '../../../shared/components/Pagination';
+import AdminIssueResolveDialog from '../components/AdminIssueResolveDialog';
 import IssuesList from '../components/IssuesList';
 import { adminApi } from '../api/adminApi';
 import { toAdminIssue } from '../api/issueMapping';
@@ -19,8 +21,11 @@ export default function AdminReportIssuePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [resolvingIssueId, setResolvingIssueId] = useState<string | null>(null);
+  const [resolutionText, setResolutionText] = useState('');
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(totalCount / issuesPageSize)), [totalCount]);
+  const resolvingIssue = resolvingIssueId ? issues.find((issue) => issue.id === resolvingIssueId) : null;
 
   const loadIssues = useCallback(async (targetPage: number, signal?: AbortSignal) => {
     setIsLoading(true);
@@ -49,13 +54,35 @@ export default function AdminReportIssuePage() {
     return () => abortController.abort();
   }, [loadIssues, page]);
 
-  async function handleResolve(issueId: string) {
+  function openResolveDialog(issueId: string) {
     setError(null);
-    setPendingId(issueId);
+    setResolutionText('');
+    setResolvingIssueId(issueId);
+  }
+
+  function closeResolveDialog() {
+    if (pendingId) {
+      return;
+    }
+
+    setResolvingIssueId(null);
+    setResolutionText('');
+  }
+
+  async function submitResolution(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!resolvingIssueId) {
+      return;
+    }
+
+    setError(null);
+    setPendingId(resolvingIssueId);
     try {
-      const resolution = window.prompt('Resolution notes (optional):') ?? undefined;
-      const updated = await adminApi.resolveIssue(issueId, resolution || undefined);
-      setIssues((current) => current.map((issue) => (issue.id === issueId ? toAdminIssue(updated) : issue)));
+      const updated = await adminApi.resolveIssue(resolvingIssueId, resolutionText.trim() || undefined);
+      setIssues((current) => current.map((issue) => (issue.id === resolvingIssueId ? toAdminIssue(updated) : issue)));
+      setResolvingIssueId(null);
+      setResolutionText('');
     } catch (requestError) {
       setError(`Could not resolve issue: ${getErrorMessage(requestError)}`);
     } finally {
@@ -112,8 +139,18 @@ export default function AdminReportIssuePage() {
           ) : null}
           pendingId={pendingId}
           onAssign={handleAssign}
-          onResolve={handleResolve}
+          onResolve={openResolveDialog}
         />
+        {resolvingIssue ? (
+          <AdminIssueResolveDialog
+            issue={resolvingIssue}
+            isPending={pendingId === resolvingIssue.id}
+            resolutionText={resolutionText}
+            onChangeResolution={setResolutionText}
+            onClose={closeResolveDialog}
+            onSubmit={submitResolution}
+          />
+        ) : null}
       </div>
     </PageSkeleton>
   );

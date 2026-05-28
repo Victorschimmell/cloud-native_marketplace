@@ -51,6 +51,9 @@ export function toAdminIssue(issue: IssueResponse): AdminIssue {
     status: statusToUi[issue.status] ?? 'open',
     reportedBy: issue.reportedByDisplay ?? issue.reportedByUserId,
     assignee: issue.assignedToDisplay ?? issue.assignedToUserId ?? undefined,
+    resolvedBy: issue.resolvedByUserId ?? undefined,
+    resolvedAt: issue.resolvedAtUtc ?? undefined,
+    resolution: issue.resolution ?? undefined,
     date: issue.createdAtUtc,
   };
 }
