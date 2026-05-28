@@ -209,26 +209,88 @@ internal sealed class FakeShipmentRepository : IShipmentRepository
 
 internal sealed class FakeAuditLogService : IAuditLogService
 {
+    public List<WriteAuditLogEntryRequest> Entries { get; } = [];
+
     public Task<Result<PagedResult<AuditLogEntryDto>>> GetByActorUserAsync(Guid actorUserId, PagedRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result<PagedResult<AuditLogEntryDto>>.NotImplemented());
     public Task<Result<IReadOnlyList<AuditLogEntryDto>>> GetByTargetEntityAsync(string entityType, string entityId, CancellationToken cancellationToken = default) => Task.FromResult(Result<IReadOnlyList<AuditLogEntryDto>>.NotImplemented());
-    public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Result.NotImplemented());
+    public Task<Result> WriteEntryAsync(WriteAuditLogEntryRequest request, CancellationToken cancellationToken = default)
+    {
+        Entries.Add(request);
+        return Task.FromResult(Result.Success());
+    }
 }
 
 internal sealed class FakeAdminIssueRepository : IAdminIssueRepository
 {
-    public AdminIssue? Issue { get; set; }
+    private AdminIssue? _issue;
+
+    public AdminIssue? Issue
+    {
+        get => _issue;
+        set
+        {
+            _issue = value;
+            Issues.Clear();
+            if (value is not null)
+            {
+                Issues.Add(value);
+            }
+        }
+    }
+
+    public List<AdminIssue> Issues { get; } = [];
+    public int AddCalls { get; private set; }
     public int UpdateCalls { get; private set; }
 
-    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Issue is not null && Issue.Id == id ? Issue : null);
-    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, bool unresolvedOnly, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<AdminIssue>([], page, pageSize, 0));
+    public Task<AdminIssue?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Issues.FirstOrDefault(issue => issue.Id == id));
+
+    public Task<PagedResult<AdminIssue>> GetByFilterAsync(IssueStatus? status, IssuePriority? priority, bool unresolvedOnly, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var filtered = Issues.AsEnumerable();
+        if (status.HasValue)
+        {
+            filtered = filtered.Where(issue => issue.Status == status.Value);
+        }
+
+        if (priority.HasValue)
+        {
+            filtered = filtered.Where(issue => issue.Priority == priority.Value);
+        }
+
+        if (unresolvedOnly)
+        {
+            filtered = filtered.Where(issue => issue.Status != IssueStatus.Resolved);
+        }
+
+        var items = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToArray();
+
+        return Task.FromResult(new PagedResult<AdminIssue>(items, page, pageSize, filtered.Count()));
+    }
+
     public Task AddAsync(AdminIssue issue, CancellationToken cancellationToken = default)
     {
-        Issue = issue;
+        Issues.Add(issue);
+        _issue = issue;
+        AddCalls += 1;
         return Task.CompletedTask;
     }
+
     public Task UpdateAsync(AdminIssue issue, CancellationToken cancellationToken = default)
     {
-        Issue = issue;
+        var index = Issues.FindIndex(existing => existing.Id == issue.Id);
+        if (index >= 0)
+        {
+            Issues[index] = issue;
+        }
+        else
+        {
+            Issues.Add(issue);
+        }
+
+        _issue = issue;
         UpdateCalls += 1;
         return Task.CompletedTask;
     }
