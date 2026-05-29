@@ -30,6 +30,10 @@ services:
     restart: always
     environment:
       ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: "compose-local-encrypted-saved-objects-key"
+      XPACK_REPORTING_ENCRYPTIONKEY: "compose-local-reporting-encryption-key-2026"
+      XPACK_SECURITY_ENCRYPTIONKEY: "compose-local-security-encryption-key-2026"
+      XPACK_SYNTHETICS_ENABLED: "false"
     ports:
       - "5601:5601"
     depends_on:
