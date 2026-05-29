@@ -36,6 +36,9 @@ services:
       - elasticsearch
 
   backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: adminkusofteng2026/marketplace-platform-backend
     container_name: marketplace-backend
     restart: always
