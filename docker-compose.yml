@@ -45,7 +45,8 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=marketplace;Username=postgres;Password=postgres"
       Database__ApplyMigrationsOnStartup: "true"
-      Authentication__TokenSecret: "compose-local-token-secret-not-for-production-2026"
+      HttpsRedirection__Enabled: "false"
+      Authentication__TokenSecret: "${AUTHENTICATION_TOKEN_SECRET:-compose-local-token-secret-not-for-production-2026}"
       Elasticsearch__Uri: "http://elasticsearch:9200"
     ports:
       - "8080:8080"

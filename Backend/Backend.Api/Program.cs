@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Backend.Api.Auth;
 using Backend.Api.Middleware;
@@ -98,7 +100,30 @@ if (seedOlistOnStartup)
 }
 
 app.UseExceptionHandler();
-app.UseSerilogRequestLogging();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var statusCode = httpContext.Response.StatusCode;
+        var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        diagnosticContext.Set("Component", "HttpPipeline");
+        diagnosticContext.Set("Operation", statusCode >= StatusCodes.Status400BadRequest ? "HttpRequest.Failed" : "HttpRequest.Completed");
+        diagnosticContext.Set("Outcome", statusCode >= StatusCodes.Status400BadRequest ? "Failed" : "Succeeded");
+        diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+        diagnosticContext.Set("StatusCode", statusCode);
+        diagnosticContext.Set("RequestMethod", httpContext.Request.Method);
+        diagnosticContext.Set("RequestPath", httpContext.Request.Path.Value ?? string.Empty);
+
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            diagnosticContext.Set("UserId", userId);
+        }
+    };
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -118,7 +143,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && app.Configuration.GetValue("HttpsRedirection:Enabled", true))
 {
     app.UseHttpsRedirection();
 }
