@@ -70,6 +70,23 @@ services:
     depends_on:
       - backend
 
+  loadtest:
+    image: grafana/k6:0.54.0
+    profiles:
+      - loadtest
+    environment:
+      BASE_URL: "${LOADTEST_BASE_URL:-http://frontend}"
+      CURRENCY: "${LOADTEST_CURRENCY:-BRL}"
+      LOAD_PROFILE: "${LOAD_PROFILE:-case-study}"
+      USER_POOL_SIZE: "${LOADTEST_USER_POOL_SIZE:-8}"
+    volumes:
+      - ./docs/observability/load-tests:/scripts:ro
+    command:
+      - run
+      - /scripts/marketplace-load-test.js
+    depends_on:
+      - frontend
+
 volumes:
   postgres_data:
   elasticsearch_data:

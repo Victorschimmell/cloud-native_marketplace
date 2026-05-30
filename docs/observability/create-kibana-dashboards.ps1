@@ -573,7 +573,7 @@ $visualizations = @(
         Id = "vis-checkout-failures-by-type"
         Title = "Checkout: Failures by Error Type"
         Query = 'labels.Component: "CheckoutService" and labels.Outcome: "Failed"'
-        State = New-HorizontalBarVisState "Checkout: Failures by Error Type" "metadata.ErrorType"
+        State = New-HorizontalBarVisState "Checkout: Failures by Error Type" "error.type"
     },
     @{
         Id = "vis-checkout-debug-table"
