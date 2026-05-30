@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
@@ -9,11 +10,14 @@ using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.Location;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Backend.Application.Services;
 
 public sealed class CheckoutService : ICheckoutService
 {
+    private const string ComponentName = "CheckoutService";
+
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
     private readonly IOrderRepository _orderRepository;
@@ -27,6 +31,7 @@ public sealed class CheckoutService : ICheckoutService
     private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CheckoutService> _logger;
 
     public CheckoutService(
         ICartRepository cartRepository,
@@ -41,7 +46,8 @@ public sealed class CheckoutService : ICheckoutService
         IDateTimeProvider dateTimeProvider,
         ICurrencyConversionService currencyConversionService,
         IAuditLogService auditLogService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<CheckoutService> logger)
     {
         ArgumentNullException.ThrowIfNull(cartRepository);
         ArgumentNullException.ThrowIfNull(productListingRepository);
@@ -56,6 +62,7 @@ public sealed class CheckoutService : ICheckoutService
         ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(logger);
 
         _cartRepository = cartRepository;
         _productListingRepository = productListingRepository;
@@ -70,6 +77,7 @@ public sealed class CheckoutService : ICheckoutService
         _currencyConversionService = currencyConversionService;
         _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<Result<CheckoutPreviewDto>> GetCheckoutPreviewAsync(GetCheckoutPreviewRequest request, string displayCurrency, CancellationToken cancellationToken = default)
@@ -125,178 +133,503 @@ public sealed class CheckoutService : ICheckoutService
 
     public async Task<Result<CheckoutResponse>> CheckoutAsync(CheckoutRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
-        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        var checkoutStartedAt = Stopwatch.GetTimestamp();
+        LogCheckoutStep(
+            "Checkout.Started",
+            "Started",
+            checkoutStartedAt,
+            request.UserId,
+            request.CartId,
+            orderId: null,
+            orderNumber: null,
+            displayCurrency,
+            itemCount: null,
+            request.Payments.Count);
+
+        try
         {
-            return Result<CheckoutResponse>.Forbidden(restriction);
-        }
-
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
-        {
-            return Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
-        }
-
-        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
-        {
-            return Result<CheckoutResponse>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
-        }
-
-        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
-        if (cart is null)
-        {
-            return Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers.");
-        }
-
-        var customerUserId = request.UserId ?? cart.UserId;
-        if (!customerUserId.HasValue)
-        {
-            return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
-        }
-
-        var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
-        if (customer is null)
-        {
-            return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
-        }
-
-        if (!TryCreateShippingAddress(request.ShippingAddress, out var shippingAddress, out var shippingAddressError))
-        {
-            return Result<CheckoutResponse>.ValidationFailure(shippingAddressError);
-        }
-
-        if (request.Payments.Count == 0)
-        {
-            return Result<CheckoutResponse>.ValidationFailure("At least one payment is required.");
-        }
-
-        if (request.Payments.Any(payment => payment.PaymentType != PaymentType.CreditCard))
-        {
-            return Result<CheckoutResponse>.ValidationFailure("Only credit card payments are supported at checkout.");
-        }
-
-        var now = _dateTimeProvider.UtcNow;
-        var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
-
-        if (cart.Items.Count == 0)
-        {
-            return Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item.");
-        }
-
-        var listingsById = new Dictionary<Guid, ProductListing>();
-
-        // check stock availability for each cart item, if any of the items is not available in the requested quantity, return failure result
-        foreach (var item in cart.Items)
-        {
-            var listing = await _productListingRepository.GetByIdAsync(item.ListingId, cancellationToken);
-            if (listing is null || listing.IsDeleted || listing.VisibilityStatus != ListingVisibilityStatus.Published)
+            var stepStartedAt = Stopwatch.GetTimestamp();
+            if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
             {
-                return Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found.");
+                LogCheckoutFailure(
+                    "Checkout.CustomerValidated",
+                    "BuyerRestricted",
+                    stepStartedAt,
+                    request.UserId,
+                    request.CartId,
+                    orderId: null,
+                    orderNumber: null,
+                    displayCurrency);
+                return Result<CheckoutResponse>.Forbidden(restriction);
             }
 
-            if (listing.InventoryQuantity < item.Quantity)
+            if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
             {
-                return Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}.");
+                LogCheckoutFailure(
+                    "Checkout.PaymentValidated",
+                    "InvalidCurrency",
+                    checkoutStartedAt,
+                    request.UserId,
+                    request.CartId,
+                    orderId: null,
+                    orderNumber: null,
+                    displayCurrency);
+                return Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
             }
 
-            listingsById[item.ListingId] = listing;
-        }
-
-        // check payment amount is consistent with the checkout total, if not, return failure result
-        var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
-        var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
-        var totalAmount = subtotalAmount + freightAmount;
-        var expectedPaymentAmount = priceConverter(totalAmount);
-        if (request.Payments.Sum(p => p.PaymentValue) != expectedPaymentAmount)
-        {
-            return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount.");
-        }
-
-        // 1. Create Order
-        await _addressRepository.AddAsync(shippingAddress, cancellationToken);
-        if (request.SaveShippingAddressAsDefault)
-        {
-            customer.DefaultAddressId = shippingAddress.Id;
-            await _customerRepository.UpdateAsync(customer, cancellationToken);
-        }
-
-        var customerId = customer.Id;
-        var order = new Order
-        {
-            CustomerId = customerId,
-            ShippingAddressId = shippingAddress.Id,
-            OrderStatus = OrderStatus.Pending,
-            OrderPurchaseTimestampUtc = now,
-            SubtotalAmount = subtotalAmount,
-            FreightAmount = freightAmount,
-            TotalAmount = totalAmount,
-            PlacedFromCartId = cart.Id,
-            OrderNumber = orderNumber
-        };
-        await _orderRepository.AddAsync(order, cancellationToken);
-
-        // 2. process payments
-        var payments = new List<PaymentDto>();
-        foreach (var paymentRequest in request.Payments)
-        {
-            var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
-            // NOTE: Currently never fails
-            var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, cancellationToken);
-            if (!paymentResult.IsSuccess)
+            if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
             {
-                // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
-                // await _unitOfWork.RollbackAsync(cancellationToken);
-                await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
-                    ActionType: AuditActionType.Created,
-                    TargetEntityType: nameof(Order),
-                    TargetEntityId: order.Id.ToString(),
-                    Outcome: AuditOutcome.Failed,
-                    Details: $"Payment processing failed: {paymentResult.Error}"
-                ), cancellationToken);
-                return Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error);
+                LogCheckoutFailure(
+                    "Checkout.CartLoaded",
+                    "MissingCartIdentifier",
+                    checkoutStartedAt,
+                    request.UserId,
+                    request.CartId,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode);
+                return Result<CheckoutResponse>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
             }
 
-            if (paymentResult.Value is null)
+            stepStartedAt = Stopwatch.GetTimestamp();
+            var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+            if (cart is null)
             {
-                return Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null.");
+                LogCheckoutFailure(
+                    "Checkout.CartLoaded",
+                    "CartNotFound",
+                    stepStartedAt,
+                    request.UserId,
+                    request.CartId,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode);
+                return Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers.");
             }
-            payments.Add(paymentResult.Value);
-        }
+            LogCheckoutStep("Checkout.CartLoaded", "Succeeded", stepStartedAt, request.UserId, cart.Id, orderId: null, orderNumber: null, currencyCode, cart.Items.Count, request.Payments.Count);
 
-        // 3. Create order items, decrement stock, and update cart/order status
-        await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
-        cart.Status = CartStatus.Converted;
-        await _cartRepository.UpdateAsync(cart, cancellationToken);
-
-        // 4. Save all changes
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
-            ActionType: AuditActionType.Created,
-            TargetEntityType: nameof(Order),
-            TargetEntityId: order.Id.ToString(),
-            Outcome: AuditOutcome.Succeeded,
-            Details: JsonSerializer.Serialize(new
+            stepStartedAt = Stopwatch.GetTimestamp();
+            var customerUserId = request.UserId ?? cart.UserId;
+            if (!customerUserId.HasValue)
             {
-                order.OrderNumber,
-                customerId,
-                totalAmount,
-                payments.Count
-            })
-        ), cancellationToken);
+                LogCheckoutFailure(
+                    "Checkout.CustomerValidated",
+                    "UnauthenticatedCustomer",
+                    stepStartedAt,
+                    request.UserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
+            }
 
-        // 5. Return response
-        var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
-            throw new InvalidOperationException("Order must exist after checkout.");
+            var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
+            if (customer is null)
+            {
+                LogCheckoutFailure(
+                    "Checkout.CustomerValidated",
+                    "CustomerProfileNotFound",
+                    stepStartedAt,
+                    customerUserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
+            }
+            LogCheckoutStep("Checkout.CustomerValidated", "Succeeded", stepStartedAt, customerUserId, cart.Id, orderId: null, orderNumber: null, currencyCode, cart.Items.Count, request.Payments.Count);
 
-        var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, cancellationToken) ??
-            throw new InvalidOperationException("Cart must exist after checkout.");
+            stepStartedAt = Stopwatch.GetTimestamp();
+            if (!TryCreateShippingAddress(request.ShippingAddress, out var shippingAddress, out var shippingAddressError))
+            {
+                LogCheckoutFailure(
+                    "Checkout.ShippingAddressValidated",
+                    "InvalidShippingAddress",
+                    stepStartedAt,
+                    customerUserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.ValidationFailure(shippingAddressError);
+            }
+            LogCheckoutStep("Checkout.ShippingAddressValidated", "Succeeded", stepStartedAt, customerUserId, cart.Id, orderId: null, orderNumber: null, currencyCode, cart.Items.Count, request.Payments.Count);
 
-        var response = new CheckoutResponse(
-            savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
-            savedCart.ToCartDto(currencyCode, priceConverter),
-            payments,
-            priceConverter(order.TotalAmount),
-            currencyCode);
-        return Result<CheckoutResponse>.Success(response);
+            stepStartedAt = Stopwatch.GetTimestamp();
+            if (request.Payments.Count == 0)
+            {
+                LogCheckoutFailure(
+                    "Checkout.PaymentValidated",
+                    "MissingPayment",
+                    stepStartedAt,
+                    customerUserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.ValidationFailure("At least one payment is required.");
+            }
+
+            if (request.Payments.Any(payment => payment.PaymentType != PaymentType.CreditCard))
+            {
+                LogCheckoutFailure(
+                    "Checkout.PaymentValidated",
+                    "UnsupportedPaymentType",
+                    stepStartedAt,
+                    customerUserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber: null,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.ValidationFailure("Only credit card payments are supported at checkout.");
+            }
+
+            var now = _dateTimeProvider.UtcNow;
+            var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
+
+            if (cart.Items.Count == 0)
+            {
+                LogCheckoutFailure(
+                    "Checkout.InventoryValidated",
+                    "EmptyCart",
+                    stepStartedAt,
+                    customerUserId,
+                    cart.Id,
+                    orderId: null,
+                    orderNumber,
+                    currencyCode,
+                    cart.Items.Count,
+                    request.Payments.Count);
+                return Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item.");
+            }
+
+            var listingsById = new Dictionary<Guid, ProductListing>();
+
+            // check stock availability for each cart item, if any of the items is not available in the requested quantity, return failure result
+            stepStartedAt = Stopwatch.GetTimestamp();
+            foreach (var item in cart.Items)
+            {
+                var listing = await _productListingRepository.GetByIdAsync(item.ListingId, cancellationToken);
+                if (listing is null || listing.IsDeleted || listing.VisibilityStatus != ListingVisibilityStatus.Published)
+                {
+                    LogCheckoutFailure(
+                        "Checkout.InventoryValidated",
+                        "ListingNotFound",
+                        stepStartedAt,
+                        customerUserId,
+                        cart.Id,
+                        orderId: null,
+                        orderNumber,
+                        currencyCode,
+                        cart.Items.Count,
+                        request.Payments.Count,
+                        listingId: item.ListingId);
+                    return Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found.");
+                }
+
+                if (listing.InventoryQuantity < item.Quantity)
+                {
+                    LogInventoryFailure(stepStartedAt, customerUserId, cart.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, item.ListingId, item.Quantity, listing.InventoryQuantity);
+                    return Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}.");
+                }
+
+                listingsById[item.ListingId] = listing;
+            }
+            LogCheckoutStep("Checkout.InventoryValidated", "Succeeded", stepStartedAt, customerUserId, cart.Id, orderId: null, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count);
+
+            // check payment amount is consistent with the checkout total, if not, return failure result
+            stepStartedAt = Stopwatch.GetTimestamp();
+            var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
+            var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
+            var totalAmount = subtotalAmount + freightAmount;
+            var expectedPaymentAmount = priceConverter(totalAmount);
+            var requestedPaymentAmount = request.Payments.Sum(p => p.PaymentValue);
+            if (requestedPaymentAmount != expectedPaymentAmount)
+            {
+                LogPaymentAmountFailure(stepStartedAt, customerUserId, cart.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount, requestedPaymentAmount, expectedPaymentAmount);
+                return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount.");
+            }
+            LogCheckoutStep("Checkout.PaymentValidated", "Succeeded", stepStartedAt, customerUserId, cart.Id, orderId: null, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount);
+
+            // 1. Create Order
+            stepStartedAt = Stopwatch.GetTimestamp();
+            await _addressRepository.AddAsync(shippingAddress, cancellationToken);
+            if (request.SaveShippingAddressAsDefault)
+            {
+                customer.DefaultAddressId = shippingAddress.Id;
+                await _customerRepository.UpdateAsync(customer, cancellationToken);
+            }
+
+            var customerId = customer.Id;
+            var order = new Order
+            {
+                CustomerId = customerId,
+                ShippingAddressId = shippingAddress.Id,
+                OrderStatus = OrderStatus.Pending,
+                OrderPurchaseTimestampUtc = now,
+                SubtotalAmount = subtotalAmount,
+                FreightAmount = freightAmount,
+                TotalAmount = totalAmount,
+                PlacedFromCartId = cart.Id,
+                OrderNumber = orderNumber
+            };
+            await _orderRepository.AddAsync(order, cancellationToken);
+            LogCheckoutStep("Checkout.OrderCreated", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount);
+
+            // 2. process payments
+            stepStartedAt = Stopwatch.GetTimestamp();
+            var payments = new List<PaymentDto>();
+            foreach (var paymentRequest in request.Payments)
+            {
+                var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
+                // NOTE: Currently never fails
+                var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, cancellationToken);
+                if (!paymentResult.IsSuccess)
+                {
+                    LogCheckoutFailure(
+                        "Checkout.PaymentRecorded",
+                        "PaymentProcessingFailed",
+                        stepStartedAt,
+                        customerUserId,
+                        cart.Id,
+                        order.Id,
+                        orderNumber,
+                        currencyCode,
+                        cart.Items.Count,
+                        request.Payments.Count,
+                        totalAmount);
+
+                    // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
+                    // await _unitOfWork.RollbackAsync(cancellationToken);
+                    await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                        ActionType: AuditActionType.Created,
+                        TargetEntityType: nameof(Order),
+                        TargetEntityId: order.Id.ToString(),
+                        Outcome: AuditOutcome.Failed,
+                        Details: $"Payment processing failed: {paymentResult.Error}"
+                    ), cancellationToken);
+                    return Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error);
+                }
+
+                if (paymentResult.Value is null)
+                {
+                    LogCheckoutFailure(
+                        "Checkout.PaymentRecorded",
+                        "PaymentProcessingFailed",
+                        stepStartedAt,
+                        customerUserId,
+                        cart.Id,
+                        order.Id,
+                        orderNumber,
+                        currencyCode,
+                        cart.Items.Count,
+                        request.Payments.Count,
+                        totalAmount);
+                    return Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null.");
+                }
+                payments.Add(paymentResult.Value);
+            }
+            LogCheckoutStep("Checkout.PaymentRecorded", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+
+            // 3. Create order items, decrement stock, and update cart/order status
+            stepStartedAt = Stopwatch.GetTimestamp();
+            await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
+            LogCheckoutStep("Checkout.OrderItemsCreated", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+            LogCheckoutStep("Checkout.StockDeducted", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+
+            stepStartedAt = Stopwatch.GetTimestamp();
+            cart.Status = CartStatus.Converted;
+            await _cartRepository.UpdateAsync(cart, cancellationToken);
+            LogCheckoutStep("Checkout.CartConverted", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+
+            // 4. Save all changes
+            stepStartedAt = Stopwatch.GetTimestamp();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            LogCheckoutStep("Checkout.ChangesSaved", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+
+            stepStartedAt = Stopwatch.GetTimestamp();
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(Order),
+                TargetEntityId: order.Id.ToString(),
+                Outcome: AuditOutcome.Succeeded,
+                Details: JsonSerializer.Serialize(new
+                {
+                    order.OrderNumber,
+                    customerId,
+                    totalAmount,
+                    payments.Count
+                })
+            ), cancellationToken);
+            LogCheckoutStep("Checkout.AuditLogWritten", "Succeeded", stepStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+
+            // 5. Return response
+            var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
+                throw new InvalidOperationException("Order must exist after checkout.");
+
+            var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, cancellationToken) ??
+                throw new InvalidOperationException("Cart must exist after checkout.");
+
+            var response = new CheckoutResponse(
+                savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
+                savedCart.ToCartDto(currencyCode, priceConverter),
+                payments,
+                priceConverter(order.TotalAmount),
+                currencyCode);
+            LogCheckoutStep("Checkout.Completed", "Succeeded", checkoutStartedAt, customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount);
+            return Result<CheckoutResponse>.Success(response);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogError(
+                exception,
+                "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. ErrorType={ErrorType} CartId={CartId} UserId={UserId} CurrencyCode={CurrencyCode}",
+                "Checkout.Failed",
+                "Failed",
+                ComponentName,
+                ElapsedMilliseconds(checkoutStartedAt),
+                "UnexpectedException",
+                request.CartId,
+                request.UserId,
+                displayCurrency);
+            throw;
+        }
     }
+
+    private void LogCheckoutStep(
+        string operation,
+        string outcome,
+        long startedAt,
+        Guid? userId,
+        Guid? cartId,
+        Guid? orderId,
+        string? orderNumber,
+        string currencyCode,
+        int? itemCount = null,
+        int? paymentCount = null,
+        decimal? totalAmount = null)
+    {
+        _logger.LogInformation(
+            "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. CartId={CartId} UserId={UserId} OrderId={OrderId} OrderNumber={OrderNumber} CurrencyCode={CurrencyCode} ItemCount={ItemCount} PaymentCount={PaymentCount} TotalAmount={TotalAmount}",
+            operation,
+            outcome,
+            ComponentName,
+            ElapsedMilliseconds(startedAt),
+            cartId,
+            userId,
+            orderId,
+            orderNumber,
+            currencyCode,
+            itemCount,
+            paymentCount,
+            totalAmount);
+    }
+
+    private void LogCheckoutFailure(
+        string operation,
+        string errorType,
+        long startedAt,
+        Guid? userId,
+        Guid? cartId,
+        Guid? orderId,
+        string? orderNumber,
+        string currencyCode,
+        int? itemCount = null,
+        int? paymentCount = null,
+        decimal? totalAmount = null,
+        Guid? listingId = null)
+    {
+        _logger.LogWarning(
+            "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. ErrorType={ErrorType} CartId={CartId} UserId={UserId} OrderId={OrderId} OrderNumber={OrderNumber} CurrencyCode={CurrencyCode} ItemCount={ItemCount} PaymentCount={PaymentCount} TotalAmount={TotalAmount} ListingId={ListingId}",
+            operation,
+            "Failed",
+            ComponentName,
+            ElapsedMilliseconds(startedAt),
+            errorType,
+            cartId,
+            userId,
+            orderId,
+            orderNumber,
+            currencyCode,
+            itemCount,
+            paymentCount,
+            totalAmount,
+            listingId);
+    }
+
+    private void LogInventoryFailure(
+        long startedAt,
+        Guid? userId,
+        Guid cartId,
+        string orderNumber,
+        string currencyCode,
+        int itemCount,
+        int paymentCount,
+        Guid listingId,
+        int requestedQuantity,
+        int availableQuantity)
+    {
+        _logger.LogWarning(
+            "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. ErrorType={ErrorType} CartId={CartId} UserId={UserId} OrderNumber={OrderNumber} CurrencyCode={CurrencyCode} ItemCount={ItemCount} PaymentCount={PaymentCount} ListingId={ListingId} RequestedQuantity={RequestedQuantity} AvailableQuantity={AvailableQuantity}",
+            "Checkout.InventoryValidated",
+            "Failed",
+            ComponentName,
+            ElapsedMilliseconds(startedAt),
+            "InsufficientInventory",
+            cartId,
+            userId,
+            orderNumber,
+            currencyCode,
+            itemCount,
+            paymentCount,
+            listingId,
+            requestedQuantity,
+            availableQuantity);
+    }
+
+    private void LogPaymentAmountFailure(
+        long startedAt,
+        Guid? userId,
+        Guid cartId,
+        string orderNumber,
+        string currencyCode,
+        int itemCount,
+        int paymentCount,
+        decimal totalAmount,
+        decimal requestedPaymentAmount,
+        decimal expectedPaymentAmount)
+    {
+        _logger.LogWarning(
+            "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. ErrorType={ErrorType} CartId={CartId} UserId={UserId} OrderNumber={OrderNumber} CurrencyCode={CurrencyCode} ItemCount={ItemCount} PaymentCount={PaymentCount} TotalAmount={TotalAmount} RequestedPaymentAmount={RequestedPaymentAmount} ExpectedPaymentAmount={ExpectedPaymentAmount}",
+            "Checkout.PaymentValidated",
+            "Failed",
+            ComponentName,
+            ElapsedMilliseconds(startedAt),
+            "PaymentAmountMismatch",
+            cartId,
+            userId,
+            orderNumber,
+            currencyCode,
+            itemCount,
+            paymentCount,
+            totalAmount,
+            requestedPaymentAmount,
+            expectedPaymentAmount);
+    }
+
+    private static double ElapsedMilliseconds(long startedAt) =>
+        Math.Round(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds, 3);
 
     private async Task CreateOrderItemsAndDeductStockAsync(
         Order order,
