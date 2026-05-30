@@ -59,6 +59,9 @@ services:
       - elasticsearch
 
   frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
     image: adminkusofteng2026/marketplace-platform-frontend
     container_name: marketplace-frontend
     restart: always
