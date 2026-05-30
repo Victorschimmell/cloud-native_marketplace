@@ -34,7 +34,7 @@ Purpose:
 - show failed request count;
 - show requests over time grouped by HTTP status code;
 - show the busiest API endpoints;
-- show average request duration by endpoint;
+- show average request duration by endpoint in milliseconds;
 - show log volume by severity level.
 
 This dashboard is useful during load simulation because it answers which routes receive the most traffic and which routes become slower.

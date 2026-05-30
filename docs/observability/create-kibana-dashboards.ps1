@@ -343,6 +343,84 @@ function New-TableVisState {
     }
 }
 
+function New-EndpointTableVisState {
+    param([Parameter(Mandatory = $true)] [string]$Title)
+
+    return @{
+        title = $Title
+        type = "table"
+        aggs = @(
+            @{
+                id = "1"
+                enabled = $true
+                type = "count"
+                schema = "metric"
+                params = @{}
+            },
+            @{
+                id = "2"
+                enabled = $true
+                type = "terms"
+                schema = "bucket"
+                params = @{
+                    field = "url.path"
+                    orderBy = "1"
+                    order = "desc"
+                    size = 10
+                    otherBucket = $false
+                    missingBucket = $false
+                }
+            }
+        )
+        params = @{
+            perPage = 10
+            showPartialRows = $false
+            showMetricsAtAllLevels = $false
+            showTotal = $false
+            totalFunc = "sum"
+        }
+    }
+}
+
+function New-EndpointDurationTableVisState {
+    param([Parameter(Mandatory = $true)] [string]$Title)
+
+    return @{
+        title = $Title
+        type = "table"
+        aggs = @(
+            @{
+                id = "1"
+                enabled = $true
+                type = "avg"
+                schema = "metric"
+                params = @{ field = "event.duration_ms" }
+            },
+            @{
+                id = "2"
+                enabled = $true
+                type = "terms"
+                schema = "bucket"
+                params = @{
+                    field = "url.path"
+                    orderBy = "1"
+                    order = "desc"
+                    size = 10
+                    otherBucket = $false
+                    missingBucket = $false
+                }
+            }
+        )
+        params = @{
+            perPage = 10
+            showPartialRows = $false
+            showMetricsAtAllLevels = $false
+            showTotal = $false
+            totalFunc = "sum"
+        }
+    }
+}
+
 function New-DashboardPanel {
     param(
         [Parameter(Mandatory = $true)] [string]$PanelId,
@@ -425,7 +503,14 @@ Invoke-KibanaSavedObjectUpsert -Type "index-pattern" -Id $dataViewId -Attributes
     fields = "[]"
     fieldAttrs = "{}"
     fieldFormatMap = "{}"
-    runtimeFieldMap = "{}"
+    runtimeFieldMap = ConvertTo-CompressedJson @{
+        "event.duration_ms" = @{
+            type = "double"
+            script = @{
+                source = "if (doc.containsKey('event.duration') && !doc['event.duration'].empty) { emit(doc['event.duration'].value / 1000000.0); }"
+            }
+        }
+    }
     sourceFilters = "[]"
     allowHidden = $false
 }
@@ -453,13 +538,13 @@ $visualizations = @(
         Id = "vis-system-top-endpoints"
         Title = "System: Top Endpoints"
         Query = 'labels.Component: "HttpPipeline"'
-        State = New-HorizontalBarVisState "System: Top Endpoints" "url.path"
+        State = New-EndpointTableVisState "System: Top Endpoints"
     },
     @{
         Id = "vis-system-duration-by-endpoint"
-        Title = "System: Average Request Duration by Endpoint"
+        Title = "System: Average Request Duration by Endpoint (ms)"
         Query = 'labels.Component: "HttpPipeline" and event.duration: *'
-        State = New-HorizontalBarVisState "System: Average Request Duration by Endpoint" "url.path" "avg" "event.duration" "Average ns"
+        State = New-EndpointDurationTableVisState "System: Average Request Duration by Endpoint (ms)"
     },
     @{
         Id = "vis-system-log-levels"
