@@ -877,13 +877,15 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
 
 internal sealed class FakeCheckoutObservability : ICheckoutObservability
 {
+    public List<(string Operation, string ErrorType, CheckoutObservabilityContext Context)> Failures { get; } = [];
+
     public long GetTimestamp() => 0;
     public void Started(long startedAt, CheckoutObservabilityContext context) { }
     public void Succeeded(string operation, long startedAt, CheckoutObservabilityContext context) { }
-    public void Failed(string operation, string errorType, long startedAt, CheckoutObservabilityContext context) { }
-    public void InventoryFailed(long startedAt, CheckoutObservabilityContext context, Guid listingId, int requestedQuantity, int availableQuantity) { }
-    public void PaymentAmountFailed(long startedAt, CheckoutObservabilityContext context, decimal requestedPaymentAmount, decimal expectedPaymentAmount) { }
-    public void Unexpected(Exception exception, long startedAt, CheckoutObservabilityContext context) { }
+    public void Failed(string operation, string errorType, long startedAt, CheckoutObservabilityContext context) => Failures.Add((operation, errorType, context));
+    public void InventoryFailed(long startedAt, CheckoutObservabilityContext context, Guid listingId, int requestedQuantity, int availableQuantity) => Failures.Add(("Checkout.InventoryValidated", "InsufficientInventory", context));
+    public void PaymentAmountFailed(long startedAt, CheckoutObservabilityContext context, decimal requestedPaymentAmount, decimal expectedPaymentAmount) => Failures.Add(("Checkout.PaymentValidated", "PaymentAmountMismatch", context));
+    public void Unexpected(Exception exception, long startedAt, CheckoutObservabilityContext context) => Failures.Add(("Checkout.Failed", "UnexpectedException", context));
 }
 
 internal sealed class FakeCurrentUserProvider : ICurrentUserProvider

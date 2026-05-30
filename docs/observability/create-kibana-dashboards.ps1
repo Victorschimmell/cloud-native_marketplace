@@ -394,7 +394,7 @@ function New-EndpointDurationTableVisState {
                 enabled = $true
                 type = "avg"
                 schema = "metric"
-                params = @{ field = "event.duration_ms" }
+                params = @{ field = "metadata.DurationMs" }
             },
             @{
                 id = "2"
@@ -503,14 +503,7 @@ Invoke-KibanaSavedObjectUpsert -Type "index-pattern" -Id $dataViewId -Attributes
     fields = "[]"
     fieldAttrs = "{}"
     fieldFormatMap = "{}"
-    runtimeFieldMap = ConvertTo-CompressedJson @{
-        "event.duration_ms" = @{
-            type = "double"
-            script = @{
-                source = "if (doc.containsKey('event.duration') && !doc['event.duration'].empty) { emit(doc['event.duration'].value / 1000000.0); }"
-            }
-        }
-    }
+    runtimeFieldMap = "{}"
     sourceFilters = "[]"
     allowHidden = $false
 }
@@ -543,7 +536,7 @@ $visualizations = @(
     @{
         Id = "vis-system-duration-by-endpoint"
         Title = "System: Average Request Duration by Endpoint (ms)"
-        Query = 'labels.Component: "HttpPipeline" and event.duration: *'
+        Query = 'labels.Component: "HttpPipeline" and metadata.DurationMs: *'
         State = New-EndpointDurationTableVisState "System: Average Request Duration by Endpoint (ms)"
     },
     @{

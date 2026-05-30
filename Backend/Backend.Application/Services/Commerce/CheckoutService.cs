@@ -134,6 +134,12 @@ public sealed class CheckoutService : ICheckoutService
             checkoutStartedAt,
             ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency, paymentCount: request.Payments.Count));
 
+        Result<CheckoutResponse> FailCheckout(Result<CheckoutResponse> result, string errorType, CheckoutObservabilityContext context)
+        {
+            _checkoutObservability.Failed("Checkout.Failed", errorType, checkoutStartedAt, context);
+            return result;
+        }
+
         try
         {
             var stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -144,7 +150,10 @@ public sealed class CheckoutService : ICheckoutService
                     "BuyerRestricted",
                     stepStartedAt,
                     ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
-                return Result<CheckoutResponse>.Forbidden(restriction);
+                return FailCheckout(
+                    Result<CheckoutResponse>.Forbidden(restriction),
+                    "BuyerRestricted",
+                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
             }
 
             if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
@@ -154,7 +163,10 @@ public sealed class CheckoutService : ICheckoutService
                     "InvalidCurrency",
                     checkoutStartedAt,
                     ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
-                return Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK."),
+                    "InvalidCurrency",
+                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
             }
 
             if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
@@ -164,7 +176,10 @@ public sealed class CheckoutService : ICheckoutService
                     "MissingCartIdentifier",
                     checkoutStartedAt,
                     ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
-                return Result<CheckoutResponse>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided."),
+                    "MissingCartIdentifier",
+                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
             }
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -176,7 +191,10 @@ public sealed class CheckoutService : ICheckoutService
                     "CartNotFound",
                     stepStartedAt,
                     ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
-                return Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers."),
+                    "CartNotFound",
+                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
             }
             _checkoutObservability.Succeeded("Checkout.CartLoaded", stepStartedAt, ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
 
@@ -189,7 +207,10 @@ public sealed class CheckoutService : ICheckoutService
                     "UnauthenticatedCustomer",
                     stepStartedAt,
                     ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer."),
+                    "UnauthenticatedCustomer",
+                    ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
 
             var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
@@ -200,7 +221,10 @@ public sealed class CheckoutService : ICheckoutService
                     "CustomerProfileNotFound",
                     stepStartedAt,
                     ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user."),
+                    "CustomerProfileNotFound",
+                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
             _checkoutObservability.Succeeded("Checkout.CustomerValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
 
@@ -212,7 +236,10 @@ public sealed class CheckoutService : ICheckoutService
                     "InvalidShippingAddress",
                     stepStartedAt,
                     ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.ValidationFailure(shippingAddressError);
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure(shippingAddressError),
+                    "InvalidShippingAddress",
+                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
             _checkoutObservability.Succeeded("Checkout.ShippingAddressValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
 
@@ -224,7 +251,10 @@ public sealed class CheckoutService : ICheckoutService
                     "MissingPayment",
                     stepStartedAt,
                     ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.ValidationFailure("At least one payment is required.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("At least one payment is required."),
+                    "MissingPayment",
+                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
 
             if (request.Payments.Any(payment => payment.PaymentType != PaymentType.CreditCard))
@@ -234,7 +264,10 @@ public sealed class CheckoutService : ICheckoutService
                     "UnsupportedPaymentType",
                     stepStartedAt,
                     ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.ValidationFailure("Only credit card payments are supported at checkout.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("Only credit card payments are supported at checkout."),
+                    "UnsupportedPaymentType",
+                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
 
             var now = _dateTimeProvider.UtcNow;
@@ -247,7 +280,10 @@ public sealed class CheckoutService : ICheckoutService
                     "EmptyCart",
                     stepStartedAt,
                     ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                return Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item."),
+                    "EmptyCart",
+                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
             }
 
             var listingsById = new Dictionary<Guid, ProductListing>();
@@ -264,7 +300,10 @@ public sealed class CheckoutService : ICheckoutService
                         "ListingNotFound",
                         stepStartedAt,
                         ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
-                    return Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found.");
+                    return FailCheckout(
+                        Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found."),
+                        "ListingNotFound",
+                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
                 }
 
                 if (listing.InventoryQuantity < item.Quantity)
@@ -275,7 +314,10 @@ public sealed class CheckoutService : ICheckoutService
                         item.ListingId,
                         item.Quantity,
                         listing.InventoryQuantity);
-                    return Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}.");
+                    return FailCheckout(
+                        Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}."),
+                        "InsufficientInventory",
+                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
                 }
 
                 listingsById[item.ListingId] = listing;
@@ -296,7 +338,10 @@ public sealed class CheckoutService : ICheckoutService
                     ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount),
                     requestedPaymentAmount,
                     expectedPaymentAmount);
-                return Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount.");
+                return FailCheckout(
+                    Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount."),
+                    "PaymentAmountMismatch",
+                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount));
             }
             _checkoutObservability.Succeeded("Checkout.PaymentValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount));
 
@@ -350,7 +395,10 @@ public sealed class CheckoutService : ICheckoutService
                         Outcome: AuditOutcome.Failed,
                         Details: $"Payment processing failed: {paymentResult.Error}"
                     ), cancellationToken);
-                    return Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error);
+                    return FailCheckout(
+                        Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error),
+                        "PaymentProcessingFailed",
+                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
                 }
 
                 if (paymentResult.Value is null)
@@ -360,7 +408,10 @@ public sealed class CheckoutService : ICheckoutService
                         "PaymentProcessingFailed",
                         stepStartedAt,
                         ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
-                    return Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null.");
+                    return FailCheckout(
+                        Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null."),
+                        "PaymentProcessingFailed",
+                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
                 }
                 payments.Add(paymentResult.Value);
             }

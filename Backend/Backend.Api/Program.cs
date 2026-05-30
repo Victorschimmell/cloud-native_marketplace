@@ -124,6 +124,7 @@ app.UseSerilogRequestLogging(options =>
         }
     };
 });
+app.UseMiddleware<RequestTimingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
