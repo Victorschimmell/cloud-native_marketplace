@@ -420,8 +420,7 @@ public sealed class CheckoutService : ICheckoutService
             // 3. Create order items, decrement stock, and update cart/order status
             stepStartedAt = _checkoutObservability.GetTimestamp();
             await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.OrderItemsCreated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
-            _checkoutObservability.Succeeded("Checkout.StockDeducted", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.OrderItemsCreatedAndStockDeducted", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             cart.Status = CartStatus.Converted;

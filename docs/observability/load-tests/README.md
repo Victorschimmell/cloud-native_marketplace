@@ -18,6 +18,14 @@ Start the Docker stack:
 docker compose up -d --build
 ```
 
+For a fresh case-study database with the local Olist dataset, use the seed override:
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.olist-seed.yml up -d --build
+```
+
+The seed override is intended for local demos and load-test case studies only. It should not be used as the normal production-like startup path.
+
 Create or update the Kibana dashboards:
 
 ```powershell

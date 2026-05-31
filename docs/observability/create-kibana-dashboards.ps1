@@ -554,7 +554,7 @@ $visualizations = @(
     @{
         Id = "vis-checkout-failed"
         Title = "Checkout: Failed Count"
-        Query = 'labels.Component: "CheckoutService" and labels.Outcome: "Failed"'
+        Query = 'labels.Operation: "Checkout.Failed"'
         State = New-MetricVisState "Checkout: Failed Count"
     },
     @{
@@ -572,7 +572,7 @@ $visualizations = @(
     @{
         Id = "vis-checkout-failures-by-type"
         Title = "Checkout: Failures by Error Type"
-        Query = 'labels.Component: "CheckoutService" and labels.Outcome: "Failed"'
+        Query = 'labels.Operation: "Checkout.Failed"'
         State = New-HorizontalBarVisState "Checkout: Failures by Error Type" "error.type"
     },
     @{
