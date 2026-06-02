@@ -1,8 +1,7 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16
+    container_name: marketplace-postgres
     restart: always
     environment:
       POSTGRES_USER: postgres 
@@ -13,19 +12,57 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: marketplace-elasticsearch
+    restart: always
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.3
+    container_name: marketplace-kibana
+    restart: always
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: "compose-local-encrypted-saved-objects-key"
+      XPACK_REPORTING_ENCRYPTIONKEY: "compose-local-reporting-encryption-key-2026"
+      XPACK_SECURITY_ENCRYPTIONKEY: "compose-local-security-encryption-key-2026"
+      XPACK_SYNTHETICS_ENABLED: "false"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
   backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: adminkusofteng2026/marketplace-platform-backend
     container_name: marketplace-backend
     restart: always
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=marketplace;Username=postgres;Password=postgres"
       Database__ApplyMigrationsOnStartup: "true"
+      HttpsRedirection__Enabled: "false"
+      Authentication__TokenSecret: "${AUTHENTICATION_TOKEN_SECRET:-compose-local-token-secret-not-for-production-2026}"
+      Elasticsearch__Uri: "http://elasticsearch:9200"
     ports:
       - "8080:8080"
     depends_on:
       - postgres
+      - elasticsearch
 
   frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
     image: adminkusofteng2026/marketplace-platform-frontend
     container_name: marketplace-frontend
     restart: always
@@ -34,5 +71,23 @@ services:
     depends_on:
       - backend
 
+  loadtest:
+    image: grafana/k6:0.54.0
+    profiles:
+      - loadtest
+    environment:
+      BASE_URL: "${LOADTEST_BASE_URL:-http://frontend}"
+      CURRENCY: "${LOADTEST_CURRENCY:-BRL}"
+      LOAD_PROFILE: "${LOAD_PROFILE:-case-study}"
+      USER_POOL_SIZE: "${LOADTEST_USER_POOL_SIZE:-8}"
+    volumes:
+      - ./docs/observability/load-tests:/scripts:ro
+    command:
+      - run
+      - /scripts/marketplace-load-test.js
+    depends_on:
+      - frontend
+
 volumes:
   postgres_data:
+  elasticsearch_data:

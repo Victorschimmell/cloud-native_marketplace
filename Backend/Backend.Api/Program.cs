@@ -1,9 +1,14 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Backend.Api.Auth;
 using Backend.Api.Middleware;
 using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
 using Backend.Infrastructure;
+using Elastic.Ingest.Elasticsearch;
+using Elastic.Ingest.Elasticsearch.DataStreams;
+using Elastic.Serilog.Sinks;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using Serilog;
@@ -15,6 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     var logDirectory = context.Configuration["LogFiles:DirectoryPath"];
+    var elasticsearchUri = context.Configuration["Elasticsearch:Uri"];
     var resolvedLogDirectory = string.IsNullOrWhiteSpace(logDirectory)
         ? Path.Combine(AppContext.BaseDirectory, "logs")
         : Path.GetFullPath(logDirectory);
@@ -30,6 +36,17 @@ builder.Host.UseSerilog((context, services, configuration) =>
             shared: true,
             retainedFileCountLimit: 30,
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
+
+    if (Uri.TryCreate(elasticsearchUri, UriKind.Absolute, out var parsedElasticsearchUri))
+    {
+        configuration.WriteTo.Elasticsearch(
+            [parsedElasticsearchUri],
+            options =>
+            {
+                options.DataStream = new DataStreamName("logs", "marketplace-backend", context.HostingEnvironment.EnvironmentName.ToLowerInvariant());
+                options.BootstrapMethod = BootstrapMethod.Silent;
+            });
+    }
 });
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
@@ -83,7 +100,31 @@ if (seedOlistOnStartup)
 }
 
 app.UseExceptionHandler();
-app.UseSerilogRequestLogging();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var statusCode = httpContext.Response.StatusCode;
+        var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        diagnosticContext.Set("Component", "HttpPipeline");
+        diagnosticContext.Set("Operation", "HttpRequest");
+        diagnosticContext.Set("Outcome", statusCode >= StatusCodes.Status400BadRequest ? "Failed" : "Succeeded");
+        diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+        diagnosticContext.Set("StatusCode", statusCode);
+        diagnosticContext.Set("RequestMethod", httpContext.Request.Method);
+        diagnosticContext.Set("RequestPath", httpContext.Request.Path.Value ?? string.Empty);
+
+        if (Guid.TryParse(userIdClaim, out var userId))
+        {
+            diagnosticContext.Set("UserId", userId);
+        }
+    };
+});
+app.UseMiddleware<RequestTimingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -103,7 +144,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && app.Configuration.GetValue("HttpsRedirection:Enabled", true))
 {
     app.UseHttpsRedirection();
 }
