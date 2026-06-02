@@ -135,7 +135,7 @@ labels.CorrelationId: k6-*
 ```
 
 ```text
-labels.Operation: "Checkout.Failed"
+labels.Operation: "Checkout.Process" and labels.Outcome: "Failed"
 ```
 
 ```text

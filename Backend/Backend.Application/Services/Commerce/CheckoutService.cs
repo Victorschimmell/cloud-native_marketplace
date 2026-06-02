@@ -130,13 +130,12 @@ public sealed class CheckoutService : ICheckoutService
     public async Task<Result<CheckoutResponse>> CheckoutAsync(CheckoutRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
         var checkoutStartedAt = _checkoutObservability.GetTimestamp();
-        _checkoutObservability.Started(
-            checkoutStartedAt,
-            ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency, paymentCount: request.Payments.Count));
+        var context = ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency, paymentCount: request.Payments.Count);
+        _checkoutObservability.Started(checkoutStartedAt, context);
 
-        Result<CheckoutResponse> FailCheckout(Result<CheckoutResponse> result, string errorType, CheckoutObservabilityContext context)
+        Result<CheckoutResponse> FailCheckout(Result<CheckoutResponse> result, string errorType, CheckoutObservabilityContext failureContext)
         {
-            _checkoutObservability.Failed("Checkout.Failed", errorType, checkoutStartedAt, context);
+            _checkoutObservability.Failed("Checkout.Process", errorType, checkoutStartedAt, failureContext);
             return result;
         }
 
@@ -149,37 +148,41 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.CustomerValidated",
                     "BuyerRestricted",
                     stepStartedAt,
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.Forbidden(restriction),
                     "BuyerRestricted",
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
+                    context);
             }
 
+            stepStartedAt = _checkoutObservability.GetTimestamp();
             if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
             {
                 _checkoutObservability.Failed(
                     "Checkout.PaymentValidated",
                     "InvalidCurrency",
-                    checkoutStartedAt,
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
+                    stepStartedAt,
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("Currency must be one of BRL, USD, or DKK."),
                     "InvalidCurrency",
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
+                    context);
             }
 
+            context = context with { CurrencyCode = currencyCode };
+
+            stepStartedAt = _checkoutObservability.GetTimestamp();
             if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
             {
                 _checkoutObservability.Failed(
                     "Checkout.CartLoaded",
                     "MissingCartIdentifier",
-                    checkoutStartedAt,
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
+                    stepStartedAt,
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided."),
                     "MissingCartIdentifier",
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
+                    context);
             }
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -190,13 +193,14 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.CartLoaded",
                     "CartNotFound",
                     stepStartedAt,
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.NotFound("Cart was not found for the provided identifiers."),
                     "CartNotFound",
-                    ObservabilityContext(request.UserId, request.CartId, currencyCode: currencyCode));
+                    context);
             }
-            _checkoutObservability.Succeeded("Checkout.CartLoaded", stepStartedAt, ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+            context = context with { CartId = cart.Id, ItemCount = cart.Items.Count, PaymentCount = request.Payments.Count };
+            _checkoutObservability.Succeeded("Checkout.CartLoaded", stepStartedAt, context);
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             var customerUserId = request.UserId ?? cart.UserId;
@@ -206,12 +210,14 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.CustomerValidated",
                     "UnauthenticatedCustomer",
                     stepStartedAt,
-                    ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.Unauthorized("Checkout requires an authenticated customer."),
                     "UnauthenticatedCustomer",
-                    ObservabilityContext(request.UserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
+
+            context = context with { UserId = customerUserId };
 
             var customer = await _customerRepository.GetByUserIdAsync(customerUserId.Value, cancellationToken);
             if (customer is null)
@@ -220,13 +226,13 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.CustomerValidated",
                     "CustomerProfileNotFound",
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.NotFound("Customer profile was not found for the authenticated user."),
                     "CustomerProfileNotFound",
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
-            _checkoutObservability.Succeeded("Checkout.CustomerValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+            _checkoutObservability.Succeeded("Checkout.CustomerValidated", stepStartedAt, context);
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             if (!TryCreateShippingAddress(request.ShippingAddress, out var shippingAddress, out var shippingAddressError))
@@ -235,13 +241,13 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.ShippingAddressValidated",
                     "InvalidShippingAddress",
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure(shippingAddressError),
                     "InvalidShippingAddress",
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
-            _checkoutObservability.Succeeded("Checkout.ShippingAddressValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+            _checkoutObservability.Succeeded("Checkout.ShippingAddressValidated", stepStartedAt, context);
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             if (request.Payments.Count == 0)
@@ -250,11 +256,11 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.PaymentValidated",
                     "MissingPayment",
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("At least one payment is required."),
                     "MissingPayment",
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
 
             if (request.Payments.Any(payment => payment.PaymentType != PaymentType.CreditCard))
@@ -263,33 +269,34 @@ public sealed class CheckoutService : ICheckoutService
                     "Checkout.PaymentValidated",
                     "UnsupportedPaymentType",
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("Only credit card payments are supported at checkout."),
                     "UnsupportedPaymentType",
-                    ObservabilityContext(customerUserId, cart.Id, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
 
             var now = _dateTimeProvider.UtcNow;
             var orderNumber = await _orderNumberGenerator.GenerateOrderNumberAsync(cancellationToken);
+            context = context with { OrderNumber = orderNumber };
 
+            stepStartedAt = _checkoutObservability.GetTimestamp();
             if (cart.Items.Count == 0)
             {
                 _checkoutObservability.Failed(
                     "Checkout.InventoryValidated",
                     "EmptyCart",
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("Checkout requires at least one cart item."),
                     "EmptyCart",
-                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                    context);
             }
 
             var listingsById = new Dictionary<Guid, ProductListing>();
 
             // check stock availability for each cart item, if any of the items is not available in the requested quantity, return failure result
-            stepStartedAt = _checkoutObservability.GetTimestamp();
             foreach (var item in cart.Items)
             {
                 var listing = await _productListingRepository.GetByIdAsync(item.ListingId, cancellationToken);
@@ -299,30 +306,30 @@ public sealed class CheckoutService : ICheckoutService
                         "Checkout.InventoryValidated",
                         "ListingNotFound",
                         stepStartedAt,
-                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                        context);
                     return FailCheckout(
                         Result<CheckoutResponse>.NotFound($"Product listing with id {item.ListingId} was not found."),
                         "ListingNotFound",
-                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                        context);
                 }
 
                 if (listing.InventoryQuantity < item.Quantity)
                 {
                     _checkoutObservability.InventoryFailed(
                         stepStartedAt,
-                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count),
+                        context,
                         item.ListingId,
                         item.Quantity,
                         listing.InventoryQuantity);
                     return FailCheckout(
                         Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}."),
                         "InsufficientInventory",
-                        ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+                        context);
                 }
 
                 listingsById[item.ListingId] = listing;
             }
-            _checkoutObservability.Succeeded("Checkout.InventoryValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count));
+            _checkoutObservability.Succeeded("Checkout.InventoryValidated", stepStartedAt, context);
 
             // check payment amount is consistent with the checkout total, if not, return failure result
             stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -331,19 +338,20 @@ public sealed class CheckoutService : ICheckoutService
             var totalAmount = subtotalAmount + freightAmount;
             var expectedPaymentAmount = priceConverter(totalAmount);
             var requestedPaymentAmount = request.Payments.Sum(p => p.PaymentValue);
+            context = context with { TotalAmount = totalAmount };
             if (requestedPaymentAmount != expectedPaymentAmount)
             {
                 _checkoutObservability.PaymentAmountFailed(
                     stepStartedAt,
-                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount),
+                    context,
                     requestedPaymentAmount,
                     expectedPaymentAmount);
                 return FailCheckout(
                     Result<CheckoutResponse>.ValidationFailure("Payment amount in the request does not match the calculated checkout total amount."),
                     "PaymentAmountMismatch",
-                    ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount));
+                    context);
             }
-            _checkoutObservability.Succeeded("Checkout.PaymentValidated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, orderNumber: orderNumber, currencyCode: currencyCode, itemCount: cart.Items.Count, paymentCount: request.Payments.Count, totalAmount: totalAmount));
+            _checkoutObservability.Succeeded("Checkout.PaymentValidated", stepStartedAt, context);
 
             // 1. Create Order
             stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -368,7 +376,8 @@ public sealed class CheckoutService : ICheckoutService
                 OrderNumber = orderNumber
             };
             await _orderRepository.AddAsync(order, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.OrderCreated", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
+            context = context with { OrderId = order.Id };
+            _checkoutObservability.Succeeded("Checkout.OrderCreated", stepStartedAt, context);
 
             // 2. process payments
             stepStartedAt = _checkoutObservability.GetTimestamp();
@@ -384,7 +393,7 @@ public sealed class CheckoutService : ICheckoutService
                         "Checkout.PaymentRecorded",
                         "PaymentProcessingFailed",
                         stepStartedAt,
-                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
+                        context);
 
                     // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
                     // await _unitOfWork.RollbackAsync(cancellationToken);
@@ -398,7 +407,7 @@ public sealed class CheckoutService : ICheckoutService
                     return FailCheckout(
                         Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error),
                         "PaymentProcessingFailed",
-                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
+                        context);
                 }
 
                 if (paymentResult.Value is null)
@@ -407,30 +416,31 @@ public sealed class CheckoutService : ICheckoutService
                         "Checkout.PaymentRecorded",
                         "PaymentProcessingFailed",
                         stepStartedAt,
-                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
+                        context);
                     return FailCheckout(
                         Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null."),
                         "PaymentProcessingFailed",
-                        ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, request.Payments.Count, totalAmount));
+                        context);
                 }
                 payments.Add(paymentResult.Value);
             }
-            _checkoutObservability.Succeeded("Checkout.PaymentRecorded", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            context = context with { PaymentCount = payments.Count };
+            _checkoutObservability.Succeeded("Checkout.PaymentRecorded", stepStartedAt, context);
 
             // 3. Create order items, decrement stock, and update cart/order status
             stepStartedAt = _checkoutObservability.GetTimestamp();
             await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.OrderItemsCreatedAndStockDeducted", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.OrderItemsCreatedAndStockDeducted", stepStartedAt, context);
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             cart.Status = CartStatus.Converted;
             await _cartRepository.UpdateAsync(cart, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.CartConverted", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.CartConverted", stepStartedAt, context);
 
             // 4. Save all changes
             stepStartedAt = _checkoutObservability.GetTimestamp();
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.ChangesSaved", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.ChangesSaved", stepStartedAt, context);
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
@@ -446,7 +456,7 @@ public sealed class CheckoutService : ICheckoutService
                     payments.Count
                 })
             ), cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.AuditLogWritten", stepStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.AuditLogWritten", stepStartedAt, context);
 
             // 5. Return response
             var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
@@ -461,12 +471,12 @@ public sealed class CheckoutService : ICheckoutService
                 payments,
                 priceConverter(order.TotalAmount),
                 currencyCode);
-            _checkoutObservability.Succeeded("Checkout.Completed", checkoutStartedAt, ObservabilityContext(customerUserId, cart.Id, order.Id, orderNumber, currencyCode, cart.Items.Count, payments.Count, totalAmount));
+            _checkoutObservability.Succeeded("Checkout.Process", checkoutStartedAt, context);
             return Result<CheckoutResponse>.Success(response);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _checkoutObservability.Unexpected(exception, checkoutStartedAt, ObservabilityContext(request.UserId, request.CartId, currencyCode: displayCurrency));
+            _checkoutObservability.Unexpected(exception, checkoutStartedAt, context);
             throw;
         }
     }

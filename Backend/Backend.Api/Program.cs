@@ -111,7 +111,7 @@ app.UseSerilogRequestLogging(options =>
             ?? httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
         diagnosticContext.Set("Component", "HttpPipeline");
-        diagnosticContext.Set("Operation", statusCode >= StatusCodes.Status400BadRequest ? "HttpRequest.Failed" : "HttpRequest.Completed");
+        diagnosticContext.Set("Operation", "HttpRequest");
         diagnosticContext.Set("Outcome", statusCode >= StatusCodes.Status400BadRequest ? "Failed" : "Succeeded");
         diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
         diagnosticContext.Set("StatusCode", statusCode);

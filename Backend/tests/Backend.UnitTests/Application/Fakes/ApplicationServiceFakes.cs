@@ -885,7 +885,7 @@ internal sealed class FakeCheckoutObservability : ICheckoutObservability
     public void Failed(string operation, string errorType, long startedAt, CheckoutObservabilityContext context) => Failures.Add((operation, errorType, context));
     public void InventoryFailed(long startedAt, CheckoutObservabilityContext context, Guid listingId, int requestedQuantity, int availableQuantity) => Failures.Add(("Checkout.InventoryValidated", "InsufficientInventory", context));
     public void PaymentAmountFailed(long startedAt, CheckoutObservabilityContext context, decimal requestedPaymentAmount, decimal expectedPaymentAmount) => Failures.Add(("Checkout.PaymentValidated", "PaymentAmountMismatch", context));
-    public void Unexpected(Exception exception, long startedAt, CheckoutObservabilityContext context) => Failures.Add(("Checkout.Failed", "UnexpectedException", context));
+    public void Unexpected(Exception exception, long startedAt, CheckoutObservabilityContext context) => Failures.Add(("Checkout.Process", "UnexpectedException", context));
 }
 
 internal sealed class FakeCurrentUserProvider : ICurrentUserProvider

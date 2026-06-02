@@ -34,7 +34,7 @@ public sealed class CheckoutServiceObservabilityTests
             failure.Operation == "Checkout.PaymentValidated" &&
             failure.ErrorType == "InvalidCurrency");
         Assert.Contains(observability.Failures, failure =>
-            failure.Operation == "Checkout.Failed" &&
+            failure.Operation == "Checkout.Process" &&
             failure.ErrorType == "InvalidCurrency");
     }
 

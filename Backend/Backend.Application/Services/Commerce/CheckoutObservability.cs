@@ -19,7 +19,7 @@ public sealed class CheckoutObservability : ICheckoutObservability
     public long GetTimestamp() => Stopwatch.GetTimestamp();
 
     public void Started(long startedAt, CheckoutObservabilityContext context) =>
-        LogInformation("Checkout.Started", "Started", startedAt, context);
+        LogInformation("Checkout.Process", "Started", startedAt, context);
 
     public void Succeeded(string operation, long startedAt, CheckoutObservabilityContext context) =>
         LogInformation(operation, "Succeeded", startedAt, context);
@@ -81,7 +81,7 @@ public sealed class CheckoutObservability : ICheckoutObservability
         _logger.LogError(
             exception,
             "Checkout observability event {Operation} {Outcome} for {Component} in {DurationMs} ms. ErrorType={ErrorType} CartId={CartId} UserId={UserId} CurrencyCode={CurrencyCode}",
-            "Checkout.Failed",
+            "Checkout.Process",
             "Failed",
             ComponentName,
             ElapsedMilliseconds(startedAt),
