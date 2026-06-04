@@ -74,6 +74,18 @@ public sealed class AdminService : IAdminService
             return Result<AdminOperationResponse>.NotFound("User not found.");
         }
 
+        if (user.IsAdmin) {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Block,
+                TargetEntityType: nameof(UserAccount),
+                TargetEntityId: user.Id.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Block failed: cannot block an admin user."
+            ), cancellationToken);
+
+            return Result<AdminOperationResponse>.Forbidden("Admin users cannot be blocked.");
+        }
+
         if (user.IsBlocked)
         {
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
