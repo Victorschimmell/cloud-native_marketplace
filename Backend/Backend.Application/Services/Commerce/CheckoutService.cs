@@ -327,6 +327,32 @@ public sealed class CheckoutService : ICheckoutService
                         context);
                 }
 
+                if (listing.Seller?.VerificationStatus != VerificationStatus.Verified)
+                {
+                    _checkoutObservability.Failed(
+                        "Checkout.InventoryValidated",
+                        "SellerNotVerified",
+                        stepStartedAt,
+                        context);
+                    return FailCheckout(
+                        Result<CheckoutResponse>.ValidationFailure($"Seller of product listing {item.ListingId} is not verified. Products from unverified sellers cannot be purchased."),
+                        "SellerNotVerified",
+                        context);
+                }
+
+                if (listing.Seller.UserAccount?.IsBlocked != true)
+                {
+                    _checkoutObservability.Failed(
+                        "Checkout.InventoryValidated",
+                        "SellerNotActive",
+                        stepStartedAt,
+                        context);
+                    return FailCheckout(
+                        Result<CheckoutResponse>.ValidationFailure($"Seller of product listing {item.ListingId} is not active. Products from inactive sellers cannot be purchased."),
+                        "SellerNotActive",
+                        context);
+                }
+
                 listingsById[item.ListingId] = listing;
             }
             _checkoutObservability.Succeeded("Checkout.InventoryValidated", stepStartedAt, context);
@@ -710,5 +736,4 @@ public sealed class CheckoutService : ICheckoutService
 
         return null;
     }
-
 }
