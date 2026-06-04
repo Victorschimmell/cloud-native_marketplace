@@ -66,7 +66,7 @@ public class CustomersController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access another customer." });
         }
 
-        _logger.LogInformation("Fetching customer with ID {userId}.", userId);
+        _logger.LogInformation("Fetching customer with ID {UserId}.", userId);
 
         var result = await _customerService.GetByIdAsync(userId, cancellationToken);
         return HandleResult(result, customer => customer.ToResponse());
