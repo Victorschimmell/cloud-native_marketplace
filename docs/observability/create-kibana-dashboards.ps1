@@ -428,14 +428,15 @@ function New-DashboardPanel {
         [Parameter(Mandatory = $true)] [int]$X,
         [Parameter(Mandatory = $true)] [int]$Y,
         [Parameter(Mandatory = $true)] [int]$Width,
-        [Parameter(Mandatory = $true)] [int]$Height
+        [Parameter(Mandatory = $true)] [int]$Height,
+        [string]$Type = "visualization"
     )
 
     return @{
         version = "8.15.3"
         panelIndex = $ReferenceName
         panelRefName = $ReferenceName
-        type = "visualization"
+        type = $Type
         gridData = @{
             i = $ReferenceName
             x = $X
@@ -450,13 +451,35 @@ function New-DashboardPanel {
 function New-DashboardReference {
     param(
         [Parameter(Mandatory = $true)] [string]$ReferenceName,
-        [Parameter(Mandatory = $true)] [string]$VisualizationId
+        [Parameter(Mandatory = $true)] [string]$SavedObjectId,
+        [string]$Type = "visualization"
     )
 
     return @{
         name = $ReferenceName
-        type = "visualization"
-        id = $VisualizationId
+        type = $Type
+        id = $SavedObjectId
+    }
+}
+
+function New-SavedSearchAttributes {
+    param(
+        [Parameter(Mandatory = $true)] [string]$Title,
+        [Parameter(Mandatory = $true)] [string]$Query,
+        [Parameter(Mandatory = $true)] [string[]]$Columns,
+        [string]$SortField = "@timestamp",
+        [string]$SortDirection = "desc"
+    )
+
+    return @{
+        title = $Title
+        description = ""
+        hits = 0
+        columns = $Columns
+        sort = @(@($SortField, $SortDirection))
+        kibanaSavedObjectMeta = @{
+            searchSourceJSON = New-SearchSourceJson $Query
+        }
     }
 }
 
@@ -548,13 +571,13 @@ $visualizations = @(
     @{
         Id = "vis-checkout-completed"
         Title = "Checkout: Completed Count"
-        Query = 'labels.Operation: "Checkout.Process" and labels.Outcome: "Succeeded"'
+        Query = '(labels.Operation: "Checkout.Process" and labels.Outcome: "Succeeded") or labels.Operation: "Checkout.Completed"'
         State = New-MetricVisState "Checkout: Completed Count"
     },
     @{
         Id = "vis-checkout-failed"
         Title = "Checkout: Failed Count"
-        Query = 'labels.Operation: "Checkout.Process" and labels.Outcome: "Failed"'
+        Query = '(labels.Operation: "Checkout.Process" and labels.Outcome: "Failed") or labels.Operation: "Checkout.Failed"'
         State = New-MetricVisState "Checkout: Failed Count"
     },
     @{
@@ -572,7 +595,7 @@ $visualizations = @(
     @{
         Id = "vis-checkout-failures-by-type"
         Title = "Checkout: Failures by Error Type"
-        Query = 'labels.Operation: "Checkout.Process" and labels.Outcome: "Failed"'
+        Query = '(labels.Operation: "Checkout.Process" and labels.Outcome: "Failed") or labels.Operation: "Checkout.Failed"'
         State = New-HorizontalBarVisState "Checkout: Failures by Error Type" "error.type"
     },
     @{
@@ -588,6 +611,54 @@ foreach ($visualization in $visualizations) {
         -Type "visualization" `
         -Id $visualization.Id `
         -Attributes (New-VisualizationAttributes $visualization.Title $visualization.Query $visualization.State) `
+        -References @(New-IndexReference)
+}
+
+$checkoutDetailColumns = @(
+    "@timestamp",
+    "labels.CorrelationId",
+    "labels.Operation",
+    "labels.Outcome",
+    "metadata.DurationMs",
+    "error.type",
+    "metadata.CartId",
+    "metadata.OrderId",
+    "labels.OrderNumber",
+    "metadata.UserId"
+)
+
+$savedSearches = @(
+    @{
+        Id = "search-checkout-recent-operation-events"
+        Title = "Checkout: Recent Operation Events"
+        Query = 'labels.Component: "CheckoutService"'
+        Columns = $checkoutDetailColumns
+        SortField = "@timestamp"
+        SortDirection = "desc"
+    },
+    @{
+        Id = "search-checkout-slowest-operation-events"
+        Title = "Checkout: Slowest Operation Events"
+        Query = 'labels.Component: "CheckoutService" and metadata.DurationMs: *'
+        Columns = $checkoutDetailColumns
+        SortField = "metadata.DurationMs"
+        SortDirection = "desc"
+    },
+    @{
+        Id = "search-checkout-failed-examples"
+        Title = "Checkout: Failed Checkout Examples"
+        Query = '(labels.Operation: "Checkout.Process" and labels.Outcome: "Failed") or labels.Operation: "Checkout.Failed"'
+        Columns = $checkoutDetailColumns
+        SortField = "@timestamp"
+        SortDirection = "desc"
+    }
+)
+
+foreach ($savedSearch in $savedSearches) {
+    Invoke-KibanaSavedObjectUpsert `
+        -Type "search" `
+        -Id $savedSearch.Id `
+        -Attributes (New-SavedSearchAttributes $savedSearch.Title $savedSearch.Query $savedSearch.Columns $savedSearch.SortField $savedSearch.SortDirection) `
         -References @(New-IndexReference)
 }
 
@@ -622,6 +693,9 @@ $checkoutPanels = @(
     New-DashboardPanel "vis-checkout-duration-by-operation" "panel_checkout_duration_by_operation" 0 20 12 12
     New-DashboardPanel "vis-checkout-failures-by-type" "panel_checkout_failures_by_type" 12 20 12 12
     New-DashboardPanel "vis-checkout-debug-table" "panel_checkout_debug_table" 0 32 24 12
+    New-DashboardPanel "search-checkout-recent-operation-events" "panel_checkout_recent_operation_events" 0 44 24 12 "search"
+    New-DashboardPanel "search-checkout-slowest-operation-events" "panel_checkout_slowest_operation_events" 0 56 24 12 "search"
+    New-DashboardPanel "search-checkout-failed-examples" "panel_checkout_failed_examples" 0 68 24 12 "search"
 )
 
 $checkoutReferences = @(
@@ -631,6 +705,9 @@ $checkoutReferences = @(
     New-DashboardReference "panel_checkout_duration_by_operation" "vis-checkout-duration-by-operation"
     New-DashboardReference "panel_checkout_failures_by_type" "vis-checkout-failures-by-type"
     New-DashboardReference "panel_checkout_debug_table" "vis-checkout-debug-table"
+    New-DashboardReference "panel_checkout_recent_operation_events" "search-checkout-recent-operation-events" "search"
+    New-DashboardReference "panel_checkout_slowest_operation_events" "search-checkout-slowest-operation-events" "search"
+    New-DashboardReference "panel_checkout_failed_examples" "search-checkout-failed-examples" "search"
 )
 
 Invoke-KibanaSavedObjectUpsert `
