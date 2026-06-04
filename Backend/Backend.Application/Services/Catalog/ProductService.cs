@@ -115,6 +115,8 @@ public sealed class ProductService : IProductService
             return Result<ProductDto>.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
             return Result<ProductDto>.NotFound("Product category was not found.");
@@ -186,6 +188,8 @@ public sealed class ProductService : IProductService
             return Result<ProductDto>.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
             return Result<ProductDto>.NotFound("Product category was not found.");
@@ -240,6 +244,8 @@ public sealed class ProductService : IProductService
             return Result.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         var listing = await _productListingRepository.GetByIdAsync(listingId, cancellationToken);
         if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)
