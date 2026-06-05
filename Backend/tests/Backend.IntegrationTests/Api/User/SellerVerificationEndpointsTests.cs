@@ -93,7 +93,7 @@ public class SellerVerificationEndpointsTests : IClassFixture<MarketplaceApiFact
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         var user = TestEntityFactory.CreateUserAccount(email);
-        var seller = TestEntityFactory.CreateSeller(user.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(user.Id);
         seller.VerificationStatus = verificationStatus;
 
         dbContext.UserAccounts.Add(user);

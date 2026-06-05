@@ -290,7 +290,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("test_category", "Test category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, sku, price);
@@ -336,10 +336,10 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
         seller.VerificationStatus = DomainVerificationStatus.Verified;
         var otherSellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        var otherSeller = TestEntityFactory.CreateVerifiedSeller(otherSellerUser.Id);
         otherSeller.VerificationStatus = DomainVerificationStatus.Verified;
         var category = TestEntityFactory.CreateCategory("shared_category", "Shared category");
         var product = TestEntityFactory.CreateProduct(category.Id, "Shared product");

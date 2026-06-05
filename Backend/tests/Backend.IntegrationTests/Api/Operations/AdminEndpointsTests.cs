@@ -172,7 +172,7 @@ public class AdminEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         var user = TestEntityFactory.CreateUserAccount(email);
-        var seller = TestEntityFactory.CreateSeller(user.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(user.Id);
         var request = new DomainSellerVerificationRequest
         {
             SellerId = seller.Id,

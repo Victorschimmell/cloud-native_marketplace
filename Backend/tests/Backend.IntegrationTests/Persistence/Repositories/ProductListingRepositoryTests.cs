@@ -20,7 +20,7 @@ public sealed class ProductListingRepositoryTests
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller@example.com");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("livros", "Books");
         var product = TestEntityFactory.CreateProduct(category.Id, "Domain-Driven Design");
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, "BOOK-001", 199.95m);
@@ -54,8 +54,8 @@ public sealed class ProductListingRepositoryTests
 
         var sellerUser = TestEntityFactory.CreateUserAccount("seller2@example.com");
         var otherSellerUser = TestEntityFactory.CreateUserAccount("seller3@example.com");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
-        var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
+        var otherSeller = TestEntityFactory.CreatePendingSeller(otherSellerUser.Id);
         var category = TestEntityFactory.CreateCategory("games", "Games");
         var targetProduct = TestEntityFactory.CreateProduct(category.Id, "Console");
         var otherProduct = TestEntityFactory.CreateProduct(category.Id, "Headset");
@@ -89,7 +89,7 @@ public sealed class ProductListingRepositoryTests
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var sellerUser = TestEntityFactory.CreateUserAccount("sku-seller@example.com");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("music", "Music");
         var product = TestEntityFactory.CreateProduct(category.Id, "Turntable");
 

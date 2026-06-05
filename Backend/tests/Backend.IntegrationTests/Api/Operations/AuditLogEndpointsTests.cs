@@ -634,7 +634,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount($"checkout-customer-{Guid.NewGuid():N}@example.com");
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"checkout-seller-{Guid.NewGuid():N}@example.com");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("checkout-category", "Checkout category");
         var product = TestEntityFactory.CreateProduct(category.Id, "Checkout product");
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"SKU-{Guid.NewGuid():N}", 50m);

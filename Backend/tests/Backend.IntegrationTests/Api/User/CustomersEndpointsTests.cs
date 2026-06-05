@@ -173,7 +173,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount(email);
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("orders_category", "Orders category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         product.ImageUrl = $"https://example.com/{Guid.NewGuid():N}.jpg";

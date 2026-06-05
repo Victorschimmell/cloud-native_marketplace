@@ -418,7 +418,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("cart_category", "Cart category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         product.ImageUrl = $"https://example.com/cart-product-{Guid.NewGuid():N}.jpg";
@@ -456,7 +456,7 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount(email);
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
 
         dbContext.UserAccounts.Add(sellerUser);
         dbContext.Sellers.Add(seller);

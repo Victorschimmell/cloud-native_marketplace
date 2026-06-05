@@ -554,7 +554,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("checkout_category", "Checkout category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, sku, price);
@@ -591,7 +591,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount(email);
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
 
         dbContext.UserAccounts.Add(sellerUser);
         dbContext.Sellers.Add(seller);
