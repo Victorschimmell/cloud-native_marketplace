@@ -32,7 +32,7 @@ public sealed class FixedRateCurrencyConversionService : ICurrencyConversionServ
         return decimal.Round(converted, 2, MidpointRounding.AwayFromZero);
     }
 
-    public bool TryGetPriceConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    public bool TryGetPriceFromBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
     {
         var normalizedCurrency = NormalizeOrDefault(displayCurrency);
         if (!IsSupported(normalizedCurrency))
@@ -47,7 +47,7 @@ public sealed class FixedRateCurrencyConversionService : ICurrencyConversionServ
         return true;
     }
 
-    public Func<decimal, decimal> GetPriceConverter(string displayCurrency)
+    public Func<decimal, decimal> GetPriceFromBaseConverter(string displayCurrency)
     {
         var normalizedCurrency = NormalizeOrDefault(displayCurrency);
         if (!IsSupported(normalizedCurrency))
@@ -56,5 +56,26 @@ public sealed class FixedRateCurrencyConversionService : ICurrencyConversionServ
         }
 
         return amount => FromBaseCurrency(amount, normalizedCurrency);
+    }
+
+    public decimal ToBaseCurrency(decimal amount, string currencyCode)
+    {
+        var converted = amount / RatesFromBaseCurrency[currencyCode];
+        return decimal.Round(converted, 2, MidpointRounding.AwayFromZero);
+    }
+
+    public bool TryGetPriceToBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    {
+        var normalizedCurrency = NormalizeOrDefault(displayCurrency);
+        if (!IsSupported(normalizedCurrency))
+        {
+            currencyCode = BaseCurrency;
+            priceConverter = static amount => amount;
+            return false;
+        }
+
+        currencyCode = BaseCurrency;
+        priceConverter = amount => ToBaseCurrency(amount, normalizedCurrency);
+        return true;
     }
 }

@@ -51,7 +51,7 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<ProductDetailsDto>> GetDetailsAsync(Guid productId, Guid? listingId, string? currency, CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<ProductDetailsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -79,7 +79,7 @@ public sealed class ProductService : IProductService
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Sort must be one of newest, price-asc, price-desc, or name-asc.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(request.Currency, out var currencyCode, out var priceConverter))
         {
             return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -93,8 +93,13 @@ public sealed class ProductService : IProductService
             new PagedResult<BrowseProductDto>(products, listings.Page, listings.PageSize, listings.TotalCount));
     }
 
-    public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceToBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<ProductDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var validationError = ValidateProductMutation(
             request.ProductName,
             request.Description,
@@ -115,6 +120,8 @@ public sealed class ProductService : IProductService
             return Result<ProductDto>.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
             return Result<ProductDto>.NotFound("Product category was not found.");
@@ -127,7 +134,7 @@ public sealed class ProductService : IProductService
             SellerId = seller.Id,
             ProductId = product.Id,
             Sku = product.Id.ToString("N")[..12],
-            ListingPrice = request.Price,
+            ListingPrice = priceConverter(request.Price),
             InventoryQuantity = request.InventoryQuantity,
             VisibilityStatus = ListingVisibilityStatus.Draft,
         };
@@ -140,14 +147,19 @@ public sealed class ProductService : IProductService
             TargetEntityType: nameof(ProductListing),
             TargetEntityId: listing.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Seller {seller.Id} created product listing {listing.Id} for product {product.Id} with status {listing.VisibilityStatus}."
+            Details: $"Seller {seller.Id} created product listing {listing.Id} for product {product.Id} with status {listing.VisibilityStatus}. Requested listing price: {request.Price} {displayCurrency}; Converted listing price: {listing.ListingPrice} BRL."
         ), cancellationToken);
 
         return Result<ProductDto>.Success(product.ToProductDto());
     }
 
-    public async Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<IReadOnlyList<SellerListingDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var userId = _currentUserProvider.UserId;
         if (userId is null)
             return Result<IReadOnlyList<SellerListingDto>>.Unauthorized("User is not authenticated.");
@@ -159,11 +171,16 @@ public sealed class ProductService : IProductService
             return Result<IReadOnlyList<SellerListingDto>>.Forbidden("Seller must be verified to manage product listings.");
 
         var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, int.MaxValue, cancellationToken);
-        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto()).ToArray());
+        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(priceConverter)).ToArray());
     }
 
-    public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceToBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<ProductDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var validationError = ValidateProductMutation(
             request.ProductName,
             request.Description,
@@ -186,6 +203,8 @@ public sealed class ProductService : IProductService
             return Result<ProductDto>.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result<ProductDto>.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         if (!await CategoryExistsAsync(request.CategoryId, cancellationToken))
             return Result<ProductDto>.NotFound("Product category was not found.");
@@ -223,7 +242,7 @@ public sealed class ProductService : IProductService
             TargetEntityType: nameof(ProductListing),
             TargetEntityId: listing.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Seller {seller.Id} updated product listing {listing.Id} for product {product.Id}. Visibility: {listing.VisibilityStatus}; inventory: {listing.InventoryQuantity}."
+            Details: $"Seller {seller.Id} updated product listing {listing.Id} for product {product.Id}. Visibility: {listing.VisibilityStatus}; inventory: {listing.InventoryQuantity}; Requested listing price: {request.Price} {currencyCode}; Converted listing price: {listing.ListingPrice} BRL."
         ), cancellationToken);
 
         return Result<ProductDto>.Success(product.ToProductDto());
@@ -240,6 +259,8 @@ public sealed class ProductService : IProductService
             return Result.NotFound("Seller profile not found.");
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result.Forbidden("Seller must be verified to manage product listings.");
+        if (seller.UserAccount?.IsBlocked == true)
+            return Result<ProductDto>.Forbidden("Blocked users cannot manage product listings.");
 
         var listing = await _productListingRepository.GetByIdAsync(listingId, cancellationToken);
         if (listing is null || listing.IsDeleted || listing.SellerId != seller.Id)

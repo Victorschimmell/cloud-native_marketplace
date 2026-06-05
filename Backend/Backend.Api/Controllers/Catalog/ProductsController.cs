@@ -84,25 +84,25 @@ public class ProductsController : ApiControllerBase
 
     [HttpGet("my-listings")]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyList<SellerListingResponse>>> GetMyListingsAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<SellerListingResponse>>> GetMyListingsAsync(string currency, CancellationToken cancellationToken)
     {
-        var result = await _productService.GetSellerListingsAsync(cancellationToken);
+        var result = await _productService.GetSellerListingsAsync(currency, cancellationToken);
         return HandleResult(result, listings => listings.Select(l => l.ToResponse()).ToArray());
     }
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] CreateProductRequest request, string currency, CancellationToken cancellationToken)
     {
-        var result = await _productService.CreateAsync(request.ToDto(), cancellationToken);
+        var result = await _productService.CreateAsync(request.ToDto(), currency, cancellationToken);
         return HandleResult(result, product => product.ToResponse());
     }
 
     [HttpPut("listings/{listingId:guid}")]
     [Authorize]
-    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateProductRequest request, string currency, CancellationToken cancellationToken)
     {
-        var result = await _productService.UpdateAsync(request.ToDto(listingId), cancellationToken);
+        var result = await _productService.UpdateAsync(request.ToDto(listingId), currency, cancellationToken);
         return HandleResult(result, product => product.ToResponse());
     }
 

@@ -66,9 +66,9 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
   const [productActionError, setProductActionError] = useState<string | null>(null);
 
   const loadListings = useCallback(async (signal?: AbortSignal) => {
-    const listingsResponse = await sellerApi.getMyListings(signal);
+    const listingsResponse = await sellerApi.getMyListings(currency, signal);
     setListings(listingsResponse);
-  }, []);
+  }, [currency]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -201,7 +201,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         price: listingPrice,
         productName: values.name,
         visibilityStatus: values.visibilityStatus,
-      });
+      }, currency);
 
       const categoryName = categories.find((category) => category.id === values.categoryId);
       const updatedProduct: SellerListing = {
@@ -264,7 +264,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         price: publishingProduct.listingPrice,
         productName: publishingProduct.productName,
         visibilityStatus: 'Published',
-      });
+      }, currency);
 
       const updatedProduct = {
         ...publishingProduct,

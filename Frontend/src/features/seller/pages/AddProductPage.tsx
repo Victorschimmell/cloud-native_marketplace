@@ -53,7 +53,7 @@ export default function AddProductPage() {
         imageUrl: normalizeOptional(form.imageUrl),
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
-      });
+      }, currency);
       navigate('/seller/products');
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create product.');

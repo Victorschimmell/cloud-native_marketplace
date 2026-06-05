@@ -57,7 +57,7 @@ public sealed class CartService : ICartService
             return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -72,7 +72,7 @@ public sealed class CartService : ICartService
             return restriction;
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -158,7 +158,7 @@ public sealed class CartService : ICartService
             return restriction;
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }

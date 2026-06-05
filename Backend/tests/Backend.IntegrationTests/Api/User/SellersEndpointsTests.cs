@@ -244,13 +244,13 @@ public class SellersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount(customerEmail);
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-seller-{unique}@example.com");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         if (sellerIsVerified)
         {
             seller.VerificationStatus = DomainVerificationStatus.Verified;
         }
         var otherSellerUser = TestEntityFactory.CreateUserAccount($"seller-orders-other-{unique}@example.com");
-        var otherSeller = TestEntityFactory.CreateSeller(otherSellerUser.Id);
+        var otherSeller = TestEntityFactory.CreatePendingSeller(otherSellerUser.Id);
         otherSeller.VerificationStatus = DomainVerificationStatus.Verified;
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("categoria", "Category");

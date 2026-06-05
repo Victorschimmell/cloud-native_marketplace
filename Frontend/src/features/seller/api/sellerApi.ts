@@ -85,16 +85,19 @@ export interface GetMyOrdersOptions {
 }
 
 export const sellerApi = {
-  createProduct: async (data: CreateProductRequest): Promise<ProductResponse> => {
-    return request<ProductResponse>('/api/products', {
+  createProduct: async (data: CreateProductRequest, currency: CurrencyCode): Promise<ProductResponse> => {
+    const params = new URLSearchParams({ currency });
+
+    return request<ProductResponse>(`/api/products?${params}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
   },
 
-  getMyListings: async (signal?: AbortSignal): Promise<SellerListing[]> => {
-    return request<SellerListing[]>('/api/products/my-listings', { signal });
+  getMyListings: async (currency: CurrencyCode, signal?: AbortSignal): Promise<SellerListing[]> => {
+    const params = new URLSearchParams({ currency });
+    return request<SellerListing[]>(`/api/products/my-listings?${params}`, { signal });
   },
 
   getMyOrders: async ({
@@ -142,8 +145,10 @@ export const sellerApi = {
     });
   },
 
-  updateProduct: async (listingId: string, data: UpdateProductRequest): Promise<ProductResponse> => {
-    return request<ProductResponse>(`/api/products/listings/${listingId}`, {
+  updateProduct: async (listingId: string, data: UpdateProductRequest, currency: CurrencyCode): Promise<ProductResponse> => {
+    const params = new URLSearchParams({ currency });
+
+    return request<ProductResponse>(`/api/products/listings/${listingId}?${params}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),

@@ -121,6 +121,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.CreateAsync(
             CreateCreateRequest(productName: productName, description: description, price: price, inventoryQuantity: inventoryQuantity),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
@@ -134,7 +135,7 @@ public sealed class ProductServiceTests
     {
         var fixture = CreateFixture(currentUserProvider: new FakeCurrentUserProvider { UserId = null, IsAuthenticated = false });
 
-        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), TestContext.Current.CancellationToken);
+        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), "BRL", TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ResultFailureType.Unauthorized, result.FailureType);
@@ -149,7 +150,7 @@ public sealed class ProductServiceTests
         };
         var fixture = CreateFixture(sellerRepository: sellerRepository);
 
-        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), TestContext.Current.CancellationToken);
+        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), "BRL", TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ResultFailureType.Forbidden, result.FailureType);
@@ -160,7 +161,7 @@ public sealed class ProductServiceTests
     {
         var fixture = CreateFixture(categoryRepository: new FakeProductCategoryRepository());
 
-        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), TestContext.Current.CancellationToken);
+        var result = await fixture.Service.CreateAsync(CreateCreateRequest(), "BRL", TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(ResultFailureType.NotFound, result.FailureType);
@@ -176,6 +177,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.CreateAsync(
             CreateCreateRequest(fixture.CategoryRepository.Category!.Id, productName: "  Fresh coffee  ", description: "  Roasted beans  "),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -189,6 +191,60 @@ public sealed class ProductServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WhenCurrencyIsBRL_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "BRL",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(100m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenCurrencyIsUSD_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "USD",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(200m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenCurrencyIsDKK_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "DKK",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(200m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
     public async Task GetSellerListingsAsync_WhenSellerIsVerified_ReturnsListings()
     {
         var category = CreateCategory();
@@ -198,7 +254,7 @@ public sealed class ProductServiceTests
         listingRepository.Listings.Add(CreateListing(product, seller, visibilityStatus: ListingVisibilityStatus.Published));
         var fixture = CreateFixture(productListingRepository: listingRepository, sellerRepository: new FakeSellerRepository { Seller = seller });
 
-        var result = await fixture.Service.GetSellerListingsAsync(TestContext.Current.CancellationToken);
+        var result = await fixture.Service.GetSellerListingsAsync("BRL", TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         var listing = Assert.Single(result.Value!);
@@ -213,6 +269,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.UpdateAsync(
             CreateUpdateRequest(visibilityStatus: "Archived"),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
@@ -232,6 +289,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.UpdateAsync(
             CreateUpdateRequest(listingId: listing.Id, categoryId: category.Id),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
@@ -259,6 +317,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.UpdateAsync(
             CreateUpdateRequest(listingId: listing.Id, categoryId: category.Id, productName: "New coffee", visibilityStatus: "Published"),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -291,6 +350,7 @@ public sealed class ProductServiceTests
 
         var result = await fixture.Service.UpdateAsync(
             CreateUpdateRequest(listingId: listing.Id, categoryId: category.Id, productName: "New coffee", price: 75m),
+            "BRL",
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);

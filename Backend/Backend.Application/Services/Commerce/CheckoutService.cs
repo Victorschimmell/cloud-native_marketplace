@@ -100,7 +100,7 @@ public sealed class CheckoutService : ICheckoutService
             return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CheckoutPreviewDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -156,7 +156,7 @@ public sealed class CheckoutService : ICheckoutService
             }
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
-            if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+            if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
             {
                 _checkoutObservability.Failed(
                     "Checkout.PaymentValidated",
@@ -324,6 +324,32 @@ public sealed class CheckoutService : ICheckoutService
                     return FailCheckout(
                         Result<CheckoutResponse>.ValidationFailure($"Product listing with id {item.ListingId} does not have enough stock. Available quantity: {listing.InventoryQuantity}, requested quantity: {item.Quantity}."),
                         "InsufficientInventory",
+                        context);
+                }
+
+                if (listing.Seller?.VerificationStatus != VerificationStatus.Verified)
+                {
+                    _checkoutObservability.Failed(
+                        "Checkout.InventoryValidated",
+                        "SellerNotVerified",
+                        stepStartedAt,
+                        context);
+                    return FailCheckout(
+                        Result<CheckoutResponse>.ValidationFailure($"Seller of product listing {item.ListingId} is not verified. Products from unverified sellers cannot be purchased."),
+                        "SellerNotVerified",
+                        context);
+                }
+
+                if (listing.Seller.UserAccount?.IsBlocked == true)
+                {
+                    _checkoutObservability.Failed(
+                        "Checkout.InventoryValidated",
+                        "SellerNotActive",
+                        stepStartedAt,
+                        context);
+                    return FailCheckout(
+                        Result<CheckoutResponse>.ValidationFailure($"Seller of product listing {item.ListingId} is not active. Products from inactive sellers cannot be purchased."),
+                        "SellerNotActive",
                         context);
                 }
 
@@ -710,5 +736,4 @@ public sealed class CheckoutService : ICheckoutService
 
         return null;
     }
-
 }

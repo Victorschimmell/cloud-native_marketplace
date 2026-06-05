@@ -42,7 +42,7 @@ public sealed class OrderService : IOrderService
 
     public async Task<Result<OrderDto>> GetByIdForCustomerAsync(Guid orderId, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -75,7 +75,7 @@ public sealed class OrderService : IOrderService
             return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -102,7 +102,7 @@ public sealed class OrderService : IOrderService
             return Result<PagedResult<OrderDto>>.ValidationFailure("Page and page size must be greater than zero.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<PagedResult<OrderDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -135,7 +135,7 @@ public sealed class OrderService : IOrderService
             return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -165,7 +165,7 @@ public sealed class OrderService : IOrderService
         string? currency,
         CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<SellerOrderSummaryDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -194,7 +194,7 @@ public sealed class OrderService : IOrderService
         string? currency,
         CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<SellerOrderStatsDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -223,7 +223,7 @@ public sealed class OrderService : IOrderService
         string? currency,
         CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<SellerOrderSummaryDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -288,7 +288,7 @@ public sealed class OrderService : IOrderService
 
     public async Task<Result<OrderDto>> CancelAsync(CancelOrderRequest request, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
     {
-        if (!_currencyConversionService.TryGetPriceConverter(currency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
         {
             return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
