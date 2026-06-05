@@ -855,6 +855,14 @@ internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
         priceConverter = amount => FromBaseCurrency(amount, selectedCurrencyCode);
         return !ForceUnsupported && IsSupported(currencyCode);
     }
+    public decimal ToBaseCurrency(decimal amount, string currencyCode) => currencyCode == "BRL" ? amount : decimal.Round(amount / 0.5m, 2, MidpointRounding.AwayFromZero);
+    public bool TryGetPriceToBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)
+    {
+        currencyCode = NormalizeOrDefault(displayCurrency);
+        var selectedCurrencyCode = currencyCode;
+        priceConverter = amount => ToBaseCurrency(amount, selectedCurrencyCode);
+        return !ForceUnsupported && IsSupported(currencyCode);
+    }
 }
 
 internal sealed class FakeUnitOfWork : IUnitOfWork

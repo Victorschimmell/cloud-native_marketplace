@@ -93,8 +93,13 @@ public sealed class ProductService : IProductService
             new PagedResult<BrowseProductDto>(products, listings.Page, listings.PageSize, listings.TotalCount));
     }
 
-    public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDto>> CreateAsync(CreateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceToBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<ProductDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var validationError = ValidateProductMutation(
             request.ProductName,
             request.Description,
@@ -129,7 +134,7 @@ public sealed class ProductService : IProductService
             SellerId = seller.Id,
             ProductId = product.Id,
             Sku = product.Id.ToString("N")[..12],
-            ListingPrice = request.Price,
+            ListingPrice = priceConverter(request.Price),
             InventoryQuantity = request.InventoryQuantity,
             VisibilityStatus = ListingVisibilityStatus.Draft,
         };
@@ -142,7 +147,7 @@ public sealed class ProductService : IProductService
             TargetEntityType: nameof(ProductListing),
             TargetEntityId: listing.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Seller {seller.Id} created product listing {listing.Id} for product {product.Id} with status {listing.VisibilityStatus}."
+            Details: $"Seller {seller.Id} created product listing {listing.Id} for product {product.Id} with status {listing.VisibilityStatus}. Requested listing price: {request.Price} {displayCurrency}; Converted listing price: {listing.ListingPrice} BRL."
         ), cancellationToken);
 
         return Result<ProductDto>.Success(product.ToProductDto());
@@ -164,8 +169,13 @@ public sealed class ProductService : IProductService
         return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto()).ToArray());
     }
 
-    public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceToBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<ProductDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var validationError = ValidateProductMutation(
             request.ProductName,
             request.Description,
@@ -227,7 +237,7 @@ public sealed class ProductService : IProductService
             TargetEntityType: nameof(ProductListing),
             TargetEntityId: listing.Id.ToString(),
             Outcome: AuditOutcome.Succeeded,
-            Details: $"Seller {seller.Id} updated product listing {listing.Id} for product {product.Id}. Visibility: {listing.VisibilityStatus}; inventory: {listing.InventoryQuantity}."
+            Details: $"Seller {seller.Id} updated product listing {listing.Id} for product {product.Id}. Visibility: {listing.VisibilityStatus}; inventory: {listing.InventoryQuantity}; Requested listing price: {request.Price} {currencyCode}; Converted listing price: {listing.ListingPrice} BRL."
         ), cancellationToken);
 
         return Result<ProductDto>.Success(product.ToProductDto());

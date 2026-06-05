@@ -7,4 +7,6 @@ public interface ICurrencyConversionService
     bool IsSupported(string currencyCode);
     decimal FromBaseCurrency(decimal amount, string currencyCode);
     bool TryGetPriceFromBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter);
+    decimal ToBaseCurrency(decimal amount, string currencyCode);
+    bool TryGetPriceToBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter);
 }

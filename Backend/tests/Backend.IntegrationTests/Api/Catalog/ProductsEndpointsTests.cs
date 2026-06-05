@@ -124,7 +124,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/products", createRequest, TestContext.Current.CancellationToken);
+        var response = await _client.PostAsJsonAsync("/api/products?currency=BRL", createRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -150,7 +150,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         };
 
         // Act
-        var response = await _client.PutAsJsonAsync($"/api/products/listings/{productId}", updateRequest, TestContext.Current.CancellationToken);
+        var response = await _client.PutAsJsonAsync($"/api/products/listings/{productId}?currency=BRL", updateRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -186,7 +186,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Act
         var response = await _client.PutAsJsonAsync(
-            $"/api/products/listings/{seed.SellerListingId}",
+            $"/api/products/listings/{seed.SellerListingId}?currency=BRL",
             updateRequest,
             TestContext.Current.CancellationToken);
 
@@ -232,7 +232,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 
         // Act
         var response = await _client.PutAsJsonAsync(
-            $"/api/products/listings/{seed.SellerListingId}",
+            $"/api/products/listings/{seed.SellerListingId}?currency=BRL",
             updateRequest,
             TestContext.Current.CancellationToken);
 

@@ -53,8 +53,10 @@ export default function AddProductPage() {
         imageUrl: normalizeOptional(form.imageUrl),
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
-      });
+      }, currency);
       navigate('/seller/products');
+
+      console.log(`Product created: ${form.name}, price: ${form.price} ${currency}, categoryId: ${form.categoryId}`);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to create product.');
     }
