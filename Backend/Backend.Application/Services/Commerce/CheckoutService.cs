@@ -340,7 +340,7 @@ public sealed class CheckoutService : ICheckoutService
                         context);
                 }
 
-                if (listing.Seller.UserAccount?.IsBlocked != true)
+                if (listing.Seller.UserAccount?.IsBlocked == true)
                 {
                     _checkoutObservability.Failed(
                         "Checkout.InventoryValidated",
