@@ -124,6 +124,34 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task CreateProduct_WhenCurrencyIsUnsupported_ReturnsBadRequest()
+    {
+        // Arrange
+        var seed = await SeedVerifiedSellerAndCategoryAsync();
+        AuthenticateAs(seed.SellerUserId);
+
+        var createRequest = new CreateProductRequest
+        {
+            ProductName = $"Created product {Guid.NewGuid():N}",
+            CategoryId = seed.CategoryId,
+            Description = "Created by integration test.",
+            Price = 100m,
+            InventoryQuantity = 10,
+            ProductPhotosQty = 1,
+            ProductWeightG = 100,
+            ProductLengthCm = 10,
+            ProductHeightCm = 10,
+            ProductWidthCm = 10
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/api/products?currency=INVALID_CODE", createRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetProductById_WhenProductDoesNotExist_ReturnsNotFound()
     {
         // Act
