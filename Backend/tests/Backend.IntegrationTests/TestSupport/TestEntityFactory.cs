@@ -28,7 +28,7 @@ internal static class TestEntityFactory
             DefaultAddressId = defaultAddressId
         };
 
-    public static Seller CreateSeller(Guid userId, Guid? defaultAddressId = null) =>
+    public static Seller CreatePendingSeller(Guid userId, Guid? defaultAddressId = null) =>
         new()
         {
             UserId = userId,
@@ -37,6 +37,17 @@ internal static class TestEntityFactory
             PayoutInformation = "iban:dk5000400440116243",
             DefaultAddressId = defaultAddressId,
             VerificationStatus = VerificationStatus.Pending
+        };
+
+    public static Seller CreateVerifiedSeller(Guid userId, Guid? defaultAddressId = null) =>
+        new()
+        {
+            UserId = userId,
+            BusinessName = "MarketplaceTraders",
+            RegistrationNumber = $"REG-{Guid.NewGuid():N}",
+            PayoutInformation = "iban:dk5000400440116243",
+            DefaultAddressId = defaultAddressId,
+            VerificationStatus = VerificationStatus.Verified
         };
 
     public static Address CreateAddress() =>
