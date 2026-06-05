@@ -37,7 +37,7 @@ public sealed class AdminDashboardService : IAdminDashboardService
             return Result<DashboardStatsDto>.Forbidden("Only admins can view dashboard stats.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var convert))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(request.Currency, out var currencyCode, out var convert))
         {
             return Result<DashboardStatsDto>.ValidationFailure($"Unsupported currency '{request.Currency}'.");
         }

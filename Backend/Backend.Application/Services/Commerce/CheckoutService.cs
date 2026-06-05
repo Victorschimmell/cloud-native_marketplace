@@ -100,7 +100,7 @@ public sealed class CheckoutService : ICheckoutService
             return Result<CheckoutPreviewDto>.NotFound("Cart was not found for the provided identifiers.");
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CheckoutPreviewDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -156,7 +156,7 @@ public sealed class CheckoutService : ICheckoutService
             }
 
             stepStartedAt = _checkoutObservability.GetTimestamp();
-            if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
+            if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
             {
                 _checkoutObservability.Failed(
                     "Checkout.PaymentValidated",

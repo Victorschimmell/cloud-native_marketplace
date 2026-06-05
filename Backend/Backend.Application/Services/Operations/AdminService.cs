@@ -240,7 +240,7 @@ public sealed class AdminService : IAdminService
             return Result<PagedResult<AdminPaymentDto>>.ValidationFailure(paginationError);
         }
 
-        if (!_currencyConversionService.TryGetPriceConverter(request.Currency, out var currencyCode, out var convert))
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(request.Currency, out var currencyCode, out var convert))
         {
             return Result<PagedResult<AdminPaymentDto>>.ValidationFailure($"Unsupported currency '{request.Currency}'.");
         }
