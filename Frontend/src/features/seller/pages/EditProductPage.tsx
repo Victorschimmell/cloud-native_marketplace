@@ -49,7 +49,7 @@ export default function EditProductPage() {
     if (state?.listing || !listingId) return;
     const controller = new AbortController();
     sellerApi
-      .getMyListings(controller.signal)
+      .getMyListings(currency, controller.signal)
       .then((listings) => {
         const found = listings.find((l) => l.listingId === listingId) ?? null;
         setListing(found);
@@ -91,7 +91,7 @@ export default function EditProductPage() {
         price: parseFloat(form.price),
         inventoryQuantity: parseInt(form.inventoryQuantity, 10),
         visibilityStatus: form.visibilityStatus,
-      });
+      }, currency);
       navigate('/seller/products');
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Failed to update product.');

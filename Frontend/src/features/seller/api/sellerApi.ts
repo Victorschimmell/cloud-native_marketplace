@@ -95,8 +95,9 @@ export const sellerApi = {
     });
   },
 
-  getMyListings: async (signal?: AbortSignal): Promise<SellerListing[]> => {
-    return request<SellerListing[]>('/api/products/my-listings', { signal });
+  getMyListings: async (currency: CurrencyCode, signal?: AbortSignal): Promise<SellerListing[]> => {
+    const params = new URLSearchParams({ currency });
+    return request<SellerListing[]>(`/api/products/my-listings?${params}`, { signal });
   },
 
   getMyOrders: async ({

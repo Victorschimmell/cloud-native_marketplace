@@ -84,9 +84,9 @@ public class ProductsController : ApiControllerBase
 
     [HttpGet("my-listings")]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyList<SellerListingResponse>>> GetMyListingsAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<SellerListingResponse>>> GetMyListingsAsync(string currency, CancellationToken cancellationToken)
     {
-        var result = await _productService.GetSellerListingsAsync(cancellationToken);
+        var result = await _productService.GetSellerListingsAsync(currency, cancellationToken);
         return HandleResult(result, listings => listings.Select(l => l.ToResponse()).ToArray());
     }
 

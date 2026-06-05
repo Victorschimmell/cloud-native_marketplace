@@ -153,8 +153,13 @@ public sealed class ProductService : IProductService
         return Result<ProductDto>.Success(product.ToProductDto());
     }
 
-    public async Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<SellerListingDto>>> GetSellerListingsAsync(string displayCurrency, CancellationToken cancellationToken = default)
     {
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<IReadOnlyList<SellerListingDto>>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
         var userId = _currentUserProvider.UserId;
         if (userId is null)
             return Result<IReadOnlyList<SellerListingDto>>.Unauthorized("User is not authenticated.");
@@ -166,7 +171,7 @@ public sealed class ProductService : IProductService
             return Result<IReadOnlyList<SellerListingDto>>.Forbidden("Seller must be verified to manage product listings.");
 
         var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, int.MaxValue, cancellationToken);
-        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto()).ToArray());
+        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(priceConverter)).ToArray());
     }
 
     public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)

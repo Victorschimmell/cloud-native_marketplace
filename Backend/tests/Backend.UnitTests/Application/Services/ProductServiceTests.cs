@@ -254,7 +254,7 @@ public sealed class ProductServiceTests
         listingRepository.Listings.Add(CreateListing(product, seller, visibilityStatus: ListingVisibilityStatus.Published));
         var fixture = CreateFixture(productListingRepository: listingRepository, sellerRepository: new FakeSellerRepository { Seller = seller });
 
-        var result = await fixture.Service.GetSellerListingsAsync(TestContext.Current.CancellationToken);
+        var result = await fixture.Service.GetSellerListingsAsync("BRL", TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         var listing = Assert.Single(result.Value!);

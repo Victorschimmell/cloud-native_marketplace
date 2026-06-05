@@ -66,9 +66,9 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
   const [productActionError, setProductActionError] = useState<string | null>(null);
 
   const loadListings = useCallback(async (signal?: AbortSignal) => {
-    const listingsResponse = await sellerApi.getMyListings(signal);
+    const listingsResponse = await sellerApi.getMyListings(currency, signal);
     setListings(listingsResponse);
-  }, []);
+  }, [currency]);
 
   useEffect(() => {
     const controller = new AbortController();
