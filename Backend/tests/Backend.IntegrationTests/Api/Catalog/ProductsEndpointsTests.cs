@@ -5,8 +5,10 @@ using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
 using Backend.Api.Contracts.Common;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using DomainVerificationStatus = Backend.Domain.Enums.VerificationStatus;
 
@@ -17,11 +19,13 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
 {
     private readonly HttpClient _client;
     private readonly MarketplaceApiFactory _factory;
+    private readonly ITestOutputHelper _output;
 
-    public ProductsEndpointsTests(MarketplaceApiFactory factory)
+    public ProductsEndpointsTests(MarketplaceApiFactory factory, ITestOutputHelper output)
     {
         _factory = factory;
         _client = factory.CreateClient();
+        _output = output;
     }
 
     [Fact]
@@ -93,6 +97,30 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.NotNull(product);
         Assert.Equal("USD", product.CurrencyCode);
         Assert.Equal(18m, product.Price);
+    }
+
+    [Theory]
+    [InlineData("BRL", "BRL", 100, 100)]
+    [InlineData("BRL", "DKK", 100, 117)]
+    [InlineData("BRL", "USD", 100, 18)]
+    [InlineData("USD", "BRL", 100, 555.56)]
+    [InlineData("USD", "DKK", 100, 650)]
+    [InlineData("USD", "USD", 100, 100)]
+    [InlineData("DKK", "BRL", 100, 85.47)]
+    [InlineData("DKK", "DKK", 100, 100)]
+    [InlineData("DKK", "USD", 100, 15.38)]
+    public async Task CreateProduct_WhenAccessedInBrl_ReturnsConvertedProductDetails(
+        string createCurrency,
+        string returnCurrency,
+        decimal createPrice,
+        decimal expectedBrlPrice)
+    {
+        // Arrange & Act
+        var product = await CreateProductAndFetchDetailsAsync(createCurrency, returnCurrency, createPrice);
+
+        // Assert
+        Assert.Equal(returnCurrency, product.CurrencyCode);
+        Assert.True(Math.Abs(expectedBrlPrice - product.Price) < 0.02m, $"Expected price to be approximately {expectedBrlPrice} but was {product.Price}.");
     }
 
     [Fact]
@@ -359,6 +387,77 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             product.Id,
             sellerListing.Id,
             otherSellerListing.Id);
+    }
+
+    private async Task<ProductDetailsResponse> CreateProductAndFetchDetailsAsync(string currency, string return_currency, decimal price)
+    {
+        var seed = await SeedVerifiedSellerAndCategoryAsync();
+        AuthenticateAs(seed.SellerUserId);
+
+        var createRequest = new CreateProductRequest
+        {
+            ProductName = $"Created product {Guid.NewGuid():N}",
+            CategoryId = seed.CategoryId,
+            Description = "Created by integration test.",
+            Price = price,
+            InventoryQuantity = 10,
+            ProductPhotosQty = 1,
+            ProductWeightG = 100,
+            ProductLengthCm = 10,
+            ProductHeightCm = 10,
+            ProductWidthCm = 10
+        };
+
+        var createResponse = await _client.PostAsJsonAsync($"/api/products?currency={currency}", createRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+
+        var createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(createdProduct);
+
+        await PublishCreatedListingAsync(createdProduct.Id);
+
+        var detailsResponse = await _client.GetAsync($"/api/products/{createdProduct.Id}?currency={return_currency}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, detailsResponse.StatusCode);
+
+        var details = await detailsResponse.Content.ReadFromJsonAsync<ProductDetailsResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(details);
+
+        return details;
+    }
+
+    private async Task<(Guid SellerUserId, Guid CategoryId)> SeedVerifiedSellerAndCategoryAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
+        var category = TestEntityFactory.CreateCategory("create_category", "Create category");
+
+        dbContext.UserAccounts.Add(sellerUser);
+        dbContext.Sellers.Add(seller);
+        dbContext.ProductCategories.Add(category);
+
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return (sellerUser.Id, category.Id);
+    }
+
+    private async Task PublishCreatedListingAsync(Guid productId)
+    {
+        using var scope = _factory.Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var listing = await dbContext.ProductListings.SingleAsync(l => l.ProductId == productId, TestContext.Current.CancellationToken);
+
+        listing.VisibilityStatus = ListingVisibilityStatus.Published;
+        listing.PublishedAtUtc = DateTimeOffset.UtcNow;
+
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     private void AuthenticateAs(Guid userId)

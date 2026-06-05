@@ -191,6 +191,60 @@ public sealed class ProductServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_WhenCurrencyIsBRL_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "BRL",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(100m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenCurrencyIsUSD_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "USD",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(200m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenCurrencyIsDKK_ConvertsListingPrice()
+    {
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var fixture = CreateFixture(unitOfWork: unitOfWork, auditLogService: auditLogService);
+
+        var result = await fixture.Service.CreateAsync(
+            CreateCreateRequest(fixture.CategoryRepository.Category!.Id, price: 100m),
+            "DKK",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, fixture.ProductListingRepository.AddCalls);
+        Assert.Equal(200m, Assert.Single(fixture.ProductListingRepository.Listings).ListingPrice);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
     public async Task GetSellerListingsAsync_WhenSellerIsVerified_ReturnsListings()
     {
         var category = CreateCategory();
