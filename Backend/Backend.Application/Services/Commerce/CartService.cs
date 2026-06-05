@@ -360,6 +360,12 @@ public sealed class CartService : ICartService
             return Result<CartDto>.Forbidden("Seller accounts cannot use carts or buy products.");
         }
 
+        var user = seller?.UserAccount;
+        if (user?.IsAdmin == true)
+        {
+            return Result<CartDto>.Forbidden("Admin accounts cannot check out or buy products.");
+        }
+
         var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (customer is null)
         {

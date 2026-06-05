@@ -668,6 +668,12 @@ public sealed class CheckoutService : ICheckoutService
             return "Seller accounts cannot check out or buy products.";
         }
 
+        var user = seller?.UserAccount;
+        if (user?.IsAdmin == true)
+        {
+            return "Admin accounts cannot check out or buy products.";
+        }
+
         var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (customer is null)
         {
