@@ -48,6 +48,8 @@
   line-height: 1.6;
   margin: 20px 0;
   white-space: pre-wrap;
+  word-break: break-word; 
+  overflow-wrap: anywhere;
 }
 
 .admin-issue-details__grid {
