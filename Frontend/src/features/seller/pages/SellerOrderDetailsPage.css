@@ -134,6 +134,10 @@
   grid-template-columns: minmax(0, 1.55fr) minmax(340px, 0.85fr);
 }
 
+.seller-order-details__grid--with-cancellation .seller-order-details__panel--items {
+  grid-row: span 4;
+}
+
 .seller-order-details__panel {
   align-content: start;
   display: grid;
@@ -148,6 +152,10 @@
 
 .seller-order-details__panel--items {
   grid-row: span 3;
+}
+
+.seller-order-details__panel--cancellation {
+  gap: 0;
 }
 
 .seller-order-details__panel-heading {
@@ -353,6 +361,15 @@
 .seller-order-details__action-note,
 .seller-order-details__muted {
   padding: 0 24px;
+}
+
+.seller-order-details__reason {
+  color: var(--seller-order-text);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 18px 24px 22px;
 }
 
 .seller-order-details__action-note {
