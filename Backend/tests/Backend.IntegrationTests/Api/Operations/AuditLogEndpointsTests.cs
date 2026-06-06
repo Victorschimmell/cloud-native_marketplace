@@ -11,6 +11,7 @@ using Backend.Domain.Entities.Carts;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;

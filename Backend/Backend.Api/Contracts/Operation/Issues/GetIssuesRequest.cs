@@ -1,3 +1,5 @@
+using Backend.Domain.Enums;
+
 namespace Backend.Api.Contracts.Operation.Issues;
 
 public sealed record GetIssuesRequest

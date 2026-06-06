@@ -34,7 +34,10 @@ public static class AuthenticationServiceCollectionExtensions
                     OnTokenValidated = ValidateUserAccountAsync
                 };
             });
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(AuthorizationPolicies.AdminOnly, policy => policy.RequireRole("Admin"));
+        });
 
         return services;
     }

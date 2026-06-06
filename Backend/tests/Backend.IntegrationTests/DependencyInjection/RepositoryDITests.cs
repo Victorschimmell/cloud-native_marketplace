@@ -21,8 +21,6 @@ public sealed class RepositoryDITests
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
             options.UseInMemoryDatabase(databaseName)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
-        services.AddDbContextFactory<ApplicationDbContext>(options =>
-            options.UseInMemoryDatabase(databaseName));
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();

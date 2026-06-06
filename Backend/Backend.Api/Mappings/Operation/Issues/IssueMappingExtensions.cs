@@ -9,16 +9,16 @@ public static class IssueMappingExtensions
         new(
             request.Title,
             request.Description,
-            (Backend.Domain.Enums.IssueType)request.Type,
-            (Backend.Domain.Enums.IssuePriority)request.Priority);
+            request.Type,
+            request.Priority);
 
     public static App.ResolveAdminIssueRequest ToApplicationRequest(this ResolveIssueRequest request, Guid issueId) =>
         new(issueId, request.Resolution);
 
     public static App.GetAdminIssuesRequest ToApplicationRequest(this GetIssuesRequest request, int page, int pageSize) =>
         new(
-            request.Status.HasValue ? (Backend.Domain.Enums.IssueStatus)request.Status.Value : null,
-            request.Priority.HasValue ? (Backend.Domain.Enums.IssuePriority)request.Priority.Value : null,
+            request.Status,
+            request.Priority,
             request.UnresolvedOnly,
             page,
             pageSize);
@@ -29,9 +29,9 @@ public static class IssueMappingExtensions
             Id = dto.Id,
             Title = dto.Title,
             Description = dto.Description,
-            Type = (IssueType)dto.Type,
-            Priority = (IssuePriority)dto.Priority,
-            Status = (IssueStatus)dto.Status,
+            Type = dto.Type,
+            Priority = dto.Priority,
+            Status = dto.Status,
             ReportedByUserId = dto.ReportedByUserId,
             ReportedByDisplay = dto.ReportedByDisplay,
             AssignedToUserId = dto.AssignedToUserId,

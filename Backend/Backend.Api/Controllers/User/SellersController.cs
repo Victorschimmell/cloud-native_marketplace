@@ -6,11 +6,10 @@ using Backend.Api.Mappings.Common;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
-using ApiOrderStatus = Backend.Api.Contracts.Commerce.Orders.OrderStatus;
-using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
 
 namespace Backend.Api.Controllers.User;
 
@@ -33,7 +32,7 @@ public class SellersController : ApiControllerBase
     public async Task<ActionResult<PageResponse<SellerOrderSummaryModel>>> GetMyOrdersAsync(
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
-        [FromQuery] ApiOrderStatus? status,
+        [FromQuery] OrderStatus? status,
         [FromQuery] string? sort,
         CancellationToken cancellationToken)
     {
@@ -51,7 +50,7 @@ public class SellersController : ApiControllerBase
             authenticatedUserId,
             pageRequest.ToAppRequest(),
             currency,
-            status.HasValue ? (DomainOrderStatus)(int)status.Value : null,
+            status,
             orderSort,
             cancellationToken);
 
@@ -111,7 +110,7 @@ public class SellersController : ApiControllerBase
         }
 
         var result = await _orderService.UpdateStatusForSellerUserAsync(
-            new App.UpdateOrderStatusRequest(orderId, (DomainOrderStatus)(int)request.Status),
+            new App.UpdateOrderStatusRequest(orderId, request.Status),
             authenticatedUserId,
             currency,
             cancellationToken);

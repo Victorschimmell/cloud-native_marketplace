@@ -1,9 +1,9 @@
 using Backend.Api.Attributes;
+using Backend.Api.Auth;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Operation.Admin;
 using Backend.Api.Contracts.User.SellerVerification;
 using Backend.Api.Mappings.User.SellerVerification;
-using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,24 +13,21 @@ using ApplicationRepositories = Backend.Application.Abstractions.Repositories;
 namespace Backend.Api.Controllers.Operations;
 
 [Route("api/admin")]
-[Authorize]
+[Authorize(Policy = AuthorizationPolicies.AdminOnly)]
 public class AdminController : ApiControllerBase
 {
     private readonly IAdminService _adminService;
     private readonly IAdminDashboardService _adminDashboardService;
     private readonly ISellerVerificationService _sellerVerificationService;
-    private readonly ICurrentUserProvider _currentUserProvider;
 
     public AdminController(
         IAdminService adminService,
         IAdminDashboardService adminDashboardService,
-        ISellerVerificationService sellerVerificationService,
-        ICurrentUserProvider currentUserProvider)
+        ISellerVerificationService sellerVerificationService)
     {
         _adminService = adminService;
         _adminDashboardService = adminDashboardService;
         _sellerVerificationService = sellerVerificationService;
-        _currentUserProvider = currentUserProvider;
     }
 
     [HttpPost("users/{userId:guid}/block")]
@@ -39,11 +36,6 @@ public class AdminController : ApiControllerBase
         [FromBody] AdminBlockUserRequest request,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can block users." });
-        }
-
         var applicationRequest = new App.AdminBlockUserRequest(userId, request.Reason);
         var result = await _adminService.BlockUserAsync(applicationRequest, cancellationToken);
         return HandleResult(result, dto => new AdminOperationResponse
@@ -60,11 +52,6 @@ public class AdminController : ApiControllerBase
         [FromBody] AdminUnblockUserRequest request,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can unblock users." });
-        }
-
         var applicationRequest = new App.AdminUnblockUserRequest(userId, request.Reason);
         var result = await _adminService.UnblockUserAsync(applicationRequest, cancellationToken);
         return HandleResult(result, dto => new AdminOperationResponse
@@ -80,11 +67,6 @@ public class AdminController : ApiControllerBase
         [FromQuery] PageRequest pageRequest,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can view seller verifications." });
-        }
-
         var result = await _sellerVerificationService.GetAllRequestsAsync(pageRequest.Page, pageRequest.PageSize, cancellationToken);
         return HandleResult(result, page => new PageResponse<SellerVerificationRequestDetailsResponse>
         {
@@ -101,11 +83,6 @@ public class AdminController : ApiControllerBase
         [FromBody] VerifySellerRequest request,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can verify sellers." });
-        }
-
         var applicationRequest = request.ToApplicationRequest(sellerId);
         var result = await _sellerVerificationService.VerifySellerAsync(applicationRequest, cancellationToken);
         return HandleResult(result, response => response.ToSubmissionResponse());
@@ -117,11 +94,6 @@ public class AdminController : ApiControllerBase
         [FromQuery] PageRequest pageRequest,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can list users." });
-        }
-
         var applicationRequest = new App.GetAdminUsersRequest(
             (Application.Abstractions.Repositories.AdminUserRoleFilter)filters.Role,
             (Application.Abstractions.Repositories.AdminUserStatusFilter)filters.Status,
@@ -144,11 +116,6 @@ public class AdminController : ApiControllerBase
         [FromQuery] string? currency,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can list payments." });
-        }
-
         if (!TryParsePaymentStatusFilter(filters.Status, out var statusFilter))
         {
             return BadRequest(new { Error = $"Unsupported payment status filter '{filters.Status}'." });
@@ -195,11 +162,6 @@ public class AdminController : ApiControllerBase
         [FromQuery] string? currency,
         CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can view dashboard stats." });
-        }
-
         var applicationRequest = new App.GetDashboardStatsRequest(currency);
         var result = await _adminDashboardService.GetDashboardStatsAsync(applicationRequest, cancellationToken);
         return HandleResult(result, dto => new DashboardStatsResponse

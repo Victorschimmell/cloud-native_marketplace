@@ -1,4 +1,5 @@
 using Backend.Api.Attributes;
+using Backend.Api.Auth;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.User.Registration;
@@ -8,10 +9,9 @@ using Backend.Api.Mappings.User.Registration;
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ApiOrderStatus = Backend.Api.Contracts.Commerce.Orders.OrderStatus;
-using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
 
 namespace Backend.Api.Controllers.User;
 
@@ -37,13 +37,9 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
     public async Task<ActionResult<PageResponse<CustomerResponse>>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can access customers." });
-        }
-
         _logger.LogInformation(
             "Fetching customers with page {Page} and page size {PageSize}.",
             pageRequest.Page,
@@ -85,7 +81,7 @@ public class CustomersController : ApiControllerBase
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
-        [FromQuery] ApiOrderStatus? status,
+        [FromQuery] OrderStatus? status,
         [FromQuery] string? sort,
         CancellationToken cancellationToken)
     {
@@ -108,7 +104,7 @@ public class CustomersController : ApiControllerBase
             userId,
             pageRequest.ToAppRequest(),
             currency,
-            status.HasValue ? (DomainOrderStatus)(int)status.Value : null,
+            status,
             orderSort,
             cancellationToken);
         return HandleResult(

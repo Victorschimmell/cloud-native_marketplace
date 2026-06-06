@@ -20,10 +20,10 @@ public static class AuditLogMappingExtensions
             Id = dto.Id,
             ActorUserId = dto.ActorUserId,
             ActorIpAddress = dto.ActorIpAddress,
-            ActionType = (AuditActionType)dto.ActionType,
+            ActionType = dto.ActionType,
             TargetEntityType = dto.TargetEntityType,
             TargetEntityId = dto.TargetEntityId,
-            Outcome = (AuditOutcome)dto.Outcome,
+            Outcome = dto.Outcome,
             Details = dto.Details,
             CreatedAtUtc = dto.CreatedAtUtc
         };

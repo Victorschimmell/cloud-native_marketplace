@@ -33,8 +33,6 @@ public static class DependencyInjection
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
             options.UseNpgsql(connectionString)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
-        services.AddDbContextFactory<ApplicationDbContext>((serviceProvider, options) =>
-            options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         var olistOptions = BuildOlistSeedOptions(configuration);

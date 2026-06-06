@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Backend.Api.Contracts.Commerce.Orders;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;

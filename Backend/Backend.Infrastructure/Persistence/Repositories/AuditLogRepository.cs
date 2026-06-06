@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
 
-internal sealed class AuditLogRepository(ApplicationDbContext dbContext, IDbContextFactory<ApplicationDbContext> dbContextFactory) : IAuditLogRepository
+internal sealed class AuditLogRepository(ApplicationDbContext dbContext) : IAuditLogRepository
 {
     public async Task<AuditLog?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -73,8 +73,7 @@ internal sealed class AuditLogRepository(ApplicationDbContext dbContext, IDbCont
 
     public async Task AddAsync(AuditLog auditLog, CancellationToken cancellationToken = default)
     {
-        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        db.AuditLogs.Add(auditLog);
-        await db.SaveChangesAsync(cancellationToken);
+        dbContext.AuditLogs.Add(auditLog);
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

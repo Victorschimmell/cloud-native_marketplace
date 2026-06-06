@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.Commerce.Shipments;
+using Backend.Domain.Enums;
 
 namespace Backend.Api.Contracts.Commerce.Orders;
 
