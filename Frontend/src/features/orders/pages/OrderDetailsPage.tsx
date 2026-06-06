@@ -258,6 +258,8 @@ export default function OrderDetailsPage() {
                           Quantity {item.quantity}
                           <span aria-hidden="true"> - </span>
                           Sold by {item.sellerName}
+                          <br/>
+                          Item Status - {item.fulfillmentStatus}
                         </p>
                       </div>
                     </div>
