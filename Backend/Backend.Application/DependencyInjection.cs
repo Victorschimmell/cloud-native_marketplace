@@ -20,7 +20,6 @@ public static class DependencyInjection
         services.AddScoped<ICartService, CartService>();
         services.AddScoped<ICheckoutObservability, CheckoutObservability>();
         services.AddScoped<ICheckoutService, CheckoutService>();
-        services.AddScoped<IShipmentService, ShipmentService>();
 
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAdminService, AdminService>();

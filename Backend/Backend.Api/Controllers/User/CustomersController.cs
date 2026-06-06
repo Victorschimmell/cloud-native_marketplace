@@ -37,7 +37,7 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<CustomerResponse>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<PageResponse<CustomerResponse>>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
         if (!_currentUserProvider.IsAdmin)
         {
@@ -50,7 +50,15 @@ public class CustomersController : ApiControllerBase
             pageRequest.PageSize);
 
         var result = await _customerService.GetCustomersAsync(pageRequest.ToAppRequest(), cancellationToken);
-        return HandleResult(result, customer => customer.ToResponse());
+        return HandleResult(
+            result,
+            page => new PageResponse<CustomerResponse>
+            {
+                Items = page.Items.Select(customer => customer.ToResponse()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
     }
 
     [HttpGet("{userId:guid}")]

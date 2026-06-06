@@ -230,7 +230,7 @@ public sealed class ProductService : IProductService
             await _productRepository.UpdateAsync(product, cancellationToken);
         }
 
-        listing.ListingPrice = request.Price;
+        listing.ListingPrice = priceConverter(request.Price);
         listing.InventoryQuantity = request.InventoryQuantity;
         listing.VisibilityStatus = parsedStatus;
 

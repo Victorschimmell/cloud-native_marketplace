@@ -14,6 +14,8 @@ namespace Backend.Application.Services;
 
 public sealed class CheckoutService : ICheckoutService
 {
+    private const decimal FlatFreightAmount = 100m;
+
     private readonly ICartRepository _cartRepository;
     private readonly IProductListingRepository _productListingRepository;
     private readonly IOrderRepository _orderRepository;
@@ -115,7 +117,7 @@ public sealed class CheckoutService : ICheckoutService
             currencyCode)).ToArray();
 
         var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
-        var freightAmount = 100m;
+        var freightAmount = FlatFreightAmount;
         var totalAmount = subtotalAmount + freightAmount;
         var preview = new CheckoutPreviewDto(
             checkoutLines,
@@ -360,7 +362,7 @@ public sealed class CheckoutService : ICheckoutService
             // check payment amount is consistent with the checkout total, if not, return failure result
             stepStartedAt = _checkoutObservability.GetTimestamp();
             var subtotalAmount = cart.Items.Sum(i => i.UnitPriceAtAddition * i.Quantity);
-            var freightAmount = 100m;  // TODO: Implement proper freight calculation, currently using a fixed amount
+            var freightAmount = FlatFreightAmount;
             var totalAmount = subtotalAmount + freightAmount;
             var expectedPaymentAmount = priceConverter(totalAmount);
             var requestedPaymentAmount = request.Payments.Sum(p => p.PaymentValue);
@@ -379,126 +381,139 @@ public sealed class CheckoutService : ICheckoutService
             }
             _checkoutObservability.Succeeded("Checkout.PaymentValidated", stepStartedAt, context);
 
-            // 1. Create Order
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            await _addressRepository.AddAsync(shippingAddress, cancellationToken);
-            if (request.SaveShippingAddressAsDefault)
-            {
-                customer.DefaultAddressId = shippingAddress.Id;
-                await _customerRepository.UpdateAsync(customer, cancellationToken);
-            }
+            Result<CheckoutResponse>? transactionFailure = null;
+            CheckoutResponse? response = null;
 
-            var customerId = customer.Id;
-            var order = new Order
+            try
             {
-                CustomerId = customerId,
-                ShippingAddressId = shippingAddress.Id,
-                OrderStatus = OrderStatus.Pending,
-                OrderPurchaseTimestampUtc = now,
-                SubtotalAmount = subtotalAmount,
-                FreightAmount = freightAmount,
-                TotalAmount = totalAmount,
-                PlacedFromCartId = cart.Id,
-                OrderNumber = orderNumber
-            };
-            await _orderRepository.AddAsync(order, cancellationToken);
-            context = context with { OrderId = order.Id };
-            _checkoutObservability.Succeeded("Checkout.OrderCreated", stepStartedAt, context);
-
-            // 2. process payments
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            var payments = new List<PaymentDto>();
-            foreach (var paymentRequest in request.Payments)
-            {
-                var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
-                // NOTE: Currently never fails
-                var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, cancellationToken);
-                if (!paymentResult.IsSuccess)
+                await _unitOfWork.ExecuteInTransactionAsync(async transactionCancellationToken =>
                 {
-                    _checkoutObservability.Failed(
-                        "Checkout.PaymentRecorded",
-                        "PaymentProcessingFailed",
-                        stepStartedAt,
-                        context);
+                    // 1. Create Order
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
+                    await _addressRepository.AddAsync(shippingAddress, transactionCancellationToken);
+                    if (request.SaveShippingAddressAsDefault)
+                    {
+                        customer.DefaultAddressId = shippingAddress.Id;
+                        await _customerRepository.UpdateAsync(customer, transactionCancellationToken);
+                    }
 
-                    // TODO: Implement rollback mechanism to undo the created order in case of payment failure, currently always success
-                    // await _unitOfWork.RollbackAsync(cancellationToken);
+                    var customerId = customer.Id;
+                    var order = new Order
+                    {
+                        CustomerId = customerId,
+                        ShippingAddressId = shippingAddress.Id,
+                        OrderStatus = OrderStatus.Pending,
+                        OrderPurchaseTimestampUtc = now,
+                        SubtotalAmount = subtotalAmount,
+                        FreightAmount = freightAmount,
+                        TotalAmount = totalAmount,
+                        PlacedFromCartId = cart.Id,
+                        OrderNumber = orderNumber
+                    };
+                    await _orderRepository.AddAsync(order, transactionCancellationToken);
+                    context = context with { OrderId = order.Id };
+                    _checkoutObservability.Succeeded("Checkout.OrderCreated", stepStartedAt, context);
+
+                    // 2. process payments
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
+                    var payments = new List<PaymentDto>();
+                    foreach (var paymentRequest in request.Payments)
+                    {
+                        var paymentRequestWithOrderId = new RecordPaymentRequest(order.Id, paymentRequest);
+                        var paymentResult = await _paymentService.RecordCheckoutPaymentAsync(paymentRequestWithOrderId, transactionCancellationToken);
+                        if (!paymentResult.IsSuccess)
+                        {
+                            _checkoutObservability.Failed(
+                                "Checkout.PaymentRecorded",
+                                "PaymentProcessingFailed",
+                                stepStartedAt,
+                                context);
+
+                            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                                ActionType: AuditActionType.Created,
+                                TargetEntityType: nameof(Order),
+                                TargetEntityId: order.Id.ToString(),
+                                Outcome: AuditOutcome.Failed,
+                                Details: $"Payment processing failed: {paymentResult.Error}"
+                            ), transactionCancellationToken);
+                            transactionFailure = FailCheckout(
+                                Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error),
+                                "PaymentProcessingFailed",
+                                context);
+                            throw new CheckoutTransactionFailedException();
+                        }
+
+                        if (paymentResult.Value is null)
+                        {
+                            _checkoutObservability.Failed(
+                                "Checkout.PaymentRecorded",
+                                "PaymentProcessingFailed",
+                                stepStartedAt,
+                                context);
+                            transactionFailure = FailCheckout(
+                                Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null."),
+                                "PaymentProcessingFailed",
+                                context);
+                            throw new CheckoutTransactionFailedException();
+                        }
+                        payments.Add(paymentResult.Value);
+                    }
+                    context = context with { PaymentCount = payments.Count };
+                    _checkoutObservability.Succeeded("Checkout.PaymentRecorded", stepStartedAt, context);
+
+                    // 3. Create order items, decrement stock, and update cart/order status
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
+                    await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, transactionCancellationToken);
+                    _checkoutObservability.Succeeded("Checkout.OrderItemsCreatedAndStockDeducted", stepStartedAt, context);
+
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
+                    cart.Status = CartStatus.Converted;
+                    await _cartRepository.UpdateAsync(cart, transactionCancellationToken);
+                    _checkoutObservability.Succeeded("Checkout.CartConverted", stepStartedAt, context);
+
+                    // 4. Save all changes
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
+                    await _unitOfWork.SaveChangesAsync(transactionCancellationToken);
+                    _checkoutObservability.Succeeded("Checkout.ChangesSaved", stepStartedAt, context);
+
+                    stepStartedAt = _checkoutObservability.GetTimestamp();
                     await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                         ActionType: AuditActionType.Created,
                         TargetEntityType: nameof(Order),
                         TargetEntityId: order.Id.ToString(),
-                        Outcome: AuditOutcome.Failed,
-                        Details: $"Payment processing failed: {paymentResult.Error}"
-                    ), cancellationToken);
-                    return FailCheckout(
-                        Result<CheckoutResponse>.Failure("Payment processing failed: " + paymentResult.Error),
-                        "PaymentProcessingFailed",
-                        context);
-                }
+                        Outcome: AuditOutcome.Succeeded,
+                        Details: JsonSerializer.Serialize(new
+                        {
+                            order.OrderNumber,
+                            customerId,
+                            totalAmount,
+                            payments.Count
+                        })
+                    ), transactionCancellationToken);
+                    _checkoutObservability.Succeeded("Checkout.AuditLogWritten", stepStartedAt, context);
 
-                if (paymentResult.Value is null)
-                {
-                    _checkoutObservability.Failed(
-                        "Checkout.PaymentRecorded",
-                        "PaymentProcessingFailed",
-                        stepStartedAt,
-                        context);
-                    return FailCheckout(
-                        Result<CheckoutResponse>.Failure("Payment processing failed: payment result was null."),
-                        "PaymentProcessingFailed",
-                        context);
-                }
-                payments.Add(paymentResult.Value);
+                    // 5. Build response from saved state
+                    var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, transactionCancellationToken) ??
+                        throw new InvalidOperationException("Order must exist after checkout.");
+
+                    var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, transactionCancellationToken) ??
+                        throw new InvalidOperationException("Cart must exist after checkout.");
+
+                    response = new CheckoutResponse(
+                        savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
+                        savedCart.ToCartDto(currencyCode, priceConverter),
+                        payments,
+                        priceConverter(order.TotalAmount),
+                        currencyCode);
+                }, cancellationToken);
             }
-            context = context with { PaymentCount = payments.Count };
-            _checkoutObservability.Succeeded("Checkout.PaymentRecorded", stepStartedAt, context);
+            catch (CheckoutTransactionFailedException)
+            {
+                return transactionFailure ?? Result<CheckoutResponse>.Failure("Checkout failed.");
+            }
 
-            // 3. Create order items, decrement stock, and update cart/order status
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            await CreateOrderItemsAndDeductStockAsync(order, cart, listingsById, freightAmount, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.OrderItemsCreatedAndStockDeducted", stepStartedAt, context);
-
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            cart.Status = CartStatus.Converted;
-            await _cartRepository.UpdateAsync(cart, cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.CartConverted", stepStartedAt, context);
-
-            // 4. Save all changes
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.ChangesSaved", stepStartedAt, context);
-
-            stepStartedAt = _checkoutObservability.GetTimestamp();
-            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
-                ActionType: AuditActionType.Created,
-                TargetEntityType: nameof(Order),
-                TargetEntityId: order.Id.ToString(),
-                Outcome: AuditOutcome.Succeeded,
-                Details: JsonSerializer.Serialize(new
-                {
-                    order.OrderNumber,
-                    customerId,
-                    totalAmount,
-                    payments.Count
-                })
-            ), cancellationToken);
-            _checkoutObservability.Succeeded("Checkout.AuditLogWritten", stepStartedAt, context);
-
-            // 5. Return response
-            var savedOrder = await _orderRepository.GetByIdWithDetailsAsync(order.Id, cancellationToken) ??
-                throw new InvalidOperationException("Order must exist after checkout.");
-
-            var savedCart = await _cartRepository.GetByIdWithProductDetailsAsync(cart.Id, cancellationToken) ??
-                throw new InvalidOperationException("Cart must exist after checkout.");
-
-            var response = new CheckoutResponse(
-                savedOrder.ToOrderDto(customer.UserId, currencyCode, priceConverter),
-                savedCart.ToCartDto(currencyCode, priceConverter),
-                payments,
-                priceConverter(order.TotalAmount),
-                currencyCode);
             _checkoutObservability.Succeeded("Checkout.Process", checkoutStartedAt, context);
-            return Result<CheckoutResponse>.Success(response);
+            return Result<CheckoutResponse>.Success(response ?? throw new InvalidOperationException("Checkout response must be created before returning success."));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -735,5 +750,9 @@ public sealed class CheckoutService : ICheckoutService
         }
 
         return null;
+    }
+
+    private sealed class CheckoutTransactionFailedException : Exception
+    {
     }
 }
