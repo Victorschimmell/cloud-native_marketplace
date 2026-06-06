@@ -37,18 +37,22 @@
 }
 
 .cart-summary__row.total {
-  border: 1px solid #e8edf5;
-  border-radius: 8px;
-  background: #f8fafc;
+  border-bottom: none;
   margin-top: 4px;
-  padding: 16px;
+  padding-top: 14px;
   color: #111827;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 900;
+}
+
+.cart-summary__row.total span:first-child {
+  color: #111827;
+  font-weight: 900;
 }
 
 .cart-summary__row.total span:last-child {
   color: var(--primary-color);
+  font-weight: 900;
 }
 
 .cart-summary__checkout-link,
