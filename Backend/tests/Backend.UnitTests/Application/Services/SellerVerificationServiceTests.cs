@@ -12,45 +12,6 @@ public sealed class SellerVerificationServiceTests
     private static readonly Guid CurrentUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     [Fact]
-    public async Task SubmitVerificationAsync_WhenSellerDoesNotExist_ReturnsNotFoundAndWritesAuditLog()
-    {
-        var auditLogService = new FakeAuditLogService();
-        var service = CreateService(new FakeSellerRepository(), auditLogService: auditLogService);
-
-        var result = await service.SubmitVerificationAsync(
-            new SubmitSellerVerificationRequest(Guid.NewGuid(), "documents attached"),
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ResultFailureType.NotFound, result.FailureType);
-        Assert.Single(auditLogService.Entries);
-    }
-
-    [Fact]
-    public async Task SubmitVerificationAsync_WhenSellerExists_CreatesRequestAndSetsSellerPending()
-    {
-        var seller = CreateSeller(verificationStatus: VerificationStatus.Rejected);
-        var sellerRepository = new FakeSellerRepository { Seller = seller };
-        var requestRepository = new FakeSellerVerificationRequestRepository();
-        var unitOfWork = new FakeUnitOfWork();
-        var auditLogService = new FakeAuditLogService();
-        var service = CreateService(sellerRepository, requestRepository, unitOfWork: unitOfWork, auditLogService: auditLogService);
-
-        var result = await service.SubmitVerificationAsync(
-            new SubmitSellerVerificationRequest(seller.Id, "updated documents"),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(SellerVerificationRequestStatus.Submitted, result.Value!.Request.Status);
-        Assert.Equal(VerificationStatus.Pending, seller.VerificationStatus);
-        Assert.Equal("updated documents", requestRepository.Request!.SubmittedDetails);
-        Assert.Equal(1, requestRepository.AddCalls);
-        Assert.Equal(1, sellerRepository.UpdateCalls);
-        Assert.Equal(1, unitOfWork.SaveChangesCalls);
-        Assert.Single(auditLogService.Entries);
-    }
-
-    [Fact]
     public async Task VerifySellerAsync_WhenCurrentUserIsNotAdmin_ReturnsForbiddenAndWritesAuditLog()
     {
         var seller = CreateSeller();
@@ -198,34 +159,6 @@ public sealed class SellerVerificationServiceTests
     }
 
     [Fact]
-    public async Task GetRequestsBySellerAsync_WhenSellerDoesNotExist_ReturnsNotFoundAndWritesAuditLog()
-    {
-        var auditLogService = new FakeAuditLogService();
-        var service = CreateService(new FakeSellerRepository(), auditLogService: auditLogService);
-
-        var result = await service.GetRequestsBySellerAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(ResultFailureType.NotFound, result.FailureType);
-        Assert.Single(auditLogService.Entries);
-    }
-
-    [Fact]
-    public async Task GetRequestsBySellerAsync_WhenSellerExists_ReturnsSellerRequests()
-    {
-        var seller = CreateSeller();
-        var requestRepository = new FakeSellerVerificationRequestRepository();
-        requestRepository.Requests.Add(CreateVerificationRequest(seller.Id));
-        requestRepository.Requests.Add(CreateVerificationRequest(Guid.NewGuid()));
-        var service = CreateService(new FakeSellerRepository { Seller = seller }, requestRepository);
-
-        var result = await service.GetRequestsBySellerAsync(seller.Id, TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Single(result.Value!);
-    }
-
-    [Fact]
     public async Task GetAllRequestsAsync_WhenPaginationIsInvalid_ReturnsValidationFailure()
     {
         var service = CreateService(new FakeSellerRepository());
@@ -255,7 +188,6 @@ public sealed class SellerVerificationServiceTests
     private static SellerVerificationService CreateService(
         FakeSellerRepository sellerRepository,
         FakeSellerVerificationRequestRepository? requestRepository = null,
-        FakeUserAccountRepository? userAccountRepository = null,
         FakeCurrentUserProvider? currentUserProvider = null,
         FakeDateTimeProvider? dateTimeProvider = null,
         FakeAuditLogService? auditLogService = null,
@@ -263,16 +195,18 @@ public sealed class SellerVerificationServiceTests
         new(
             requestRepository ?? new FakeSellerVerificationRequestRepository(),
             sellerRepository,
-            userAccountRepository ?? new FakeUserAccountRepository(),
             currentUserProvider ?? new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = true },
             dateTimeProvider ?? new FakeDateTimeProvider(),
             auditLogService ?? new FakeAuditLogService(),
             unitOfWork ?? new FakeUnitOfWork());
 
     private static Seller CreateSeller(VerificationStatus verificationStatus = VerificationStatus.Pending) =>
+        CreateSeller(Guid.Parse("22222222-2222-2222-2222-222222222222"), verificationStatus);
+
+    private static Seller CreateSeller(Guid userId, VerificationStatus verificationStatus = VerificationStatus.Pending) =>
         new()
         {
-            UserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            UserId = userId,
             BusinessName = "Coffee Seller",
             RegistrationNumber = "123456",
             PayoutInformation = "bank",

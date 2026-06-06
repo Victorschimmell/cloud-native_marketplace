@@ -34,16 +34,19 @@ export function getStoredAccessToken(): string | null {
 
 export function setStoredAuth(auth: StoredAuth) {
   currentAuth = auth;
-  window.localStorage.setItem(authStorageKey, JSON.stringify(auth));
+  window.sessionStorage.setItem(authStorageKey, JSON.stringify(auth));
+  window.localStorage.removeItem(authStorageKey);
 }
 
 export function clearStoredAuth() {
   currentAuth = null;
+  window.sessionStorage.removeItem(authStorageKey);
   window.localStorage.removeItem(authStorageKey);
 }
 
 function readStoredAuth(): StoredAuth | null {
-  const rawAuth = window.localStorage.getItem(authStorageKey);
+  window.localStorage.removeItem(authStorageKey);
+  const rawAuth = window.sessionStorage.getItem(authStorageKey);
 
   if (!rawAuth) {
     return null;
