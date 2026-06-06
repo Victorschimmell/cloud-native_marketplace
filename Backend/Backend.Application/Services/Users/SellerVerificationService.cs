@@ -10,6 +10,8 @@ namespace Backend.Application.Services;
 
 public sealed class SellerVerificationService : ISellerVerificationService
 {
+    private const int SubmittedDetailsMaxLength = 4000;
+
     private readonly ISellerVerificationRequestRepository _verificationRequestRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly IUserAccountRepository _userAccountRepository;
@@ -46,6 +48,12 @@ public sealed class SellerVerificationService : ISellerVerificationService
 
     public async Task<Result<SellerVerificationResponse>> SubmitVerificationAsync(SubmitSellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
+        var validationError = ValidateSubmittedDetails(request.SubmittedDetails);
+        if (validationError is not null)
+        {
+            return Result<SellerVerificationResponse>.ValidationFailure(validationError);
+        }
+
         var seller = await _sellerRepository.GetByIdAsync(request.SellerId, cancellationToken);
         if (seller is null)
         {
@@ -60,6 +68,19 @@ public sealed class SellerVerificationService : ISellerVerificationService
             return Result<SellerVerificationResponse>.NotFound("Seller not found.");
         }
 
+        if (!CanAccessSeller(seller))
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Created,
+                TargetEntityType: nameof(SellerVerificationRequest),
+                TargetEntityId: seller.Id.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Verification submission failed: authenticated user does not own the seller profile."
+            ), cancellationToken);
+
+            return Result<SellerVerificationResponse>.Forbidden("Cannot submit verification for another seller.");
+        }
+
         var verificationRequest = new SellerVerificationRequest
         {
             SellerId = seller.Id,
@@ -67,7 +88,7 @@ public sealed class SellerVerificationService : ISellerVerificationService
             Status = SellerVerificationRequestStatus.Submitted,
             BusinessNameSnapshot = seller.BusinessName,
             RegistrationNumberSnapshot = seller.RegistrationNumber,
-            SubmittedDetails = request.SubmittedDetails
+            SubmittedDetails = request.SubmittedDetails.Trim()
         };
 
         seller.VerificationStatus = VerificationStatus.Pending;
@@ -238,6 +259,19 @@ public sealed class SellerVerificationService : ISellerVerificationService
             return Result<IReadOnlyList<SellerVerificationRequestDto>>.NotFound("Seller not found.");
         }
 
+        if (!CanAccessSeller(seller))
+        {
+            await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+                ActionType: AuditActionType.Updated,
+                TargetEntityType: nameof(Seller),
+                TargetEntityId: sellerId.ToString(),
+                Outcome: AuditOutcome.Forbidden,
+                Details: "Lookup of verification requests failed: authenticated user does not own the seller profile."
+            ), cancellationToken);
+
+            return Result<IReadOnlyList<SellerVerificationRequestDto>>.Forbidden("Cannot access verification requests for another seller.");
+        }
+
         var requests = await _verificationRequestRepository.GetBySellerIdAsync(sellerId, cancellationToken);
         var dtos = requests.Select(r => r.ToSellerVerificationRequestDto()).ToList();
         return Result<IReadOnlyList<SellerVerificationRequestDto>>.Success(dtos);
@@ -257,5 +291,24 @@ public sealed class SellerVerificationService : ISellerVerificationService
         var dtos = requests.Select(r => r.ToSellerVerificationRequestDto()).ToList();
         return Result<PagedResult<SellerVerificationRequestDto>>.Success(
             new PagedResult<SellerVerificationRequestDto>(dtos, page, pageSize, totalCount));
+    }
+
+    private bool CanAccessSeller(Seller seller) =>
+        _currentUserProvider.IsAdmin ||
+        _currentUserProvider.UserId == seller.UserId;
+
+    private static string? ValidateSubmittedDetails(string submittedDetails)
+    {
+        if (string.IsNullOrWhiteSpace(submittedDetails))
+        {
+            return "SubmittedDetails is required.";
+        }
+
+        if (submittedDetails.Length > SubmittedDetailsMaxLength)
+        {
+            return $"SubmittedDetails must be {SubmittedDetailsMaxLength} characters or fewer.";
+        }
+
+        return null;
     }
 }

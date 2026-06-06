@@ -15,7 +15,10 @@ public sealed class SellerVerificationServiceTests
     public async Task SubmitVerificationAsync_WhenSellerDoesNotExist_ReturnsNotFoundAndWritesAuditLog()
     {
         var auditLogService = new FakeAuditLogService();
-        var service = CreateService(new FakeSellerRepository(), auditLogService: auditLogService);
+        var service = CreateService(
+            new FakeSellerRepository(),
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            auditLogService: auditLogService);
 
         var result = await service.SubmitVerificationAsync(
             new SubmitSellerVerificationRequest(Guid.NewGuid(), "documents attached"),
@@ -29,12 +32,17 @@ public sealed class SellerVerificationServiceTests
     [Fact]
     public async Task SubmitVerificationAsync_WhenSellerExists_CreatesRequestAndSetsSellerPending()
     {
-        var seller = CreateSeller(verificationStatus: VerificationStatus.Rejected);
+        var seller = CreateSeller(CurrentUserId, verificationStatus: VerificationStatus.Rejected);
         var sellerRepository = new FakeSellerRepository { Seller = seller };
         var requestRepository = new FakeSellerVerificationRequestRepository();
         var unitOfWork = new FakeUnitOfWork();
         var auditLogService = new FakeAuditLogService();
-        var service = CreateService(sellerRepository, requestRepository, unitOfWork: unitOfWork, auditLogService: auditLogService);
+        var service = CreateService(
+            sellerRepository,
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            unitOfWork: unitOfWork,
+            auditLogService: auditLogService);
 
         var result = await service.SubmitVerificationAsync(
             new SubmitSellerVerificationRequest(seller.Id, "updated documents"),
@@ -47,6 +55,75 @@ public sealed class SellerVerificationServiceTests
         Assert.Equal(1, requestRepository.AddCalls);
         Assert.Equal(1, sellerRepository.UpdateCalls);
         Assert.Equal(1, unitOfWork.SaveChangesCalls);
+        Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task SubmitVerificationAsync_WhenDetailsAreBlank_ReturnsValidationFailure()
+    {
+        var seller = CreateSeller(CurrentUserId);
+        var requestRepository = new FakeSellerVerificationRequestRepository();
+        var unitOfWork = new FakeUnitOfWork();
+        var service = CreateService(
+            new FakeSellerRepository { Seller = seller },
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            unitOfWork: unitOfWork);
+
+        var result = await service.SubmitVerificationAsync(
+            new SubmitSellerVerificationRequest(seller.Id, " "),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ResultFailureType.ValidationFailure, result.FailureType);
+        Assert.Equal(0, requestRepository.AddCalls);
+        Assert.Equal(0, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task SubmitVerificationAsync_WhenDetailsAreTooLong_ReturnsValidationFailure()
+    {
+        var seller = CreateSeller(CurrentUserId);
+        var requestRepository = new FakeSellerVerificationRequestRepository();
+        var unitOfWork = new FakeUnitOfWork();
+        var service = CreateService(
+            new FakeSellerRepository { Seller = seller },
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            unitOfWork: unitOfWork);
+
+        var result = await service.SubmitVerificationAsync(
+            new SubmitSellerVerificationRequest(seller.Id, new string('a', 4001)),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ResultFailureType.ValidationFailure, result.FailureType);
+        Assert.Equal(0, requestRepository.AddCalls);
+        Assert.Equal(0, unitOfWork.SaveChangesCalls);
+    }
+
+    [Fact]
+    public async Task SubmitVerificationAsync_WhenAuthenticatedUserDoesNotOwnSeller_ReturnsForbidden()
+    {
+        var seller = CreateSeller(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+        var requestRepository = new FakeSellerVerificationRequestRepository();
+        var unitOfWork = new FakeUnitOfWork();
+        var auditLogService = new FakeAuditLogService();
+        var service = CreateService(
+            new FakeSellerRepository { Seller = seller },
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            unitOfWork: unitOfWork,
+            auditLogService: auditLogService);
+
+        var result = await service.SubmitVerificationAsync(
+            new SubmitSellerVerificationRequest(seller.Id, "documents attached"),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ResultFailureType.Forbidden, result.FailureType);
+        Assert.Equal(0, requestRepository.AddCalls);
+        Assert.Equal(0, unitOfWork.SaveChangesCalls);
         Assert.Single(auditLogService.Entries);
     }
 
@@ -213,16 +290,39 @@ public sealed class SellerVerificationServiceTests
     [Fact]
     public async Task GetRequestsBySellerAsync_WhenSellerExists_ReturnsSellerRequests()
     {
-        var seller = CreateSeller();
+        var seller = CreateSeller(CurrentUserId);
         var requestRepository = new FakeSellerVerificationRequestRepository();
         requestRepository.Requests.Add(CreateVerificationRequest(seller.Id));
         requestRepository.Requests.Add(CreateVerificationRequest(Guid.NewGuid()));
-        var service = CreateService(new FakeSellerRepository { Seller = seller }, requestRepository);
+        var service = CreateService(
+            new FakeSellerRepository { Seller = seller },
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false });
 
         var result = await service.GetRequestsBySellerAsync(seller.Id, TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value!);
+    }
+
+    [Fact]
+    public async Task GetRequestsBySellerAsync_WhenAuthenticatedUserDoesNotOwnSeller_ReturnsForbidden()
+    {
+        var seller = CreateSeller(Guid.Parse("22222222-2222-2222-2222-222222222222"));
+        var requestRepository = new FakeSellerVerificationRequestRepository();
+        requestRepository.Requests.Add(CreateVerificationRequest(seller.Id));
+        var auditLogService = new FakeAuditLogService();
+        var service = CreateService(
+            new FakeSellerRepository { Seller = seller },
+            requestRepository,
+            currentUserProvider: new FakeCurrentUserProvider { UserId = CurrentUserId, IsAdmin = false },
+            auditLogService: auditLogService);
+
+        var result = await service.GetRequestsBySellerAsync(seller.Id, TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ResultFailureType.Forbidden, result.FailureType);
+        Assert.Single(auditLogService.Entries);
     }
 
     [Fact]
@@ -270,9 +370,12 @@ public sealed class SellerVerificationServiceTests
             unitOfWork ?? new FakeUnitOfWork());
 
     private static Seller CreateSeller(VerificationStatus verificationStatus = VerificationStatus.Pending) =>
+        CreateSeller(Guid.Parse("22222222-2222-2222-2222-222222222222"), verificationStatus);
+
+    private static Seller CreateSeller(Guid userId, VerificationStatus verificationStatus = VerificationStatus.Pending) =>
         new()
         {
-            UserId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+            UserId = userId,
             BusinessName = "Coffee Seller",
             RegistrationNumber = "123456",
             PayoutInformation = "bank",

@@ -21,6 +21,7 @@ public sealed class SellerVerificationRequestConfiguration : IEntityTypeConfigur
             .IsRequired();
 
         builder.Property(r => r.SubmittedDetails)
+            .HasMaxLength(4000)
             .IsRequired();
 
         builder.Property(r => r.ReviewNotes)
