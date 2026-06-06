@@ -39,6 +39,7 @@ export interface SellerListing {
   imageUrl?: string | null;
   categoryName: string | null;
   listingPrice: number;
+  currencyCode: CurrencyCode;
   inventoryQuantity: number;
   visibilityStatus: string;
 }

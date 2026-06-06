@@ -100,5 +100,6 @@ public sealed record SellerListingDto(
     string? ImageUrl,
     string? CategoryName,
     decimal ListingPrice,
+    string CurrencyCode,
     int InventoryQuantity,
     string VisibilityStatus);

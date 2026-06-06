@@ -395,6 +395,7 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             TestContext.Current.CancellationToken);
         Assert.NotNull(listings);
         var listing = Assert.Single(listings, item => item.ListingId == listingId);
+        Assert.Equal("DKK", listing.CurrencyCode);
         Assert.Equal(150m, listing.ListingPrice);
 
         var detailsResponse = await _client.GetAsync($"/api/products/{createdProduct.Id}?listingId={listingId}&currency=DKK", TestContext.Current.CancellationToken);

@@ -172,7 +172,7 @@ public sealed class ProductService : IProductService
             return Result<IReadOnlyList<SellerListingDto>>.Forbidden("Seller must be verified to manage product listings.");
 
         var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, PaginationRules.MaxPageSize, cancellationToken);
-        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(priceConverter)).ToArray());
+        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(currencyCode, priceConverter)).ToArray());
     }
 
     public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)

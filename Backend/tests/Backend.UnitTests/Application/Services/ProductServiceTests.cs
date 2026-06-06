@@ -260,6 +260,7 @@ public sealed class ProductServiceTests
         var listing = Assert.Single(result.Value!);
         Assert.Equal(product.Id, listing.ProductId);
         Assert.Equal("Coffee", listing.ProductName);
+        Assert.Equal("BRL", listing.CurrencyCode);
     }
 
     [Fact]

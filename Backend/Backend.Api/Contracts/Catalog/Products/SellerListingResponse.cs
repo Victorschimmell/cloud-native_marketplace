@@ -10,6 +10,7 @@ public sealed record SellerListingResponse
     public string? ImageUrl { get; init; }
     public string? CategoryName { get; init; }
     public required decimal ListingPrice { get; init; }
+    public required string CurrencyCode { get; init; }
     public required int InventoryQuantity { get; init; }
     public required string VisibilityStatus { get; init; }
 }

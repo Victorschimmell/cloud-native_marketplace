@@ -119,6 +119,7 @@ public static class ProductsMappingExtensions
             ImageUrl = listing.ImageUrl,
             CategoryName = listing.CategoryName,
             ListingPrice = listing.ListingPrice,
+            CurrencyCode = listing.CurrencyCode,
             InventoryQuantity = listing.InventoryQuantity,
             VisibilityStatus = listing.VisibilityStatus,
         };
