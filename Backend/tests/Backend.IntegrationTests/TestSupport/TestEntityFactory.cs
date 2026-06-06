@@ -109,6 +109,20 @@ internal static class TestEntityFactory
             TotalAmount = 115m
         };
 
+    public static OrderItem CreateOrderItem(Guid orderId, int orderItemId, Guid listingId, Guid productId, Guid sellerId, int quantity, decimal unitPrice) =>
+        new()
+        {
+            OrderId = orderId,
+            OrderItemId = orderItemId,
+            ListingId = listingId,
+            ProductId = productId,
+            SellerId = sellerId,
+            Quantity = quantity,
+            UnitPrice = unitPrice,
+            FreightValue = 15m,
+            FulfillmentStatus = OrderStatus.Pending
+        };
+
     public static AuditLog CreateAuditLog(
         Guid? actorUserId = null,
         string? actorIpAddress = "127.0.0.1",

@@ -300,7 +300,7 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
 
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
         if (order is null)
         {
             return Result<OrderDto>.NotFound("Order was not found.");
@@ -323,12 +323,21 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {order.OrderStatus}.");
         }
 
+        // Modify the order status
         order.OrderStatus = OrderStatus.Cancelled;
         order.OrderStatusDescription = request.Reason;
 
+        // Add back the inventory quantities for each item in the order
+        foreach (var item in order.Items)
+        {
+            item.Listing?.InventoryQuantity += item.Quantity;
+        }
+
+        // Save changes
         await _orderRepository.UpdateAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Write an audit log entry for the cancellation
         await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
             ActionType: AuditActionType.Cancelled,
             TargetEntityType: nameof(Order),
