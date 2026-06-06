@@ -30,6 +30,8 @@ public sealed record AddCartItemRequest(Guid? CartId, Guid? UserId, Guid? Sessio
 
 public sealed record UpdateCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId, int Quantity);
 
+public sealed record RemoveCartItemRequest(Guid? CartId, Guid? UserId, Guid? SessionId, Guid ListingId);
+
 public sealed record CheckoutLineDto(Guid ListingId, Guid ProductId, string ProductName, int Quantity, decimal UnitPrice, decimal LineTotal, string CurrencyCode);
 
 public sealed record CheckoutPreviewDto(

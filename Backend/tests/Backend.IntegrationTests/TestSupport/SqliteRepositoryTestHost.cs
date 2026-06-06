@@ -67,7 +67,6 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<ISellerVerificationRequestRepository, SellerVerificationRequestRepository>();
-        services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
         var serviceProvider = services.BuildServiceProvider();

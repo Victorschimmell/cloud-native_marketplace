@@ -280,6 +280,36 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task DeleteCartItem_WhenItemExists_RemovesItemCompletely()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Delete product", "DELETE-001", 29.95m);
+        var userId = await SeedCustomerAsync("delete-cart-item@example.com");
+        AuthenticateAs(userId);
+
+        var addResponse = await _client.PostAsJsonAsync(
+            "/api/cart/items?displayCurrency=BRL",
+            new AddCartItemRequest
+            {
+                ListingId = listingId,
+                Quantity = 2
+            },
+            TestContext.Current.CancellationToken);
+
+        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
+        Assert.NotNull(cartAfterAdd);
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/cart/items/{listingId}?cartId={cartAfterAdd.Id}&displayCurrency=BRL", TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
+        Assert.NotNull(cart);
+        Assert.Empty(cart.Items);
+    }
+
+    [Fact]
     public async Task PatchCartItem_WhenQuantityLessThanCartItem_ModifiesQuantity()
     {
         // Arrange
@@ -370,42 +400,44 @@ public class CartEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // [Fact]
-    // TODO: This test should fail right now since the current implementation does not remove items from cart when listing is deleted.
-    // public async Task RemoveCartItem_WhenItemFromDeletedListing_ReturnsBadRequest()
-    // {
-    //     // Arrange
-    //     var listingId = await SeedProductListingAsync("Will be deleted", "WILL-DELETE-001", 29.95m);
-    //     var userId = await SeedCustomerAsync("willdelete@example.com");
+    [Fact]
+    public async Task DeleteCartItem_WhenListingWasDeleted_RemovesItemCompletely()
+    {
+        // Arrange
+        var listingId = await SeedProductListingAsync("Will be deleted", "WILL-DELETE-001", 29.95m);
+        var userId = await SeedCustomerAsync("willdelete@example.com");
+        AuthenticateAs(userId);
 
-    //     var addResponse = await _client.PostAsJsonAsync(
-    //         "/api/cart/items?displayCurrency=BRL",
-    //         new AddCartItemRequest
-    //         {
-    //             ListingId = listingId,
-    //             Quantity = 1
-    //         },
-    //         TestContext.Current.CancellationToken);
+        var addResponse = await _client.PostAsJsonAsync(
+            "/api/cart/items?displayCurrency=BRL",
+            new AddCartItemRequest
+            {
+                ListingId = listingId,
+                Quantity = 1
+            },
+            TestContext.Current.CancellationToken);
 
-    //     var cart = await addResponse.Content.ReadFromJsonAsync<CartResponse>(TestContext.Current.CancellationToken);
-    //     Assert.NotNull(cart);
+        var cartAfterAdd = await addResponse.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
+        Assert.NotNull(cartAfterAdd);
 
-    //     // Mark listing as deleted
-    //     using var scope = _factory.Services.CreateScope();
-    //     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    //     var listing = await dbContext.ProductListings.FindAsync(new object[] { listingId }, cancellationToken: TestContext.Current.CancellationToken);
-    //     Assert.NotNull(listing);
-    //     listing.IsDeleted = true;
-    //     await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var listing = await dbContext.ProductListings.FindAsync([listingId], cancellationToken: TestContext.Current.CancellationToken);
+            Assert.NotNull(listing);
+            listing.IsDeleted = true;
+            await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
 
-    //     // Act
-    //     var response = await _client.GetAsync($"/api/cart/{userId}?displayCurrency=BRL", TestContext.Current.CancellationToken);
+        // Act
+        var response = await _client.DeleteAsync($"/api/cart/items/{listingId}?cartId={cartAfterAdd.Id}&displayCurrency=BRL", TestContext.Current.CancellationToken);
 
-    //     // Assert
-    //     Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    //     Assert.NotNull(cart);
-    //     Assert.Empty(cart.Items);
-    // }
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var cart = await response.Content.ReadFromJsonAsync<CartResponse>(IntegrationTestJson.Options, TestContext.Current.CancellationToken);
+        Assert.NotNull(cart);
+        Assert.Empty(cart.Items);
+    }
 
     private async Task<Guid> SeedProductListingAsync(
         string productName,

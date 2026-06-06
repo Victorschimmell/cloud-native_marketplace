@@ -208,6 +208,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         ...editingProduct,
         categoryId: values.categoryId,
         categoryName: categoryName?.categoryNameEn ?? categoryName?.categoryNamePt ?? editingProduct.categoryName,
+        currencyCode: currency,
         description: values.description,
         imageUrl: normalizeOptional(values.imageUrl),
         inventoryQuantity,
@@ -268,6 +269,7 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
 
       const updatedProduct = {
         ...publishingProduct,
+        currencyCode: currency,
         visibilityStatus: 'Published',
       };
 
@@ -301,7 +303,6 @@ export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
         {selectedTab === 'products' ? (
           <ProductInventoryTable
             pendingListingId={pendingProductAction?.listingId ?? null}
-            priceFormatter={priceFormatter}
             products={listings}
             onDeleteProduct={openDeleteProduct}
             onEditProduct={openEditProduct}

@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
 using Backend.Api;
 using Backend.Domain.Entities.Orders;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;

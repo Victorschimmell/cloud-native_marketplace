@@ -278,7 +278,11 @@ internal sealed class FakeCartRepository : ICartRepository
 
     public Task AddAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task AddItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RemoveItemAsync(CartItem item, CancellationToken cancellationToken = default)
+    {
+        Cart?.Items.Remove(item);
+        return Task.CompletedTask;
+    }
     public Task UpdateItemAsync(CartItem item, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteAsync(ShoppingCart cart, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<ShoppingCart?> GetActiveBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken = default) => Task.FromResult(Cart);
@@ -530,48 +534,6 @@ internal sealed class FakeOrderReviewRepository : IOrderReviewRepository
     public Task<IReadOnlyList<OrderReview>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderReview>>([]);
     public Task<IReadOnlyList<OrderReview>> GetByProductIdAsync(Guid productId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OrderReview>>([]);
     public Task UpdateAsync(OrderReview review, CancellationToken cancellationToken = default) => Task.CompletedTask;
-}
-
-internal sealed class FakeShipmentRepository : IShipmentRepository
-{
-    public List<Shipment> Shipments { get; } = [];
-    public int AddCalls { get; private set; }
-    public int UpdateCalls { get; private set; }
-    public int DeleteCalls { get; private set; }
-
-    public Task AddAsync(Shipment shipment, CancellationToken cancellationToken = default)
-    {
-        Shipments.Add(shipment);
-        AddCalls += 1;
-        return Task.CompletedTask;
-    }
-
-    public Task DeleteAsync(Shipment shipment, CancellationToken cancellationToken = default)
-    {
-        Shipments.RemoveAll(existing => existing.Id == shipment.Id);
-        DeleteCalls += 1;
-        return Task.CompletedTask;
-    }
-
-    public Task<Shipment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(Shipments.FirstOrDefault(shipment => shipment.Id == id));
-    public Task<IReadOnlyList<Shipment>> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>(Shipments.Where(shipment => shipment.OrderId == orderId).ToArray());
-    public Task<IReadOnlyList<Shipment>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<Shipment>>(Shipments.Where(shipment => shipment.SellerId == sellerId).Skip((page - 1) * pageSize).Take(pageSize).ToArray());
-
-    public Task UpdateAsync(Shipment shipment, CancellationToken cancellationToken = default)
-    {
-        var index = Shipments.FindIndex(existing => existing.Id == shipment.Id);
-        if (index >= 0)
-        {
-            Shipments[index] = shipment;
-        }
-        else
-        {
-            Shipments.Add(shipment);
-        }
-
-        UpdateCalls += 1;
-        return Task.CompletedTask;
-    }
 }
 
 internal sealed class FakeAuditLogService : IAuditLogService
@@ -867,6 +829,7 @@ internal sealed class FakeCurrencyConversionService : ICurrencyConversionService
 internal sealed class FakeUnitOfWork : IUnitOfWork
 {
     public int SaveChangesCalls { get; private set; }
+    public int TransactionCalls { get; private set; }
     public Exception? ExceptionToThrow { get; set; }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -879,6 +842,12 @@ internal sealed class FakeUnitOfWork : IUnitOfWork
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
+    {
+        TransactionCalls += 1;
+        await operation(cancellationToken);
     }
 }
 

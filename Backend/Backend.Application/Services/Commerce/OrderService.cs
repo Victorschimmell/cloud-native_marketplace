@@ -16,6 +16,7 @@ public sealed class OrderService : IOrderService
     private readonly ICurrencyConversionService _currencyConversionService;
     private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -23,7 +24,8 @@ public sealed class OrderService : IOrderService
         ISellerRepository sellerRepository,
         ICurrencyConversionService currencyConversionService,
         IAuditLogService auditLogService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IDateTimeProvider dateTimeProvider)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
@@ -31,6 +33,7 @@ public sealed class OrderService : IOrderService
         ArgumentNullException.ThrowIfNull(currencyConversionService);
         ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
+        ArgumentNullException.ThrowIfNull(dateTimeProvider);
 
         _orderRepository = orderRepository;
         _customerRepository = customerRepository;
@@ -38,6 +41,7 @@ public sealed class OrderService : IOrderService
         _currencyConversionService = currencyConversionService;
         _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<Result<OrderDto>> GetByIdForCustomerAsync(Guid orderId, Guid authenticatedUserId, string? currency, CancellationToken cancellationToken = default)
@@ -70,9 +74,10 @@ public sealed class OrderService : IOrderService
         CustomerOrderSort sort = CustomerOrderSort.Newest,
         CancellationToken cancellationToken = default)
     {
-        if (request.Page < 1 || request.PageSize < 1)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
+            return Result<PagedResult<OrderSummaryDto>>.ValidationFailure(paginationError);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
@@ -97,9 +102,10 @@ public sealed class OrderService : IOrderService
 
     public async Task<Result<PagedResult<OrderDto>>> GetByCustomerUserAsync(Guid authenticatedUserId, PagedRequest request, string? currency, CancellationToken cancellationToken = default)
     {
-        if (request.Page < 1 || request.PageSize < 1)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<OrderDto>>.ValidationFailure("Page and page size must be greater than zero.");
+            return Result<PagedResult<OrderDto>>.ValidationFailure(paginationError);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
@@ -130,9 +136,10 @@ public sealed class OrderService : IOrderService
         SellerOrderSort sort = SellerOrderSort.Newest,
         CancellationToken cancellationToken = default)
     {
-        if (request.Page < 1 || request.PageSize < 1)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure("Page and page size must be greater than zero.");
+            return Result<PagedResult<SellerOrderSummaryDto>>.ValidationFailure(paginationError);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(currency, out var currencyCode, out var priceConverter))
@@ -258,7 +265,7 @@ public sealed class OrderService : IOrderService
         }
 
         var previousOrderStatus = order.OrderStatus;
-        var now = DateTimeOffset.UtcNow;
+        var now = _dateTimeProvider.UtcNow;
         foreach (var item in sellerItems)
         {
             ApplySellerItemStatus(item, request.Status, now);

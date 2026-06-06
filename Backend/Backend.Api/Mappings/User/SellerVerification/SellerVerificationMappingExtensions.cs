@@ -15,7 +15,7 @@ public static class SellerVerificationMappingExtensions
             Id = dto.Id,
             SellerId = dto.SellerId,
             SubmittedAtUtc = dto.SubmittedAtUtc,
-            Status = (SellerVerificationRequestStatus)dto.Status,
+            Status = dto.Status,
             BusinessNameSnapshot = dto.BusinessNameSnapshot,
             RegistrationNumberSnapshot = dto.RegistrationNumberSnapshot,
             SubmittedDetails = dto.SubmittedDetails,
@@ -31,7 +31,7 @@ public static class SellerVerificationMappingExtensions
             Id = dto.Id,
             SellerId = dto.SellerId,
             SubmittedAtUtc = dto.SubmittedAtUtc,
-            Status = (SellerVerificationRequestStatus)dto.Status,
+            Status = dto.Status,
             BusinessNameSnapshot = dto.BusinessNameSnapshot,
             RegistrationNumberSnapshot = dto.RegistrationNumberSnapshot,
             SubmittedDetails = dto.SubmittedDetails,
@@ -50,7 +50,7 @@ public static class SellerVerificationMappingExtensions
             RegistrationNumber = dto.RegistrationNumber,
             PayoutInformation = dto.PayoutInformation,
             DefaultAddressId = dto.DefaultAddressId,
-            VerificationStatus = (VerificationStatus)dto.VerificationStatus,
+            VerificationStatus = dto.VerificationStatus,
             VerifiedAtUtc = dto.VerifiedAtUtc,
             OlistSellerId = dto.OlistSellerId
         };

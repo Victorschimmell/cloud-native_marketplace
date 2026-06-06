@@ -1,5 +1,4 @@
 using Backend.Api.Contracts.User.Registration;
-using Backend.Api.Contracts.User.SellerVerification;
 using Backend.Api.Mappings.User.Auth;
 using App = Backend.Application.DTOs;
 
@@ -57,7 +56,7 @@ public static class RegistrationMappingExtensions
             RegistrationNumber = seller.RegistrationNumber,
             PayoutInformation = seller.PayoutInformation,
             DefaultAddressId = seller.DefaultAddressId,
-            VerificationStatus = (VerificationStatus)seller.VerificationStatus,
+            VerificationStatus = seller.VerificationStatus,
             VerifiedAtUtc = seller.VerifiedAtUtc,
             OlistSellerId = seller.OlistSellerId
         };

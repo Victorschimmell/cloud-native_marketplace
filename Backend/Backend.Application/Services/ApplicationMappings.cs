@@ -70,7 +70,7 @@ internal static class ApplicationMappings
             product.ProductHeightCm,
             product.ProductWidthCm);
 
-    public static SellerListingDto ToSellerListingDto(this ProductListing listing, Func<decimal, decimal> priceConverter)
+    public static SellerListingDto ToSellerListingDto(this ProductListing listing, string currencyCode, Func<decimal, decimal> priceConverter)
     {
         var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
         return new SellerListingDto(
@@ -82,6 +82,7 @@ internal static class ApplicationMappings
             product.ImageUrl,
             product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
             priceConverter(listing.ListingPrice),
+            currencyCode,
             listing.InventoryQuantity,
             listing.VisibilityStatus.ToString());
     }

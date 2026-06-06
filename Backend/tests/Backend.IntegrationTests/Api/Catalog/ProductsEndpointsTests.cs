@@ -297,6 +297,117 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
+    public async Task UpdateListing_WhenPublishedListingIsChangedToDraft_RemovesItFromBrowse()
+    {
+        var seed = await SeedVerifiedSellerAndCategoryAsync();
+        AuthenticateAs(seed.SellerUserId);
+        var productName = $"Drafted product {Guid.NewGuid():N}";
+        var createRequest = new CreateProductRequest
+        {
+            ProductName = productName,
+            CategoryId = seed.CategoryId,
+            Description = "Product that will be published and drafted again.",
+            Price = 100m,
+            InventoryQuantity = 10
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/products?currency=BRL", createRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+        var createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(createdProduct);
+        var listingId = await GetListingIdByProductIdAsync(createdProduct.Id);
+
+        var publishedRequest = new UpdateProductRequest
+        {
+            ProductName = productName,
+            CategoryId = seed.CategoryId,
+            Description = createRequest.Description,
+            Price = 100m,
+            InventoryQuantity = 10,
+            VisibilityStatus = "Published"
+        };
+        var publishResponse = await _client.PutAsJsonAsync($"/api/products/listings/{listingId}?currency=BRL", publishedRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, publishResponse.StatusCode);
+
+        var publishedBrowseResponse = await _client.GetAsync($"/api/products?search={Uri.EscapeDataString(productName)}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, publishedBrowseResponse.StatusCode);
+        var publishedBrowse = await publishedBrowseResponse.Content.ReadFromJsonAsync<PageResponse<BrowseProductResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(publishedBrowse);
+        Assert.Single(publishedBrowse.Items);
+
+        var draftRequest = publishedRequest with { VisibilityStatus = "Draft" };
+        var draftResponse = await _client.PutAsJsonAsync($"/api/products/listings/{listingId}?currency=BRL", draftRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, draftResponse.StatusCode);
+
+        var draftBrowseResponse = await _client.GetAsync($"/api/products?search={Uri.EscapeDataString(productName)}", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, draftBrowseResponse.StatusCode);
+        var draftBrowse = await draftBrowseResponse.Content.ReadFromJsonAsync<PageResponse<BrowseProductResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(draftBrowse);
+        Assert.Empty(draftBrowse.Items);
+        Assert.Equal(0, draftBrowse.TotalCount);
+    }
+
+    [Fact]
+    public async Task UpdateListing_WhenCurrencyIsDkk_ReturnsEditedPriceWithoutOneCentDrift()
+    {
+        var seed = await SeedVerifiedSellerAndCategoryAsync();
+        AuthenticateAs(seed.SellerUserId);
+        var productName = $"DKK edited product {Guid.NewGuid():N}";
+        var createRequest = new CreateProductRequest
+        {
+            ProductName = productName,
+            CategoryId = seed.CategoryId,
+            Description = "Product with DKK price edits.",
+            Price = 100m,
+            InventoryQuantity = 10
+        };
+        var createResponse = await _client.PostAsJsonAsync("/api/products?currency=DKK", createRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
+        var createdProduct = await createResponse.Content.ReadFromJsonAsync<ProductResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(createdProduct);
+        var listingId = await GetListingIdByProductIdAsync(createdProduct.Id);
+
+        var updateRequest = new UpdateProductRequest
+        {
+            ProductName = productName,
+            CategoryId = seed.CategoryId,
+            Description = createRequest.Description,
+            Price = 150m,
+            InventoryQuantity = 10,
+            VisibilityStatus = "Published"
+        };
+
+        var updateResponse = await _client.PutAsJsonAsync($"/api/products/listings/{listingId}?currency=DKK", updateRequest, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        var listingsResponse = await _client.GetAsync("/api/products/my-listings?currency=DKK", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, listingsResponse.StatusCode);
+        var listings = await listingsResponse.Content.ReadFromJsonAsync<IReadOnlyList<SellerListingResponse>>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(listings);
+        var listing = Assert.Single(listings, item => item.ListingId == listingId);
+        Assert.Equal("DKK", listing.CurrencyCode);
+        Assert.Equal(150m, listing.ListingPrice);
+
+        var detailsResponse = await _client.GetAsync($"/api/products/{createdProduct.Id}?listingId={listingId}&currency=DKK", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, detailsResponse.StatusCode);
+        var details = await detailsResponse.Content.ReadFromJsonAsync<ProductDetailsResponse>(
+            IntegrationTestJson.Options,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(details);
+        Assert.Equal(150m, details.Price);
+    }
+
+    [Fact]
     public async Task DeleteListing_WhenOwned_DoesNotDeleteSharedProductOrOtherSellerListing()
     {
         // Arrange
@@ -486,6 +597,17 @@ public class ProductsEndpointsTests : IClassFixture<MarketplaceApiFactory>
         listing.PublishedAtUtc = DateTimeOffset.UtcNow;
 
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private async Task<Guid> GetListingIdByProductIdAsync(Guid productId)
+    {
+        using var scope = _factory.Services.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await dbContext.ProductListings
+            .Where(listing => listing.ProductId == productId)
+            .Select(listing => listing.Id)
+            .SingleAsync(TestContext.Current.CancellationToken);
     }
 
     private void AuthenticateAs(Guid userId)

@@ -69,9 +69,10 @@ public sealed class ProductService : IProductService
 
     public async Task<Result<PagedResult<BrowseProductDto>>> GetBrowseProductsAsync(BrowseProductsRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Page < 1 || request.PageSize < 1)
+        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
+        if (paginationError is not null)
         {
-            return Result<PagedResult<BrowseProductDto>>.ValidationFailure("Page and page size must be greater than zero.");
+            return Result<PagedResult<BrowseProductDto>>.ValidationFailure(paginationError);
         }
 
         if (request.Sort is not "newest" and not "price-asc" and not "price-desc" and not "name-asc")
@@ -170,8 +171,8 @@ public sealed class ProductService : IProductService
         if (seller.VerificationStatus != VerificationStatus.Verified)
             return Result<IReadOnlyList<SellerListingDto>>.Forbidden("Seller must be verified to manage product listings.");
 
-        var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, int.MaxValue, cancellationToken);
-        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(priceConverter)).ToArray());
+        var listings = await _productListingRepository.GetBySellerIdAsync(seller.Id, 1, PaginationRules.MaxPageSize, cancellationToken);
+        return Result<IReadOnlyList<SellerListingDto>>.Success(listings.Select(l => l.ToSellerListingDto(currencyCode, priceConverter)).ToArray());
     }
 
     public async Task<Result<ProductDto>> UpdateAsync(UpdateProductRequest request, string displayCurrency, CancellationToken cancellationToken = default)
@@ -230,7 +231,7 @@ public sealed class ProductService : IProductService
             await _productRepository.UpdateAsync(product, cancellationToken);
         }
 
-        listing.ListingPrice = request.Price;
+        listing.ListingPrice = priceConverter(request.Price);
         listing.InventoryQuantity = request.InventoryQuantity;
         listing.VisibilityStatus = parsedStatus;
 

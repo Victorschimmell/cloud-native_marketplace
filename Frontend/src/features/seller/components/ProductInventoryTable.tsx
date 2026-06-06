@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
+import { getCurrencyLocale } from '../../../shared/currency/currency';
 import type { SellerListing } from '../api/sellerApi';
 
 interface ProductInventoryTableProps {
   pendingListingId?: string | null;
-  priceFormatter: Intl.NumberFormat;
   products: SellerListing[];
   onDeleteProduct: (product: SellerListing) => void;
   onEditProduct: (product: SellerListing) => void;
@@ -15,7 +15,6 @@ type ProductSortOption = 'name' | 'category' | 'price-high' | 'price-low' | 'sto
 
 export default function ProductInventoryTable({
   pendingListingId = null,
-  priceFormatter,
   products,
   onDeleteProduct,
   onEditProduct,
@@ -96,7 +95,6 @@ export default function ProductInventoryTable({
               <ProductRow
                 key={product.listingId}
                 isPending={pendingListingId === product.listingId}
-                priceFormatter={priceFormatter}
                 product={product}
                 onDeleteProduct={onDeleteProduct}
                 onEditProduct={onEditProduct}
@@ -113,7 +111,6 @@ export default function ProductInventoryTable({
 
 function ProductRow({
   isPending,
-  priceFormatter,
   product,
   onDeleteProduct,
   onEditProduct,
@@ -121,7 +118,6 @@ function ProductRow({
   onPublishProduct,
 }: {
   isPending: boolean;
-  priceFormatter: Intl.NumberFormat;
   product: SellerListing;
   onDeleteProduct: (product: SellerListing) => void;
   onEditProduct: (product: SellerListing) => void;
@@ -129,6 +125,10 @@ function ProductRow({
   onPublishProduct: (product: SellerListing) => void;
 }) {
   const isDraft = product.visibilityStatus.toLowerCase() === 'draft';
+  const priceFormatter = useMemo(
+    () => new Intl.NumberFormat(getCurrencyLocale(product.currencyCode), { style: 'currency', currency: product.currencyCode }),
+    [product.currencyCode],
+  );
 
   return (
     <tr>

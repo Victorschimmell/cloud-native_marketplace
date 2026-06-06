@@ -260,6 +260,7 @@ public sealed class ProductServiceTests
         var listing = Assert.Single(result.Value!);
         Assert.Equal(product.Id, listing.ProductId);
         Assert.Equal("Coffee", listing.ProductName);
+        Assert.Equal("BRL", listing.CurrencyCode);
     }
 
     [Fact]
@@ -361,6 +362,31 @@ public sealed class ProductServiceTests
         Assert.Equal(1, listingRepository.UpdateCalls);
         Assert.Equal(1, unitOfWork.SaveChangesCalls);
         Assert.Single(auditLogService.Entries);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenCurrencyIsUSD_ConvertsListingPrice()
+    {
+        var category = CreateCategory();
+        var product = CreateProduct(category);
+        var seller = CreateSeller();
+        var listing = CreateListing(product, seller);
+        var productRepository = new FakeProductRepository { Product = product };
+        var listingRepository = new FakeProductListingRepository();
+        listingRepository.Listings.Add(listing);
+        var fixture = CreateFixture(
+            productRepository: productRepository,
+            productListingRepository: listingRepository,
+            categoryRepository: new FakeProductCategoryRepository { Category = category },
+            sellerRepository: new FakeSellerRepository { Seller = seller });
+
+        var result = await fixture.Service.UpdateAsync(
+            CreateUpdateRequest(listingId: listing.Id, categoryId: category.Id, price: 75m),
+            "USD",
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(150m, listing.ListingPrice);
     }
 
     [Fact]

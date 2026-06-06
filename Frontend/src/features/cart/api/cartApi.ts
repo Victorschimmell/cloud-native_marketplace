@@ -127,21 +127,14 @@ export const cartApi = {
     }
   },
 
-  // TODO: There should have a delete method in the backend, maybe change to that later
   removeItem: async (listingId: string, displayCurrency: string = 'USD') => {
     const cartId = window.localStorage.getItem(cartIdStorageKey);
     if (!cartId) throw new Error('No cart found');
 
     try {
-      const cart = await request<Cart>(`/api/cart/items/${listingId}?displayCurrency=${displayCurrency}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cartId,
-          quantity: 0,
-        }),
+      const params = new URLSearchParams({ cartId, displayCurrency });
+      const cart = await request<Cart>(`/api/cart/items/${listingId}?${params}`, {
+        method: 'DELETE',
       });
       notifyCartUpdated(cart);
       return cart;

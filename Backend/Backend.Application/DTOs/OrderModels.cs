@@ -155,10 +155,3 @@ public sealed record CreateReviewRequest(
     int ReviewScore,
     string? ReviewCommentTitle,
     string? ReviewCommentMessage);
-
-public sealed record RecordShipmentRequest(
-    Guid OrderId,
-    Guid SellerId,
-    string CarrierName,
-    string TrackingNumber,
-    ShipmentStatus ShipmentStatus);

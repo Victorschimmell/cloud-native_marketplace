@@ -61,7 +61,7 @@ public sealed class FixedRateCurrencyConversionService : ICurrencyConversionServ
     public decimal ToBaseCurrency(decimal amount, string currencyCode)
     {
         var converted = amount / RatesFromBaseCurrency[currencyCode];
-        return decimal.Round(converted, 2, MidpointRounding.AwayFromZero);
+        return decimal.Round(converted, 4, MidpointRounding.AwayFromZero);
     }
 
     public bool TryGetPriceToBaseConverter(string? displayCurrency, out string currencyCode, out Func<decimal, decimal> priceConverter)

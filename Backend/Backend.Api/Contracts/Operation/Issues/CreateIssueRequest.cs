@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Backend.Domain.Enums;
 
 namespace Backend.Api.Contracts.Operation.Issues;
 

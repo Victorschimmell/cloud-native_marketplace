@@ -1,3 +1,5 @@
+using Backend.Domain.Enums;
+
 namespace Backend.Api.Contracts.Commerce.Payments;
 
 public sealed record PaymentModel

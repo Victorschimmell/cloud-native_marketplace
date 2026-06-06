@@ -5,6 +5,7 @@ using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
 using Backend.Api.Contracts.Commerce.Orders;
+using Backend.Domain.Enums;
 using DomainEnums = Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;

@@ -211,6 +211,41 @@ public sealed class CartService : ICartService
         return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
     }
 
+    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
+    {
+        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
+        {
+            return restriction;
+        }
+
+        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        {
+            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
+        }
+
+        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
+        {
+            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
+        }
+
+        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
+        if (cart is null)
+        {
+            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
+        }
+
+        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
+        if (existingCartItem is null)
+        {
+            return Result<CartDto>.NotFound("Cart item was not found in the cart.");
+        }
+
+        await _cartRepository.RemoveItemAsync(existingCartItem, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
+    }
+
     private async Task<ShoppingCart?> GetCartAsync(Guid? CartId, Guid? UserId, Guid? SessionId, CancellationToken cancellationToken)
     {
         ShoppingCart? cart = null;

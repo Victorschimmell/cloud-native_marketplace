@@ -1,4 +1,4 @@
-using Backend.Api.Contracts.User.SellerVerification;
+using Backend.Domain.Enums;
 
 namespace Backend.Api.Contracts.User.Registration;
 
