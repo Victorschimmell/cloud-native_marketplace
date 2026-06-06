@@ -1,120 +1,68 @@
-# Introduction
-Marketplace Platform is a monorepo with:
+# Marketplace Platform
+Marketplace Platform is a monorepo with a React/Vite frontend, a .NET 10 backend API, PostgreSQL and Elasticsearch/Kibana.
 
-- `Frontend/`: React + Vite web app
-- `Backend/`: .NET 10 REST API (Clean Architecture style: Api, Application, Domain, Infrastructure) + tests
-
-The current backend is a foundation setup with one sample entity and system endpoints, ready for incremental feature development.
-
-# Getting Started
-Prerequisites:
-
-- .NET SDK 10
-- Node.js + npm
+## Prerequisites
 - Docker Desktop
+- .NET SDK 10
+- Node.js and npm
 
-Start PostgreSQL:
+## Option 1: Run the Project With Docker
+This is the simplest way to run the full project.
 
+From the repository root:
 ```powershell
-docker compose up -d postgres
+docker compose up --build
 ```
 
-Run backend API:
+Open:
+- Frontend: http://localhost
+- Backend API base URL: http://localhost:8080
+- Kibana: http://localhost:5601
 
+The backend does not have a page at `/`, so `http://localhost:8080` can show a 404 in the browser. Use the frontend URL for the application.
+
+Stop the project:
 ```powershell
-dotnet run --project .\Backend\Backend.Api\Backend.Api.csproj
+docker compose down
 ```
 
-Enable Olist startup import:
+Reset local Docker data if needed:
+```powershell
+docker compose down -v
+```
 
-1. Put the required Olist CSV files in one folder.
-2. Set `OlistImport:DatasetRootPath` in `Backend/Backend.Api/appsettings.Development.json` or via environment variables.
-3. Set `OlistImport:Enabled=true`.
-4. Start the API. Migrations will run before the import.
+## Option 2: Run the Project Locally
+Use this if you want to run the backend and frontend from source.
 
-Olist dataset location:
+Start the backing services:
+```powershell
+docker compose up -d postgres elasticsearch kibana
+```
 
-- Keep the full development dataset outside source control, for example in `.data/olist/`.
-- The repository only keeps small fixture CSV files for automated tests.
+Start the backend API:
+```powershell
+dotnet run --project .\Backend\Backend.Api\Backend.Api.csproj --launch-profile http
+```
 
-Useful backend URLs (Development):
+The backend runs at http://localhost:5094. Migrations are applied automatically in development.
 
-- Weather forecast sample: `http://localhost:5053/WeatherForecast`
-- OpenAPI document: `http://localhost:5053/openapi/v1.json`
-
-Run frontend:
-
+Start the frontend in a second terminal:
 ```powershell
 cd .\Frontend
 npm install
 npm run dev
 ```
 
-Architecture details: see [ARCHITECTURE.md](./ARCHITECTURE.md).
+The frontend runs at http://localhost:5173 and proxies API calls to http://localhost:5094.
 
-# Build and Test
-Build backend solution:
+## Optional Olist Import
 
-```powershell
-dotnet build Marketplace.slnx
-```
+The project can import Olist CSV data on backend startup.
+1. Put the Olist CSV files from https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce in `<repo-root>\.data\olist`.
+2. Set `OlistImport:Enabled` to `true` in `Backend\Backend.Api\appsettings.Development.json`.
+3. Start the backend API.
 
-Run backend tests:
+The configured default path is `.data\olist`, which is resolved relative to the backend process working directory. If you start the backend from Visual Studio, that may resolve to `<repo-root>\Backend\Backend.Api\.data\olist`. To avoid ambiguity, set `OlistImport:DatasetRootPath` to the absolute path of `<repo-root>\.data\olist` on your machine.
 
-```powershell
-dotnet test Marketplace.slnx
-```
-
-Run backend tests with coverage:
-
-```powershell
-dotnet test .\Backend\tests\Backend.UnitTests\Backend.UnitTests.csproj --collect:"XPlat Code Coverage" --settings .\Backend\coverlet.runsettings --results-directory .\TestResults\coverage\unit
-dotnet test .\Backend\tests\Backend.IntegrationTests\Backend.IntegrationTests.csproj --collect:"XPlat Code Coverage" --settings .\Backend\coverlet.runsettings --results-directory .\TestResults\coverage\integration
-```
-
-Coverage files are written as Cobertura XML under `TestResults/coverage/**/coverage.cobertura.xml`. Azure DevOps publishes those files to the pipeline Code Coverage tab.
-
-# Build frontend:
-
-```powershell
-cd .\Frontend
-npm run build
-npm install react-router-dom@6
-npm install @types/react-router-dom --save-dev
-```
-
-# Run Front-end  -- http://localhost:5173/
-```powershell
-npm run dev
-```
-
-
-# Contribute
-- Keep layer boundaries (`Api -> Application/Infrastructure -> Domain`).
-- Add unit and/or integration tests for behavior changes.
-- Keep changes focused and open a PR with:
-  - summary of changes
-  - test evidence (commands + results)
-  - migration notes (if schema changed)
-
-# Local pipeline setup
-Because we do not have dedicated pipeline server, pipelines must be run on local agents. Pipelines triggers: pull request created, pull request merged, manual trigger.
-
-### Setup steps:
-1. Follow instructions in:
-https://dev.azure.com/SEA2026/Cloud%20Native%20Platform/_settings/agentqueues?queueId=10&view=agents
-2. In local terminal, login with Docker credentials provided in Azure DevOps>Pipelines>Library>Credentials
-
-Outcomes of running a pipeline:
-- When you create a PR to branch "release/v1.0.0", backend and frontend will be built, linted, and tested automatically
-- When you merge the PR to branch "release/v1.0.0", the same steps run again, and on success the Docker image is built and pushed to DockerHub
-- You will see red/green on the pipeline
-- You will get email if pipeline run failed/is successful
-- Docker image is **only** pushed after a merge (never during a PR build)
-
-
-# Download latest Docker image of solution
-Run:
-```
-docker pull adminkusofteng2026/marketplace-platform
-```
+## Use Cases
+Text here
