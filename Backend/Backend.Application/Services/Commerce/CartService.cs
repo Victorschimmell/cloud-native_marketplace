@@ -215,7 +215,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return restriction;
+            return Result<CartDto>.Forbidden(restriction);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
