@@ -11,6 +11,7 @@ namespace Backend.Application.Services;
 public sealed class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderReviewRepository _reviewRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
@@ -20,6 +21,7 @@ public sealed class OrderService : IOrderService
 
     public OrderService(
         IOrderRepository orderRepository,
+        IOrderReviewRepository reviewRepository,
         ICustomerRepository customerRepository,
         ISellerRepository sellerRepository,
         ICurrencyConversionService currencyConversionService,
@@ -28,6 +30,7 @@ public sealed class OrderService : IOrderService
         IDateTimeProvider dateTimeProvider)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
+        ArgumentNullException.ThrowIfNull(reviewRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
@@ -36,6 +39,7 @@ public sealed class OrderService : IOrderService
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
 
         _orderRepository = orderRepository;
+        _reviewRepository = reviewRepository;
         _customerRepository = customerRepository;
         _sellerRepository = sellerRepository;
         _currencyConversionService = currencyConversionService;
@@ -63,7 +67,10 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.NotFound("Order was not found for the authenticated customer.");
         }
 
-        return Result<OrderDto>.Success(order.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
+        // Merge reviews
+        var reviews = await _reviewRepository.GetByOrderIdAsync(orderId, cancellationToken);
+
+        return Result<OrderDto>.Success(order.ToOrderDto(authenticatedUserId, currencyCode, priceConverter, reviews));
     }
 
     public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(
