@@ -6,9 +6,6 @@ namespace Backend.Api.Mappings.User.SellerVerification;
 
 public static class SellerVerificationMappingExtensions
 {
-    public static App.SubmitSellerVerificationRequest ToApplicationRequest(this SellerVerificationRequest request, Guid sellerId) =>
-        new(sellerId, request.SubmittedDetails);
-
     public static App.VerifySellerRequest ToApplicationRequest(this VerifySellerRequest request, Guid sellerId) =>
         new(request.VerificationRequestId, sellerId, request.Approve, request.ReviewNotes, request.RejectionReason);
 

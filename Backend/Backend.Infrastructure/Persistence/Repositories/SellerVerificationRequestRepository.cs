@@ -27,14 +27,6 @@ internal sealed class SellerVerificationRequestRepository(ApplicationDbContext d
         return await dbContext.SellerVerificationRequests.CountAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.SellerVerificationRequests
-            .Where(r => r.SellerId == sellerId)
-            .OrderByDescending(r => r.SubmittedAtUtc)
-            .ToListAsync(cancellationToken);
-    }
-
     public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)
     {
         dbContext.SellerVerificationRequests.Add(request);
