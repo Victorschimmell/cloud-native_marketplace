@@ -11,6 +11,7 @@ namespace Backend.Application.Services;
 public sealed class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOrderReviewRepository _reviewRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly ISellerRepository _sellerRepository;
     private readonly ICurrencyConversionService _currencyConversionService;
@@ -20,6 +21,7 @@ public sealed class OrderService : IOrderService
 
     public OrderService(
         IOrderRepository orderRepository,
+        IOrderReviewRepository reviewRepository,
         ICustomerRepository customerRepository,
         ISellerRepository sellerRepository,
         ICurrencyConversionService currencyConversionService,
@@ -28,6 +30,7 @@ public sealed class OrderService : IOrderService
         IDateTimeProvider dateTimeProvider)
     {
         ArgumentNullException.ThrowIfNull(orderRepository);
+        ArgumentNullException.ThrowIfNull(reviewRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(sellerRepository);
         ArgumentNullException.ThrowIfNull(currencyConversionService);
@@ -36,6 +39,7 @@ public sealed class OrderService : IOrderService
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
 
         _orderRepository = orderRepository;
+        _reviewRepository = reviewRepository;
         _customerRepository = customerRepository;
         _sellerRepository = sellerRepository;
         _currencyConversionService = currencyConversionService;
@@ -63,7 +67,10 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.NotFound("Order was not found for the authenticated customer.");
         }
 
-        return Result<OrderDto>.Success(order.ToOrderDto(authenticatedUserId, currencyCode, priceConverter));
+        // Merge reviews
+        var reviews = await _reviewRepository.GetByOrderIdAsync(orderId, cancellationToken);
+
+        return Result<OrderDto>.Success(order.ToOrderDto(authenticatedUserId, currencyCode, priceConverter, reviews));
     }
 
     public async Task<Result<PagedResult<OrderSummaryDto>>> GetSummaryByCustomerUserAsync(
@@ -300,7 +307,7 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
 
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdWithDetailsAsync(request.OrderId, cancellationToken);
         if (order is null)
         {
             return Result<OrderDto>.NotFound("Order was not found.");
@@ -323,12 +330,21 @@ public sealed class OrderService : IOrderService
             return Result<OrderDto>.ValidationFailure($"Order cannot be cancelled in its current status of {order.OrderStatus}.");
         }
 
+        // Modify the order status
         order.OrderStatus = OrderStatus.Cancelled;
         order.OrderStatusDescription = request.Reason;
 
+        // Add back the inventory quantities for each item in the order
+        foreach (var item in order.Items)
+        {
+            item.Listing?.InventoryQuantity += item.Quantity;
+        }
+
+        // Save changes
         await _orderRepository.UpdateAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        // Write an audit log entry for the cancellation
         await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
             ActionType: AuditActionType.Cancelled,
             TargetEntityType: nameof(Order),

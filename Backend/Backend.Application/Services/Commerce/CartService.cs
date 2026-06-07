@@ -47,7 +47,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return restriction;
+            return Result<CartDto>.Forbidden(restriction);
         }
 
         var cart = await GetCartWithProductDetailsAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
@@ -69,7 +69,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return restriction;
+            return Result<CartDto>.Forbidden(restriction);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
@@ -155,7 +155,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return restriction;
+            return Result<CartDto>.Forbidden(restriction);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
@@ -215,7 +215,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return restriction;
+            return Result<CartDto>.Forbidden(restriction);
         }
 
         if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
@@ -347,7 +347,7 @@ public sealed class CartService : ICartService
         return cart;
     }
 
-    private async Task<Result<CartDto>?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
+    private async Task<string?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
     {
         if (!userId.HasValue)
         {
@@ -357,13 +357,19 @@ public sealed class CartService : ICartService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is not null)
         {
-            return Result<CartDto>.Forbidden("Seller accounts cannot use carts or buy products.");
+            return "Seller accounts cannot use carts or buy products.";
+        }
+
+        var user = seller?.UserAccount;
+        if (user?.IsAdmin == true)
+        {
+            return "Admin accounts cannot check out or buy products.";
         }
 
         var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (customer is null)
         {
-            return Result<CartDto>.Forbidden("Only customer accounts can use carts.");
+            return "Only customer accounts can use carts.";
         }
 
         return null;

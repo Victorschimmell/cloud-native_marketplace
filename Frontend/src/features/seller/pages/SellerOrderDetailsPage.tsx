@@ -64,6 +64,8 @@ export default function SellerOrderDetailsPage() {
     [order?.canUpdateStatus, sellerFulfillmentStatus],
   );
   const itemCount = order?.items.reduce((total, item) => total + item.quantity, 0) ?? 0;
+  const orderStatusDescription = order?.orderStatusDescription?.trim() ?? '';
+  const hasOrderStatusDescription = orderStatusDescription.length > 0;
   const earliestShippingLimit = useMemo(() => {
     const limits = order?.items
       .map((item) => item.shippingLimitDateUtc)
@@ -143,7 +145,7 @@ export default function SellerOrderDetailsPage() {
               </div>
             </section>
 
-            <section className="seller-order-details__grid">
+            <section className={`seller-order-details__grid${hasOrderStatusDescription ? ' seller-order-details__grid--with-cancellation' : ''}`}>
               <article className="seller-order-details__panel seller-order-details__panel--items">
                 <div className="seller-order-details__panel-heading">
                   <div>
@@ -206,6 +208,19 @@ export default function SellerOrderDetailsPage() {
                   </div>
                 </dl>
               </article>
+
+              {hasOrderStatusDescription ? (
+                <article className="seller-order-details__panel seller-order-details__panel--cancellation">
+                  <div className="seller-order-details__panel-heading">
+                    <div>
+                      <h2>Order Status Description</h2>
+                      <p>Reason captured for the current order status</p>
+                    </div>
+                  </div>
+
+                  <p className="seller-order-details__reason">{orderStatusDescription}</p>
+                </article>
+              ) : null}
 
               <article className="seller-order-details__panel seller-order-details__panel--actions">
                 <div className="seller-order-details__panel-heading">

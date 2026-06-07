@@ -11,6 +11,7 @@ public sealed record CreateProductRequest
     [MaxLength(500)]
     [MinLength(1)]
     public required string ProductName { get; init; }
+    [MaxLength(5000)]
     [MinLength(1)]
     public required string Description { get; init; }
     [MaxLength(2048)]
