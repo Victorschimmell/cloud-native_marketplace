@@ -72,7 +72,7 @@ export default function EditProductPage() {
         }
       });
     return () => controller.abort();
-  }, [listingId, state?.listing]);
+  }, [currency, listingId, state?.listing]);
 
   function updateField<K extends keyof ProductFormState>(field: K, value: ProductFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
