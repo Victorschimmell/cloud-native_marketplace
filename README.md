@@ -3,32 +3,74 @@ Marketplace Platform is a monorepo with a React/Vite frontend, a .NET 10 backend
 
 ## Prerequisites
 - Docker Desktop
-- .NET SDK 10
-- Node.js and npm
+- .NET SDK 10, only if running the backend from source
+- Node.js and npm, only if running the frontend from source
 
-## Option 1: Run the Project With Docker
-This is the simplest way to run the full project.
+## Option 1: Run the Project With Docker and Olist Seeding
+This is the customer setup path. It starts the frontend, backend, PostgreSQL, Elasticsearch and Kibana containers, applies database migrations, and imports the Olist dataset on backend startup.
 
-From the repository root:
+1. Download the Olist dataset from https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce.
+
+2. Create the dataset folder from the repository root:
 ```powershell
-docker compose up --build
+New-Item -ItemType Directory -Force .\Backend\Backend.Api\.data\olist
+```
+
+3. Copy these CSV files into `Backend\Backend.Api\.data\olist`:
+- `product_category_name_translation.csv`
+- `olist_customers_dataset.csv`
+- `olist_sellers_dataset.csv`
+- `olist_products_dataset.csv`
+- `olist_orders_dataset.csv`
+- `olist_order_items_dataset.csv`
+- `olist_order_payments_dataset.csv`
+- `olist_order_reviews_dataset.csv`
+
+4. Start the full Docker system with the Olist seed override:
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.olist-seed.yml up --build
+```
+
+5. In a second PowerShell terminal, create or update the Kibana dashboards:
+```powershell
+.\docs\observability\create-kibana-dashboards.ps1
 ```
 
 Open:
 - Frontend: http://localhost
 - Backend API base URL: http://localhost:8080
 - Kibana: http://localhost:5601
+- Kibana System Overview dashboard: http://localhost:5601/app/dashboards#/view/dashboard-marketplace-system-overview
+- Kibana Checkout Observability dashboard: http://localhost:5601/app/dashboards#/view/dashboard-marketplace-checkout-observability
 
 The backend does not have a page at `/`, so `http://localhost:8080` can show a 404 in the browser. Use the frontend URL for the application.
+
+The dashboard script is idempotent. Run it again whenever Kibana data is reset or the dashboards need to be recreated.
+
+Verify that Olist seeding ran:
+```powershell
+docker compose logs backend
+```
+
+Look for Olist import log messages such as inserted customers, sellers, products, orders, payments and reviews.
 
 Stop the project:
 ```powershell
 docker compose down
 ```
 
-Reset local Docker data if needed:
+Reset local Docker data and reseed from a fresh database:
 ```powershell
 docker compose down -v
+docker compose -f docker-compose.yml -f docker-compose.olist-seed.yml up --build
+```
+
+`docker compose down -v` deletes the local PostgreSQL and Elasticsearch Docker volumes for this project.
+
+If the containers are already running and only the backend needs to be rebuilt/restarted for seeding:
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.olist-seed.yml up -d --build --force-recreate backend
+docker compose logs backend
 ```
 
 ## Option 2: Run the Project Locally
@@ -55,7 +97,7 @@ npm run dev
 
 The frontend runs at http://localhost:5173 and proxies API calls to http://localhost:5094.
 
-## Optional Olist Import
+## Olist Import When Running Locally
 
 The project can import Olist CSV data on backend startup.
 1. Put the Olist CSV files from https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce in `<repo-root>\.data\olist`.
