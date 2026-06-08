@@ -3,7 +3,6 @@ using Backend.Application.Common.Models;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Enums;
 using Backend.Domain.ValueObjects;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

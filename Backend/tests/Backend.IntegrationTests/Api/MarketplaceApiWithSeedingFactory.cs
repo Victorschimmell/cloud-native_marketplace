@@ -1,8 +1,6 @@
-using Backend.Api;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Xunit;
 
 namespace Backend.IntegrationTests;
 

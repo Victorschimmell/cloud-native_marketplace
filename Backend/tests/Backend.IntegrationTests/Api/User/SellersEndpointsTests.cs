@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
-using Backend.Api;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;

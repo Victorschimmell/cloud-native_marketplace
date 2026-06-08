@@ -1,6 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.IdentityAccess;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

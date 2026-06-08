@@ -2,7 +2,6 @@ using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Models;
 using Backend.Domain.Entities.Operations;
 using Backend.Domain.Enums;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

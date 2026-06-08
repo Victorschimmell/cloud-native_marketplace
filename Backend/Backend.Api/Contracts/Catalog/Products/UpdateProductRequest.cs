@@ -1,5 +1,5 @@
-using Backend.Api.Attributes;
 using System.ComponentModel.DataAnnotations;
+using Backend.Api.Attributes;
 
 namespace Backend.Api.Contracts.Catalog.Products;
 

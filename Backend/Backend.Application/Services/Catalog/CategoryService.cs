@@ -9,7 +9,7 @@ public sealed class CategoryService : ICategoryService
 {
     private readonly IProductCategoryRepository _categoryRepository;
 
-    public CategoryService(IProductCategoryRepository categoryRepository )
+    public CategoryService(IProductCategoryRepository categoryRepository)
     {
         ArgumentNullException.ThrowIfNull(categoryRepository);
         _categoryRepository = categoryRepository;

@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Backend.Api;
 using Backend.Api.Contracts.Operation.Analytics;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;

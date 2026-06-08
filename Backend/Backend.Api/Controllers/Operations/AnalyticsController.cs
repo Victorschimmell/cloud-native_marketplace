@@ -1,6 +1,6 @@
 using Backend.Api.Auth;
-using Backend.Api.Contracts.Operation.Analytics;
 using Backend.Api.Contracts.Common;
+using Backend.Api.Contracts.Operation.Analytics;
 using Backend.Api.Mappings.Operation.Analytics;
 using Backend.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;

@@ -1,6 +1,6 @@
+using System.Security.Cryptography;
 using Backend.Application.Common.Abstractions;
 using Backend.Domain.Entities.IdentityAccess;
-using System.Security.Cryptography;
 
 namespace Backend.Infrastructure.Auth;
 

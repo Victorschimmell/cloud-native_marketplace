@@ -74,7 +74,8 @@ public sealed class AdminService : IAdminService
             return Result<AdminOperationResponse>.NotFound("User not found.");
         }
 
-        if (user.IsAdmin) {
+        if (user.IsAdmin)
+        {
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Block,
                 TargetEntityType: nameof(UserAccount),
