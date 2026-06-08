@@ -1,7 +1,6 @@
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Commerce.Reviews;
-using Backend.Api.Contracts.Common;
 using Backend.Api.Mappings.Commerce.Orders;
 using Backend.Api.Mappings.Commerce.Reviews;
 using Backend.Application.Common.Abstractions;

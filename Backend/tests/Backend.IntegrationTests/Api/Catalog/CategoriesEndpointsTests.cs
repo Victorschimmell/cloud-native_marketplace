@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Backend.Api;
 using Backend.Api.Contracts.Catalog.Categories;
 
 namespace Backend.IntegrationTests;

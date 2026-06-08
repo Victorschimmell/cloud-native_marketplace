@@ -1,8 +1,8 @@
+using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Domain.Enums;
-using Backend.Application.Abstractions.Repositories;
 
 namespace Backend.Application.Interfaces.Services;
 

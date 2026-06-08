@@ -1,6 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.Orders;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
@@ -19,7 +18,7 @@ internal sealed class OrderReviewRepository(ApplicationDbContext dbContext) : IO
         var productIdsQuery = dbContext.OrderItems
             .Where(oi => oi.OrderId == orderId)
             .Select(oi => oi.ProductId);
-        
+
         var customerId = await dbContext.Orders
             .Where(o => o.Id == orderId)
             .Select(o => o.CustomerId)

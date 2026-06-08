@@ -1,14 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
+using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Operation.AuditLog;
 using Backend.Api.Contracts.User.Auth;
 using Backend.Api.Contracts.User.Registration;
 using Backend.Domain.Entities.Carts;
-using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;

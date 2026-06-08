@@ -1,7 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Backend.Application.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.Application;
 

@@ -1,17 +1,16 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
-using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Domain.Enums;
-using DomainEnums = Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Text.Json;
+using DomainEnums = Backend.Domain.Enums;
 
 namespace Backend.IntegrationTests;
 

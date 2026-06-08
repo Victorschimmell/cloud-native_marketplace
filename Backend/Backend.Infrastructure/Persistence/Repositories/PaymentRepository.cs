@@ -3,7 +3,6 @@ using Backend.Application.Common.Abstractions;
 using Backend.Application.Common.Models;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

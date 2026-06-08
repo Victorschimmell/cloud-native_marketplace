@@ -1,7 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.Carts;
 using Backend.Domain.Enums;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

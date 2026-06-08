@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Backend.Api;
 using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;

@@ -1,6 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
-using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 using Backend.Application.Interfaces.Services;

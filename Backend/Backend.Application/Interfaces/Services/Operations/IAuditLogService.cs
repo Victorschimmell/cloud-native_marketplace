@@ -1,4 +1,3 @@
-using Backend.Application.Common.Models;
 using Backend.Application.Common.Results;
 using Backend.Application.DTOs;
 
