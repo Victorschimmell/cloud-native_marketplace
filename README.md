@@ -86,7 +86,7 @@ Start the backend API:
 dotnet run --project .\Backend\Backend.Api\Backend.Api.csproj --launch-profile http
 ```
 
-The backend runs at http://localhost:5094. Migrations are applied automatically in development.
+The backend runs at http://localhost:5094. The Scalar API reference is available at http://localhost:5094/Scalar/V1. Migrations are applied automatically in development.
 
 Start the frontend in a second terminal:
 ```powershell
