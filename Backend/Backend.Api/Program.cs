@@ -88,10 +88,16 @@ app.Logger.LogInformation("Backend API host built successfully.");
 
 var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
 var seedOlistOnStartup = builder.Configuration.GetValue<bool>("OlistImport:Enabled");
+var seedAdminOnStartup = builder.Configuration.GetValue<bool>("AdminUser:SeedOnStartup");
 
-if (applyMigrationsOnStartup || seedOlistOnStartup)
+if (applyMigrationsOnStartup || seedOlistOnStartup || seedAdminOnStartup)
 {
     await app.Services.ApplyMigrationsAsync();
+}
+
+if (seedAdminOnStartup)
+{
+    await app.Services.SeedAdminDataAsync(builder.Configuration);
 }
 
 if (seedOlistOnStartup)
@@ -129,8 +135,6 @@ app.UseMiddleware<RequestTimingMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    await app.Services.SeedAdminDataAsync(builder.Configuration);
-
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {

@@ -50,6 +50,9 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=marketplace;Username=postgres;Password=postgres"
       Database__ApplyMigrationsOnStartup: "true"
+      AdminUser__SeedOnStartup: "true"
+      AdminUser__Email: "admin@example.com"
+      AdminUser__Password: "admin"
       HttpsRedirection__Enabled: "false"
       Authentication__TokenSecret: "${AUTHENTICATION_TOKEN_SECRET:-compose-local-token-secret-not-for-production-2026}"
       Elasticsearch__Uri: "http://elasticsearch:9200"
