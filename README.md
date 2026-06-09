@@ -7,7 +7,7 @@ Marketplace Platform is a monorepo with a React/Vite frontend, a .NET 10 backend
 - Node.js and npm, only if running the frontend from source
 
 ## Option 1: Run the Project With Docker and Olist Seeding
-This is the customer setup path. It starts the frontend, backend, PostgreSQL, Elasticsearch and Kibana containers, applies database migrations, and imports the Olist dataset on backend startup.
+This is the customer setup path. It starts the frontend, backend, PostgreSQL, Elasticsearch and Kibana containers, applies database migrations, seeds the admin user, and imports the Olist dataset on backend startup.
 
 1. Download the Olist dataset from https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce.
 
@@ -46,6 +46,10 @@ Open:
 The backend does not have a page at `/`, so `http://localhost:8080` can show a 404 in the browser. Use the frontend URL for the application.
 
 The dashboard script is idempotent. Run it again whenever Kibana data is reset or the dashboards need to be recreated.
+
+The Docker setup seeds the admin account on backend startup:
+- Email: `admin@example.com`
+- Password: `admin`
 
 Verify that Olist seeding ran:
 ```powershell
@@ -86,7 +90,7 @@ Start the backend API:
 dotnet run --project .\Backend\Backend.Api\Backend.Api.csproj --launch-profile http
 ```
 
-The backend runs at http://localhost:5094. The Scalar API reference is available at http://localhost:5094/Scalar/V1. Migrations are applied automatically in development.
+The backend runs at http://localhost:5094. The Scalar API reference is available at http://localhost:5094/Scalar/V1. Migrations and the admin user seed are applied automatically in development.
 
 Start the frontend in a second terminal:
 ```powershell
