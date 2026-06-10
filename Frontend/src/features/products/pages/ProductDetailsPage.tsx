@@ -164,8 +164,12 @@ export default function ProductDetailsPage() {
 
         {!isLoading && product ? (
           <div className="product-details-page__layout">
-            <div className="product-details-page__media" aria-hidden="true">
-              <span>No image</span>
+            <div className="product-details-page__media">
+              {product.imageUrl ? (
+                <img alt={product.productName} src={product.imageUrl} />
+              ) : (
+                <span>No image</span>
+              )}
             </div>
 
             <section className="product-details-page__panel" aria-labelledby="product-details-page-title">
@@ -253,10 +257,6 @@ export default function ProductDetailsPage() {
 
               {reviewsError ? (
                 <p className="product-details-page__reviews-notice" role="alert">{reviewsError}</p>
-              ) : null}
-
-              {!reviewsError && reviews.length === 0 ? (
-                <p className="product-details-page__reviews-empty">No reviews yet.</p>
               ) : null}
 
               {reviews.length > 0 ? (

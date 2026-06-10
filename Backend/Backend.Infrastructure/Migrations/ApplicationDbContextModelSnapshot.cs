@@ -108,7 +108,12 @@ namespace Backend.Infrastructure.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<string>("OlistProductId")
                         .HasMaxLength(100)
@@ -368,7 +373,8 @@ namespace Backend.Infrastructure.Migrations
 
                     b.Property<string>("SubmittedDetails")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
 
                     b.HasKey("Id");
 
@@ -516,6 +522,68 @@ namespace Backend.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("address", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.Operations.AdminIssue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ReportedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToUserId");
+
+                    b.HasIndex("Priority");
+
+                    b.HasIndex("ReportedByUserId");
+
+                    b.HasIndex("ResolvedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("admin_issue", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.Operations.AuditLog", b =>
@@ -698,6 +766,18 @@ namespace Backend.Infrastructure.Migrations
                     b.Property<decimal>("FreightValue")
                         .HasPrecision(18, 4)
                         .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTimeOffset?>("FulfillmentApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentProcessingAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FulfillmentShippedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FulfillmentStatus")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("ListingId")
                         .HasColumnType("uuid");
@@ -1004,6 +1084,31 @@ namespace Backend.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("UserAccount");
+                });
+
+            modelBuilder.Entity("Backend.Domain.Entities.Operations.AdminIssue", b =>
+                {
+                    b.HasOne("Backend.Domain.Entities.IdentityAccess.UserAccount", "AssignedToUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Backend.Domain.Entities.IdentityAccess.UserAccount", "ReportedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReportedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Domain.Entities.IdentityAccess.UserAccount", "ResolvedByUser")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AssignedToUser");
+
+                    b.Navigation("ReportedByUser");
+
+                    b.Navigation("ResolvedByUser");
                 });
 
             modelBuilder.Entity("Backend.Domain.Entities.Operations.AuditLog", b =>

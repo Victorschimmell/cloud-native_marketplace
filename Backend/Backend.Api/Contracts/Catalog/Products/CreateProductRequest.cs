@@ -1,5 +1,5 @@
-using Backend.Api.Attributes;
 using System.ComponentModel.DataAnnotations;
+using Backend.Api.Attributes;
 
 namespace Backend.Api.Contracts.Catalog.Products;
 
@@ -9,11 +9,26 @@ public sealed record CreateProductRequest
     public required Guid CategoryId { get; init; }
 
     [MaxLength(500)]
+    [MinLength(1)]
     public required string ProductName { get; init; }
+    [MaxLength(5000)]
+    [MinLength(1)]
     public required string Description { get; init; }
-    public required int ProductPhotosQty { get; init; }
-    public required int ProductWeightG { get; init; }
-    public required int ProductLengthCm { get; init; }
-    public required int ProductHeightCm { get; init; }
-    public required int ProductWidthCm { get; init; }
+    [MaxLength(2048)]
+    [Url]
+    public string? ImageUrl { get; init; }
+    [Range(0, double.MaxValue)]
+    public required decimal Price { get; init; }
+    [Range(0, int.MaxValue)]
+    public required int InventoryQuantity { get; init; }
+    [Range(0, int.MaxValue)]
+    public int ProductPhotosQty { get; init; } = 0;
+    [Range(0, int.MaxValue)]
+    public int ProductWeightG { get; init; } = 0;
+    [Range(0, int.MaxValue)]
+    public int ProductLengthCm { get; init; } = 0;
+    [Range(0, int.MaxValue)]
+    public int ProductHeightCm { get; init; } = 0;
+    [Range(0, int.MaxValue)]
+    public int ProductWidthCm { get; init; } = 0;
 }

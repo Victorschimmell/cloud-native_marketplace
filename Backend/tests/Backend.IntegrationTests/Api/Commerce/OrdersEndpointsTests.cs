@@ -3,9 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Backend.Api.Contracts.Commerce.Orders;
-using Backend.Api.Contracts.Commerce.Shipments;
+using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using DomainOrderStatus = Backend.Domain.Enums.OrderStatus;
 
@@ -36,34 +37,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
     }
 
     [Fact]
-    public async Task GetOrderItems_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Act
-        var orderId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/orders/{orderId}/items", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateOrderStatus_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var updateRequest = new UpdateOrderStatusRequest
-        {
-            Status = OrderStatus.Pending
-        };
-
-        // Act
-        var response = await _client.PatchAsJsonAsync($"/api/orders/{orderId}", updateRequest, TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
     public async Task CancelOrder_WhenUnauthenticated_ReturnsUnauthorized()
     {
         // Arrange
@@ -83,37 +56,6 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         // Act
         var orderId = Guid.NewGuid();
         var response = await _client.GetAsync($"/api/orders/{orderId}/reviews", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetOrderShipments_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Act
-        var orderId = Guid.NewGuid();
-        var response = await _client.GetAsync($"/api/orders/{orderId}/shipments", TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task CreateOrderShipment_WhenUnauthenticated_ReturnsUnauthorized()
-    {
-        // Arrange
-        var orderId = Guid.NewGuid();
-        var recordRequest = new RecordShipmentRequest
-        {
-            SellerId = Guid.NewGuid(),
-            CarrierName = "DHL",
-            TrackingNumber = "123456",
-            ShipmentStatus = ShipmentStatus.Pending
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync($"/api/orders/{orderId}/shipments", recordRequest, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -153,6 +95,46 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(OrderStatus.Cancelled, order.OrderStatus);
         Assert.Equal("USD", order.CurrencyCode);
         Assert.Equal(20.70m, order.TotalAmount);
+    }
+
+    [Fact]
+    public async Task CancelOrder_WhenValidCancellation_ReturnsCancelledOrderWithUpdatedInventoryQuantity()
+    {
+        // Arrange
+        var (userId, orderId) = await SeedOrderAsync(
+            "cancel-owner-quantity@example.com",
+            DomainOrderStatus.Pending,
+            $"ORDER-CANCEL-{Guid.NewGuid():N}");
+        AuthenticateAs(userId);
+
+        var cancelRequest = new CancelOrderRequest
+        {
+            Reason = "Customer requested cancellation."
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync(
+            $"/api/orders/{orderId}/cancel?currency=USD",
+            cancelRequest,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var order = await response.Content.ReadFromJsonAsync<OrderModel>(
+            _jsonOptions,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(order);
+
+        // Assert
+        using var scope = _factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        foreach (var item in order.Items)
+        {
+            var listing = await dbContext.ProductListings
+                .FirstOrDefaultAsync(l => l.Id == item.ListingId, TestContext.Current.CancellationToken);
+
+            Assert.NotNull(listing);
+            Assert.Equal(30, listing.InventoryQuantity);
+        }
     }
 
     [Fact]
@@ -275,12 +257,31 @@ public class OrdersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount(email);
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var address = TestEntityFactory.CreateAddress();
+        var sellerUser = TestEntityFactory.CreateUserAccount($"seller-{email}");
+        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
+        var category = TestEntityFactory.CreateCategory("Test Category");
+        var product1 = TestEntityFactory.CreateProduct(category.Id, "Test Product1");
+        var product2 = TestEntityFactory.CreateProduct(category.Id, "Test Product2");
+        var listing1 = TestEntityFactory.CreateListing(seller.Id, product1.Id, $"{Guid.NewGuid():N}", 20.00m);
+        var listing2 = TestEntityFactory.CreateListing(seller.Id, product2.Id, $"{Guid.NewGuid():N}", 20.00m);
         var order = TestEntityFactory.CreateOrder(customer.Id, address.Id, orderNumber, DateTimeOffset.UtcNow);
+        var orderItem2 = TestEntityFactory.CreateOrderItem(order.Id, 1, listing2.Id, product2.Id, seller.Id, 20, 20.00m);
+        var orderItem1 = TestEntityFactory.CreateOrderItem(order.Id, 2, listing1.Id, product1.Id, seller.Id, 20, 20.00m);
+
         order.OrderStatus = status;
 
         dbContext.UserAccounts.Add(customerUser);
         dbContext.Customers.Add(customer);
         dbContext.Addresses.Add(address);
+        dbContext.UserAccounts.Add(sellerUser);
+        dbContext.Sellers.Add(seller);
+        dbContext.ProductCategories.Add(category);
+        dbContext.Products.Add(product1);
+        dbContext.Products.Add(product2);
+        dbContext.ProductListings.Add(listing1);
+        dbContext.ProductListings.Add(listing2);
+        dbContext.OrderItems.Add(orderItem1);
+        dbContext.OrderItems.Add(orderItem2);
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

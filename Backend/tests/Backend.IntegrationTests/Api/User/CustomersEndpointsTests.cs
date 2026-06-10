@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Backend.Api;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
 using Backend.Domain.Entities.Orders;
@@ -136,6 +135,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(115m, order.TotalAmount);
         var item = Assert.Single(order.Items);
         Assert.Equal("History product", item.ProductName);
+        Assert.StartsWith("https://example.com/", item.ImageUrl);
     }
 
     [Fact]
@@ -161,6 +161,7 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(20.7m, order.TotalAmount);
         var item = Assert.Single(order.Items);
         Assert.Equal("Details product", item.ProductName);
+        Assert.StartsWith("https://example.com/", item.ImageUrl);
     }
 
     private async Task<(Guid UserId, Guid OrderId)> SeedCustomerOrderAsync(string email, string productName, string orderNumber)
@@ -171,9 +172,10 @@ public class CustomersEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount(email);
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("orders_category", "Orders category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
+        product.ImageUrl = $"https://example.com/{Guid.NewGuid():N}.jpg";
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"{Guid.NewGuid():N}", 100m);
         var address = TestEntityFactory.CreateAddress();
         var order = TestEntityFactory.CreateOrder(customer.Id, address.Id, orderNumber, DateTimeOffset.UtcNow);

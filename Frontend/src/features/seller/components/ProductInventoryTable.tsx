@@ -1,18 +1,83 @@
-import type { SellerProduct } from '../data/placeholderData';
+import { useMemo, useState } from 'react';
+import { getCurrencyLocale } from '../../../shared/currency/currency';
+import type { SellerListing } from '../api/sellerApi';
 
 interface ProductInventoryTableProps {
-  products: SellerProduct[];
+  pendingListingId?: string | null;
+  products: SellerListing[];
+  onDeleteProduct: (product: SellerListing) => void;
+  onEditProduct: (product: SellerListing) => void;
+  onOpenProduct: (product: SellerListing) => void;
+  onPublishProduct: (product: SellerListing) => void;
 }
 
-export default function ProductInventoryTable({ products }: ProductInventoryTableProps) {
+type ProductSortOption = 'name' | 'category' | 'price-high' | 'price-low' | 'stock-high' | 'stock-low' | 'status';
+
+export default function ProductInventoryTable({
+  pendingListingId = null,
+  products,
+  onDeleteProduct,
+  onEditProduct,
+  onOpenProduct,
+  onPublishProduct,
+}: ProductInventoryTableProps) {
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<ProductSortOption>('name');
+
+  const statusOptions = useMemo(() => {
+    return Array.from(new Set(products.map((product) => product.visibilityStatus))).sort((a, b) => a.localeCompare(b));
+  }, [products]);
+
+  const visibleProducts = useMemo(() => {
+    const filteredProducts = products.filter((product) => {
+      const matchesStatus = statusFilter === 'all' || product.visibilityStatus === statusFilter;
+
+      return matchesStatus;
+    });
+
+    return sortProducts(filteredProducts, sortBy);
+  }, [products, sortBy, statusFilter]);
+
   return (
     <div className="seller-dashboard__panel">
       <div className="seller-dashboard__panel-header">
-        <h2 className="seller-dashboard__panel-title">Product Inventory</h2>
+        <div>
+          <h2 className="seller-dashboard__panel-title">Product Inventory</h2>
+          <p className="seller-dashboard__panel-subtitle">Filter and sort product status, stock and pricing</p>
+        </div>
+
+        <div className="seller-dashboard__filters">
+          <label className="seller-dashboard__filter">
+            Status:
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="all">All</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="seller-dashboard__filter">
+            Sort:
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value as ProductSortOption)}>
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+              <option value="price-high">Price: high to low</option>
+              <option value="price-low">Price: low to high</option>
+              <option value="stock-high">Stock: high to low</option>
+              <option value="stock-low">Stock: low to high</option>
+              <option value="status">Status</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       {products.length === 0 ? (
-        <p className="seller-dashboard__empty">No products yet. Click "+ Add Product" to create one.</p>
+        <p className="seller-dashboard__empty">No products yet. Add a product to create one.</p>
+      ) : visibleProducts.length === 0 ? (
+        <p className="seller-dashboard__empty">No products match the current filters.</p>
       ) : (
         <table className="seller-dashboard__table">
           <thead>
@@ -21,13 +86,21 @@ export default function ProductInventoryTable({ products }: ProductInventoryTabl
               <th>Category</th>
               <th>Price</th>
               <th>Stock</th>
-              <th>Rating</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => (
-              <ProductRow key={product.id} product={product} />
+            {visibleProducts.map((product) => (
+              <ProductRow
+                key={product.listingId}
+                isPending={pendingListingId === product.listingId}
+                product={product}
+                onDeleteProduct={onDeleteProduct}
+                onEditProduct={onEditProduct}
+                onOpenProduct={onOpenProduct}
+                onPublishProduct={onPublishProduct}
+              />
             ))}
           </tbody>
         </table>
@@ -36,58 +109,93 @@ export default function ProductInventoryTable({ products }: ProductInventoryTabl
   );
 }
 
-function ProductRow({ product }: { product: SellerProduct }) {
-  // No Operation Handlers for now , will be wired to the API later.
-  function handleEdit() {
-    console.log('Edit product', product.id);
-  }
-
-  function handleDelete() {
-    console.log('Delete product', product.id);
-  }
+function ProductRow({
+  isPending,
+  product,
+  onDeleteProduct,
+  onEditProduct,
+  onOpenProduct,
+  onPublishProduct,
+}: {
+  isPending: boolean;
+  product: SellerListing;
+  onDeleteProduct: (product: SellerListing) => void;
+  onEditProduct: (product: SellerListing) => void;
+  onOpenProduct: (product: SellerListing) => void;
+  onPublishProduct: (product: SellerListing) => void;
+}) {
+  const isDraft = product.visibilityStatus.toLowerCase() === 'draft';
+  const priceFormatter = useMemo(
+    () => new Intl.NumberFormat(getCurrencyLocale(product.currencyCode), { style: 'currency', currency: product.currencyCode }),
+    [product.currencyCode],
+  );
 
   return (
     <tr>
-      <td>
-        <div className="seller-dashboard__product-cell">
-          <img
-            className="seller-dashboard__product-image"
-            src={product.imageUrl}
-            alt=""
-          />
-          <span>{product.name}</span>
-        </div>
-      </td>
-      <td>{product.category}</td>
-      <td className="seller-dashboard__price">${product.price.toFixed(2)}</td>
-      <td>
-        <span
-          className={`seller-dashboard__stock seller-dashboard__stock--${product.inStock ? 'in' : 'out'}`}
+      <td data-label="Product">
+        <button
+          type="button"
+          className="seller-dashboard__product-button"
+          onClick={() => onOpenProduct(product)}
         >
-          {product.inStock ? 'In Stock' : 'Out of Stock'}
-        </span>
+          {product.productName}
+        </button>
       </td>
-      <td>
-        {product.rating.toFixed(1)} ({product.ratingCount})
-      </td>
-      <td>
+      <td data-label="Category">{product.categoryName ?? '-'}</td>
+      <td className="seller-dashboard__price" data-label="Price">{priceFormatter.format(product.listingPrice)}</td>
+      <td data-label="Stock">{product.inventoryQuantity}</td>
+      <td data-label="Status">{product.visibilityStatus}</td>
+      <td data-label="Actions">
         <div className="seller-dashboard__row-actions">
+          {isDraft ? (
+            <button
+              type="button"
+              className="seller-dashboard__action seller-dashboard__action--publish"
+              disabled={isPending}
+              onClick={() => onPublishProduct(product)}
+            >
+              Publish
+            </button>
+          ) : null}
           <button
             type="button"
             className="seller-dashboard__action seller-dashboard__action--edit"
-            onClick={handleEdit}
+            disabled={isPending}
+            onClick={() => onEditProduct(product)}
           >
             Edit
           </button>
           <button
             type="button"
             className="seller-dashboard__action seller-dashboard__action--delete"
-            onClick={handleDelete}
+            disabled={isPending}
+            onClick={() => onDeleteProduct(product)}
           >
-            Delete
+            {isPending ? 'Working...' : 'Delete'}
           </button>
         </div>
       </td>
     </tr>
   );
+}
+
+function sortProducts(products: SellerListing[], sortBy: ProductSortOption): SellerListing[] {
+  return [...products].sort((a, b) => {
+    switch (sortBy) {
+      case 'category':
+        return (a.categoryName ?? 'Uncategorized').localeCompare(b.categoryName ?? 'Uncategorized');
+      case 'price-high':
+        return b.listingPrice - a.listingPrice;
+      case 'price-low':
+        return a.listingPrice - b.listingPrice;
+      case 'stock-high':
+        return b.inventoryQuantity - a.inventoryQuantity;
+      case 'stock-low':
+        return a.inventoryQuantity - b.inventoryQuantity;
+      case 'status':
+        return a.visibilityStatus.localeCompare(b.visibilityStatus);
+      default:
+        return a.productName.localeCompare(b.productName);
+    }
+  });
 }

@@ -23,6 +23,9 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .HasPrecision(18, 4)
             .IsRequired();
 
+        builder.Property(i => i.FulfillmentStatus)
+            .IsRequired();
+
         builder.HasOne(i => i.Seller)
             .WithMany(s => s.OrderItems)
             .HasForeignKey(i => i.SellerId);

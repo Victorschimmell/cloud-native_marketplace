@@ -23,7 +23,11 @@ export default function ProductCard({ priceFormatter, product }: ProductCardProp
       to={`/products/${product.productId}?listingId=${product.listingId}`}
     >
       <span className="product-card__media" aria-hidden="true">
-        No image
+        {product.imageUrl ? (
+          <img alt="" src={product.imageUrl} />
+        ) : (
+          'No image'
+        )}
       </span>
 
       <div className="product-card__category">

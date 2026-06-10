@@ -3,9 +3,10 @@ using Backend.Api.Contracts.Catalog.Products;
 using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Mappings.Catalog.Products;
-using Backend.Api.Mappings.Common;
 using Backend.Api.Mappings.Commerce.Reviews;
+using Backend.Api.Mappings.Common;
 using Backend.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using App = Backend.Application.DTOs;
 
@@ -18,7 +19,10 @@ public class ProductsController : ApiControllerBase
     private readonly IReviewService _reviewService;
     private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(IProductService productService, IReviewService reviewService, ILogger<ProductsController> logger)
+    public ProductsController(
+        IProductService productService,
+        IReviewService reviewService,
+        ILogger<ProductsController> logger)
     {
         _productService = productService;
         _reviewService = reviewService;
@@ -78,23 +82,36 @@ public class ProductsController : ApiControllerBase
             });
     }
 
+    [HttpGet("my-listings")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<SellerListingResponse>>> GetMyListingsAsync(string currency, CancellationToken cancellationToken)
+    {
+        var result = await _productService.GetSellerListingsAsync(currency, cancellationToken);
+        return HandleResult(result, listings => listings.Select(l => l.ToResponse()).ToArray());
+    }
+
     [HttpPost]
-    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] CreateProductRequest request, CancellationToken cancellationToken)
+    [Authorize]
+    public async Task<ActionResult<ProductResponse>> CreateProductAsync([FromBody] CreateProductRequest request, string currency, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _productService.CreateAsync(request.ToDto(), currency, cancellationToken);
+        return HandleResult(result, product => product.ToResponse());
     }
 
-    [HttpPut("{productId:guid}")]
-    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid productId, [FromBody] UpdateProductRequest request, CancellationToken cancellationToken)
+    [HttpPut("listings/{listingId:guid}")]
+    [Authorize]
+    public async Task<ActionResult<ProductResponse>> UpdateProductAsync([NotEmptyGuid] Guid listingId, [FromBody] UpdateProductRequest request, string currency, CancellationToken cancellationToken)
     {
-        // NOTE: mapping UpdateProductRequest to UpdateProductRequest in application layer should also include the productId from route
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _productService.UpdateAsync(request.ToDto(listingId), currency, cancellationToken);
+        return HandleResult(result, product => product.ToResponse());
     }
 
-    [HttpDelete("{productId:guid}")]
-    public async Task<IActionResult> DeleteProductAsync([NotEmptyGuid] Guid productId, CancellationToken cancellationToken)
+    [HttpDelete("listings/{listingId:guid}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteProductAsync([NotEmptyGuid] Guid listingId, CancellationToken cancellationToken)
     {
-        return StatusCode(StatusCodes.Status501NotImplemented, "This endpoint is not implemented yet.");
+        var result = await _productService.DeleteListingAsync(listingId, cancellationToken);
+        return HandleResult(result);
     }
 
     [HttpGet("{productId:guid}/reviews")]

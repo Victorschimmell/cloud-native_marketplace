@@ -1,6 +1,5 @@
 using Backend.Domain.Base;
 using Backend.Domain.Entities.Location;
-using Backend.Domain.ValueObjects;
 using Backend.Domain.Enums;
 
 namespace Backend.Domain.Entities.IdentityAccess;

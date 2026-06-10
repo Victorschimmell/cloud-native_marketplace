@@ -21,6 +21,7 @@ export default function OrderDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviewingItemId, setReviewingItemId] = useState<number | null>(null);
+  const [viewingReviewItemId, setViewingReviewItemId] = useState<number | null>(null);
   const [reviewScore, setReviewScore] = useState(5);
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewMessage, setReviewMessage] = useState('');
@@ -86,8 +87,6 @@ export default function OrderDetailsPage() {
   const itemCount = useMemo(() => (order ? getOrderItemCount(order) : 0), [order]);
   const sellerSummary = useMemo(() => (order ? getSellerSummary(order) : ''), [order]);
   const approvalState = useMemo(() => (order ? getApprovalState(order) : 'Pending'), [order]);
-  const reviewedItemIds = useMemo(() => new Set(order?.reviews.map((review) => review.orderItemId).filter(isNumber) ?? []), [order]);
-  const reviewedProductIds = useMemo(() => new Set(order?.reviews.map((review) => review.productId).filter(isString) ?? []), [order]);
   const canReviewOrder = Boolean(order && isReviewable(order));
 
   const canCancel = useMemo(
@@ -235,126 +234,169 @@ export default function OrderDetailsPage() {
               </div>
 
               <div className="order-details__line-list">
-                {order.items.map((item) => (
-                  <article className="order-details__line" key={`${item.orderId}-${item.orderItemId}`}>
-                    <div className="order-details__line-product">
-                      <span className="order-details__product-media" aria-hidden="true">
-                        No image
-                      </span>
-                      <div>
-                        <h3>
-                          <Link
-                            className="order-details__product-link"
-                            to={`/products/${item.productId}?listingId=${item.listingId}`}
-                          >
-                            {item.productName}
-                          </Link>
-                        </h3>
-                        <p>
-                          Quantity {item.quantity}
-                          <span aria-hidden="true"> - </span>
-                          Sold by {item.sellerName}
-                        </p>
+                {order.items.map((item) => {
+                  const itemReview = order.reviews.find((review) => review.productId === item.productId);
+
+                  return (
+                    <article className="order-details__line" key={`${item.orderId}-${item.orderItemId}`}>
+                      <div className="order-details__line-product">
+                        <span className="order-details__product-media" aria-hidden="true">
+                          {item.imageUrl ? (
+                            <img alt="" src={item.imageUrl} />
+                          ) : (
+                            'No image'
+                          )}
+                        </span>
+                        <div>
+                          <h3>
+                            <Link
+                              className="order-details__product-link"
+                              to={`/products/${item.productId}?listingId=${item.listingId}`}
+                            >
+                              {item.productName}
+                            </Link>
+                          </h3>
+                          <p>
+                            Quantity {item.quantity}
+                            <span aria-hidden="true"> - </span>
+                            Sold by {item.sellerName}
+                            <br />
+                            Item Status - {item.fulfillmentStatus}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="order-details__line-side">
-                      <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
-                      {reviewedItemIds.has(item.orderItemId) || reviewedProductIds.has(item.productId) ? (
-                        <span className="order-details__review-state">Reviewed</span>
-                      ) : canReviewOrder ? (
-                        <button
-                          className="order-details__review-button"
-                          onClick={() => {
-                            setReviewingItemId(item.orderItemId);
-                            setReviewError(null);
-                          }}
-                          type="button"
-                        >
-                          Review product
-                        </button>
-                      ) : null}
-                    </div>
-                    {reviewingItemId === item.orderItemId ? (
-                      <form
-                        className="order-details__review-form"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          void submitReview(item.orderItemId);
-                        }}
-                      >
-                        <div className="order-details__review-form-header">
-                          <h3>Review product</h3>
-                          <span>{item.productName}</span>
-                        </div>
-
-                        <fieldset className="order-details__rating-field" disabled={isSubmittingReview}>
-                          <legend>Rating</legend>
-                          <div className="order-details__rating-options">
-                            {[1, 2, 3, 4, 5].map((score) => (
-                              <button
-                                aria-pressed={reviewScore === score}
-                                aria-label={`${score} ${score === 1 ? 'star' : 'stars'}`}
-                                className="order-details__rating-option"
-                                data-active={score <= reviewScore}
-                                key={score}
-                                onClick={() => setReviewScore(score)}
-                                type="button"
-                              >
-                                <span aria-hidden="true">★</span>
-                              </button>
-                            ))}
+                      <div className="order-details__line-side">
+                        <strong>{formatMoney(item.lineTotal, item.currencyCode)}</strong>
+                        {itemReview ? (
+                          <div className="order-details__review-actions">
+                            <span className="order-details__review-state">Reviewed</span>
+                            <button
+                              className="order-details__review-button"
+                              onClick={() => {
+                                setViewingReviewItemId((currentItemId) =>
+                                  currentItemId === item.orderItemId ? null : item.orderItemId,
+                                );
+                              }}
+                              type="button"
+                            >
+                              {viewingReviewItemId === item.orderItemId ? 'Hide review' : 'View review'}
+                            </button>
                           </div>
-                        </fieldset>
-
-                        <div className="order-details__review-title-field">
-                          <TextField
-                            className="order-details__review-control"
-                            disabled={isSubmittingReview}
-                            label="Title"
-                            maxLength={200}
-                            onChange={(event) => setReviewTitle(event.target.value)}
-                            placeholder="Short summary"
-                            value={reviewTitle}
-                          />
-                        </div>
-                        <div className="order-details__review-form-message">
-                          <TextAreaField
-                            className="order-details__review-control order-details__review-feedback"
-                            disabled={isSubmittingReview}
-                            label="Feedback"
-                            maxLength={2000}
-                            onChange={(event) => setReviewMessage(event.target.value)}
-                            placeholder="What should future customers know?"
-                            rows={3}
-                            value={reviewMessage}
-                          />
-                        </div>
-                        {reviewError ? (
-                          <div className="order-details__review-form-notice">
-                            <FormNotice variant="error">{reviewError}</FormNotice>
-                          </div>
-                        ) : null}
-                        <div className="order-details__review-actions">
+                        ) : canReviewOrder ? (
                           <button
-                            className="order-details__review-action order-details__review-action--primary"
-                            disabled={isSubmittingReview}
-                            type="submit"
-                          >
-                            {isSubmittingReview ? 'Submitting...' : 'Submit review'}
-                          </button>
-                          <button
-                            className="order-details__review-action order-details__review-action--secondary"
-                            disabled={isSubmittingReview}
-                            onClick={() => setReviewingItemId(null)}
+                            className="order-details__review-button"
+                            onClick={() => {
+                              setReviewingItemId(item.orderItemId);
+                              setReviewError(null);
+                            }}
                             type="button"
                           >
-                            Cancel
+                            Review product
                           </button>
+                        ) : null}
+                      </div>
+                      {reviewingItemId === item.orderItemId ? (
+                        <form
+                          className="order-details__review-form"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void submitReview(item.orderItemId);
+                          }}
+                        >
+                          <div className="order-details__review-form-header">
+                            <h3>Review product</h3>
+                            <span>{item.productName}</span>
+                          </div>
+
+                          <fieldset className="order-details__rating-field" disabled={isSubmittingReview}>
+                            <legend>Rating</legend>
+                            <div className="order-details__rating-options">
+                              {[1, 2, 3, 4, 5].map((score) => (
+                                <button
+                                  aria-pressed={reviewScore === score}
+                                  aria-label={`${score} ${score === 1 ? 'star' : 'stars'}`}
+                                  className="order-details__rating-option"
+                                  data-active={score <= reviewScore}
+                                  key={score}
+                                  onClick={() => setReviewScore(score)}
+                                  type="button"
+                                >
+                                  <span aria-hidden="true">★</span>
+                                </button>
+                              ))}
+                            </div>
+                          </fieldset>
+
+                          <div className="order-details__review-title-field">
+                            <TextField
+                              className="order-details__review-control"
+                              disabled={isSubmittingReview}
+                              label="Title"
+                              maxLength={200}
+                              onChange={(event) => setReviewTitle(event.target.value)}
+                              placeholder="Short summary"
+                              value={reviewTitle}
+                            />
+                          </div>
+                          <div className="order-details__review-form-message">
+                            <TextAreaField
+                              className="order-details__review-control order-details__review-feedback"
+                              disabled={isSubmittingReview}
+                              label="Feedback"
+                              maxLength={2000}
+                              onChange={(event) => setReviewMessage(event.target.value)}
+                              placeholder="What should future customers know?"
+                              rows={3}
+                              value={reviewMessage}
+                            />
+                          </div>
+                          {reviewError ? (
+                            <div className="order-details__review-form-notice">
+                              <FormNotice variant="error">{reviewError}</FormNotice>
+                            </div>
+                          ) : null}
+                          <div className="order-details__review-actions">
+                            <button
+                              className="order-details__review-action order-details__review-action--primary"
+                              disabled={isSubmittingReview}
+                              type="submit"
+                            >
+                              {isSubmittingReview ? 'Submitting...' : 'Submit review'}
+                            </button>
+                            <button
+                              className="order-details__review-action order-details__review-action--secondary"
+                              disabled={isSubmittingReview}
+                              onClick={() => setReviewingItemId(null)}
+                              type="button"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : itemReview && viewingReviewItemId === item.orderItemId ? (
+                        <div className="order-details__review-box">
+                          <div className="order-details__review-box-header">
+                            <div className="order-details__review-box-copy">
+                              {itemReview.reviewCommentTitle ? (
+                                <strong className="order-details__review-box-title">{itemReview.reviewCommentTitle}</strong>
+                              ) : null}
+                              <time className="order-details__review-box-date" dateTime={itemReview.reviewCreationDateUtc}>
+                                {formatReviewDate(itemReview.reviewCreationDateUtc)}
+                              </time>
+                            </div>
+                            <div className="order-details__review-score" aria-label={`${itemReview.reviewScore} out of 5 stars`}>
+                              <ReviewStars rating={itemReview.reviewScore} />
+                              <span>{itemReview.reviewScore}/5</span>
+                            </div>
+                          </div>
+                          {itemReview.reviewCommentMessage ? (
+                            <p className="order-details__review-box-message">{itemReview.reviewCommentMessage}</p>
+                          ) : null}
                         </div>
-                      </form>
-                    ) : null}
-                  </article>
-                ))}
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
 
               <dl className="order-details__totals">
@@ -553,6 +595,31 @@ function StatusBadge({ label }: { label: string }) {
   );
 }
 
+function ReviewStars({ rating }: { rating: number }) {
+  const roundedToHalf = Math.round(rating * 2) / 2;
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const starValue = index + 1;
+
+    if (roundedToHalf >= starValue) {
+      return 'order-details__review-star--filled';
+    }
+
+    if (roundedToHalf === starValue - 0.5) {
+      return 'order-details__review-star--half';
+    }
+
+    return '';
+  });
+
+  return (
+    <span className="order-details__review-stars" aria-hidden="true">
+      {stars.map((starClass, index) => (
+        <span className={`order-details__review-star ${starClass}`} key={index} />
+      ))}
+    </span>
+  );
+}
+
 function getSellerSummary(order: Order) {
   const sellerNames = Array.from(new Set(order.items.map((item) => item.sellerName).filter(Boolean)));
   const firstSeller = sellerNames[0] ?? 'the seller';
@@ -588,10 +655,10 @@ function isReviewable(order: Order) {
   return order.orderStatus === 'Delivered' || order.orderStatus === 'Returned';
 }
 
-function isNumber(value: unknown): value is number {
-  return typeof value === 'number';
-}
-
-function isString(value: unknown): value is string {
-  return typeof value === 'string';
+function formatReviewDate(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(value));
 }

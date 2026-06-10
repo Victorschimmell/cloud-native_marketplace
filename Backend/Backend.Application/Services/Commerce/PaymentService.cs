@@ -13,6 +13,7 @@ public sealed class PaymentService : IPaymentService
     private readonly IOrderRepository _orderRepository;
     private readonly ICurrencyRepository _currencyRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
 
     public PaymentService(
@@ -20,18 +21,21 @@ public sealed class PaymentService : IPaymentService
         IOrderRepository orderRepository,
         ICurrencyRepository currencyRepository,
         IDateTimeProvider dateTimeProvider,
+        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(paymentRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(currencyRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
+        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _paymentRepository = paymentRepository;
         _orderRepository = orderRepository;
         _currencyRepository = currencyRepository;
         _dateTimeProvider = dateTimeProvider;
+        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
     }
 
@@ -52,6 +56,14 @@ public sealed class PaymentService : IPaymentService
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
+            ActionType: AuditActionType.Created,
+            TargetEntityType: nameof(OrderPayment),
+            TargetEntityId: $"{result.Value!.OrderId}:{result.Value.PaymentSequential}",
+            Outcome: AuditOutcome.Succeeded,
+            Details: $"Payment {result.Value.PaymentSequential} recorded for order {result.Value.OrderId} with status {result.Value.PaymentStatus} and value {result.Value.PaymentValue}."
+        ), cancellationToken);
 
         return result;
     }

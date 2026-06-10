@@ -21,8 +21,6 @@ public sealed class RepositoryDITests
         services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
             options.UseInMemoryDatabase(databaseName)
                 .AddInterceptors(serviceProvider.GetRequiredService<AuditTimestampInterceptor>()));
-        services.AddDbContextFactory<ApplicationDbContext>(options =>
-            options.UseInMemoryDatabase(databaseName));
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         services.AddScoped<IUserAccountRepository, UserAccountRepository>();
@@ -37,8 +35,9 @@ public sealed class RepositoryDITests
         services.AddScoped<IOrderReviewRepository, OrderReviewRepository>();
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IAdminIssueRepository, AdminIssueRepository>();
+        services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
         services.AddScoped<ISellerVerificationRequestRepository, SellerVerificationRequestRepository>();
-        services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
         return services.BuildServiceProvider();
@@ -91,8 +90,9 @@ public sealed class RepositoryDITests
         typeof(IOrderReviewRepository),
         typeof(ICartRepository),
         typeof(IAuditLogRepository),
+        typeof(IAdminIssueRepository),
+        typeof(IAdminDashboardRepository),
         typeof(ISellerVerificationRequestRepository),
-        typeof(IShipmentRepository),
         typeof(ICurrencyRepository),
     ];
 

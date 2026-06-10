@@ -1,6 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.IdentityAccess;
-using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
@@ -16,6 +15,7 @@ internal sealed class SellerRepository(ApplicationDbContext dbContext) : ISeller
     public async Task<Seller?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await dbContext.Sellers
+            .Include(s => s.UserAccount)
             .FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
     }
 

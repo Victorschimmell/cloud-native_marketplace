@@ -535,7 +535,7 @@ public sealed class OlistDataSeeder : IOlistDataSeeder
                 ProductId = productId,
                 Sku = candidate.Sku,
                 ListingPrice = row.Price,
-                InventoryQuantity = Random.Shared.Next(0, 11),
+                InventoryQuantity = Random.Shared.Next(0, 101),
                 VisibilityStatus = ListingVisibilityStatus.Published,
                 PublishedAtUtc = DateTimeOffset.UtcNow
             });

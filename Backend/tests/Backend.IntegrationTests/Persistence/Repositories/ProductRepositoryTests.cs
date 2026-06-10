@@ -1,6 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
-using Backend.IntegrationTests.TestSupport;
 using Backend.Infrastructure.Persistence;
+using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.IntegrationTests;

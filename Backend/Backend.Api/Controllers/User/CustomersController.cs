@@ -1,12 +1,15 @@
 using Backend.Api.Attributes;
+using Backend.Api.Auth;
 using Backend.Api.Contracts.Commerce.Orders;
 using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.User.Registration;
 using Backend.Api.Mappings.Commerce.Orders;
 using Backend.Api.Mappings.Common;
 using Backend.Api.Mappings.User.Registration;
+using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
+using Backend.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,20 +37,24 @@ public class CustomersController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<CustomerResponse>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
+    [Authorize(Policy = AuthorizationPolicies.AdminOnly)]
+    public async Task<ActionResult<PageResponse<CustomerResponse>>> GetCustomersAsync([FromQuery] PageRequest pageRequest, CancellationToken cancellationToken)
     {
-        if (!_currentUserProvider.IsAdmin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Only admins can access customers." });
-        }
-
         _logger.LogInformation(
             "Fetching customers with page {Page} and page size {PageSize}.",
             pageRequest.Page,
             pageRequest.PageSize);
 
         var result = await _customerService.GetCustomersAsync(pageRequest.ToAppRequest(), cancellationToken);
-        return HandleResult(result, customer => customer.ToResponse());
+        return HandleResult(
+            result,
+            page => new PageResponse<CustomerResponse>
+            {
+                Items = page.Items.Select(customer => customer.ToResponse()).ToArray(),
+                Page = page.Page,
+                PageSize = page.PageSize,
+                TotalCount = page.TotalCount
+            });
     }
 
     [HttpGet("{userId:guid}")]
@@ -63,7 +70,7 @@ public class CustomersController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access another customer." });
         }
 
-        _logger.LogInformation("Fetching customer with ID {userId}.", userId);
+        _logger.LogInformation("Fetching customer with ID {UserId}.", userId);
 
         var result = await _customerService.GetByIdAsync(userId, cancellationToken);
         return HandleResult(result, customer => customer.ToResponse());
@@ -74,6 +81,8 @@ public class CustomersController : ApiControllerBase
         [NotEmptyGuid] Guid userId,
         [FromQuery] PageRequest pageRequest,
         [FromQuery] string? currency,
+        [FromQuery] OrderStatus? status,
+        [FromQuery] string? sort,
         CancellationToken cancellationToken)
     {
         if (!TryGetCurrentUserId(out var authenticatedUserId))
@@ -86,7 +95,18 @@ public class CustomersController : ApiControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new { Error = "Cannot access orders for another customer." });
         }
 
-        var result = await _orderService.GetSummaryByCustomerUserAsync(userId, pageRequest.ToAppRequest(), currency, cancellationToken);
+        if (!TryParseOrderSort(sort, out var orderSort))
+        {
+            return BadRequest(new { Error = $"Unsupported order sort '{sort}'." });
+        }
+
+        var result = await _orderService.GetSummaryByCustomerUserAsync(
+            userId,
+            pageRequest.ToAppRequest(),
+            currency,
+            status,
+            orderSort,
+            cancellationToken);
         return HandleResult(
             result,
             page => new PageResponse<OrderSummaryModel>
@@ -108,5 +128,28 @@ public class CustomersController : ApiControllerBase
 
         userId = Guid.Empty;
         return false;
+    }
+
+    private static bool TryParseOrderSort(string? sort, out CustomerOrderSort orderSort)
+    {
+        if (string.IsNullOrWhiteSpace(sort))
+        {
+            orderSort = CustomerOrderSort.Newest;
+            return true;
+        }
+
+        orderSort = sort.Trim().ToLowerInvariant() switch
+        {
+            "newest" => CustomerOrderSort.Newest,
+            "oldest" => CustomerOrderSort.Oldest,
+            "total-high" => CustomerOrderSort.TotalHigh,
+            "total-low" => CustomerOrderSort.TotalLow,
+            _ => CustomerOrderSort.Newest
+        };
+
+        return sort.Trim().Equals("newest", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("oldest", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("total-high", StringComparison.OrdinalIgnoreCase)
+            || sort.Trim().Equals("total-low", StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,7 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
 using Backend.Application.Common.Abstractions;
 using Backend.Application.Interfaces.Services;
 using Backend.Application.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.Application;
 
@@ -18,16 +18,17 @@ public static class DependencyInjection
         services.AddScoped<IPaymentService, PaymentService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<ICartService, CartService>();
+        services.AddScoped<ICheckoutObservability, CheckoutObservability>();
         services.AddScoped<ICheckoutService, CheckoutService>();
-        services.AddScoped<IShipmentService, ShipmentService>();
 
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+        services.AddScoped<IAdminIssueService, AdminIssueService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
 
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IAddressService, AddressService>();
-        services.AddScoped<ISellerService, SellerService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRegistrationService, RegistrationService>();
         services.AddScoped<ISellerVerificationService, SellerVerificationService>();
