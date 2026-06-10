@@ -1,4 +1,5 @@
 using Backend.Api.Contracts.User.Auth;
+using Backend.Api.Contracts.User.SellerVerification;
 using App = Backend.Application.DTOs;
 
 namespace Backend.Api.Mappings.User.Auth;
@@ -21,7 +22,9 @@ public static class AuthMappingExtensions
         {
             CustomerId = response.Customer?.Id,
             SellerId = response.Seller?.Id,
-            SellerVerificationStatus = response.Seller?.VerificationStatus
+            SellerVerificationStatus = response.Seller is null
+                ? null
+                : (VerificationStatus)response.Seller.VerificationStatus
         };
 
     public static UserAccountModel ToModel(this App.UserAccountDto user) =>
@@ -31,7 +34,7 @@ public static class AuthMappingExtensions
             Email = user.Email,
             IsAdmin = user.IsAdmin,
             IsBlocked = user.IsBlocked,
-            AccountStatus = user.AccountStatus,
+            AccountStatus = (AccountStatus)user.AccountStatus,
             LastLoginAtUtc = user.LastLoginAtUtc
         };
 

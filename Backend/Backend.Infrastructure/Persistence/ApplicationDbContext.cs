@@ -29,7 +29,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-    public DbSet<AdminIssue> AdminIssues => Set<AdminIssue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

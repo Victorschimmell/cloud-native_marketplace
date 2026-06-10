@@ -21,7 +21,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(o => o.OrderStatus)
             .IsRequired();
-
+        
         builder.Property(o => o.OrderStatusDescription)
             .HasMaxLength(500);
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Backend.Api;
 using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
@@ -244,7 +245,7 @@ public class ReviewsEndpointsTests : IClassFixture<MarketplaceApiFactory>
             ? dbContext.Customers.Single(customer => customer.UserId == customerUserId.Value)
             : TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreatePendingSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
         var address = TestEntityFactory.CreateAddress();
         var category = TestEntityFactory.CreateCategory("review_category", "Review category");
         var product = productId.HasValue

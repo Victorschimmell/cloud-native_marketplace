@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Api.Contracts.Commerce.Orders;
 
 public sealed record UpdateOrderStatusRequest

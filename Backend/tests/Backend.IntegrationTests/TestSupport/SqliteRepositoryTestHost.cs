@@ -3,9 +3,9 @@ using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
 using Backend.Infrastructure.Common;
 using Backend.Infrastructure.Persistence;
+using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Import.Abstractions;
 using Backend.Infrastructure.Persistence.Import.Services;
-using Backend.Infrastructure.Persistence.Interceptors;
 using Backend.Infrastructure.Persistence.Repositories;
 using Backend.Infrastructure.Persistence.Seeding;
 using Microsoft.Data.Sqlite;
@@ -67,6 +67,7 @@ internal sealed class SqliteRepositoryTestHost : IAsyncDisposable
         services.AddScoped<ICartRepository, CartRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<ISellerVerificationRequestRepository, SellerVerificationRequestRepository>();
+        services.AddScoped<IShipmentRepository, ShipmentRepository>();
         services.AddScoped<ICurrencyRepository, CurrencyRepository>();
 
         var serviceProvider = services.BuildServiceProvider();

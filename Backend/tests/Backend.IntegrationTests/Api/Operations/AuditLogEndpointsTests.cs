@@ -1,16 +1,16 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
-using Backend.Api.Contracts.Common;
 using Backend.Api.Contracts.Operation.AuditLog;
 using Backend.Api.Contracts.User.Auth;
 using Backend.Api.Contracts.User.Registration;
 using Backend.Domain.Entities.Carts;
+using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Entities.IdentityAccess;
 using Backend.Domain.Entities.Orders;
-using Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.Extensions.DependencyInjection;
@@ -634,7 +634,7 @@ public class AuditLogEndpointsTests : IClassFixture<MarketplaceApiFactory>
         var customerUser = TestEntityFactory.CreateUserAccount($"checkout-customer-{Guid.NewGuid():N}@example.com");
         var customer = TestEntityFactory.CreateCustomer(customerUser.Id);
         var sellerUser = TestEntityFactory.CreateUserAccount($"checkout-seller-{Guid.NewGuid():N}@example.com");
-        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("checkout-category", "Checkout category");
         var product = TestEntityFactory.CreateProduct(category.Id, "Checkout product");
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, $"SKU-{Guid.NewGuid():N}", 50m);

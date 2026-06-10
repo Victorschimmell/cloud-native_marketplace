@@ -28,12 +28,6 @@ public sealed class CustomerService : ICustomerService
 
     public async Task<Result<PagedResult<CustomerDto>>> GetCustomersAsync(PagedRequest request, CancellationToken cancellationToken = default)
     {
-        var paginationError = PaginationRules.Validate(request.Page, request.PageSize);
-        if (paginationError is not null)
-        {
-            return Result<PagedResult<CustomerDto>>.ValidationFailure(paginationError);
-        }
-
         var result = await _customerRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
         return Result<PagedResult<CustomerDto>>.Success(new PagedResult<CustomerDto>(
             result.Items.Select(customer => customer.ToCustomerDto()).ToArray(), request.Page, request.PageSize, result.TotalCount));

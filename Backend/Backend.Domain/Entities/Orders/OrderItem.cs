@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Domain.Entities.Orders;
 
 public sealed class OrderItem
@@ -13,10 +11,6 @@ public sealed class OrderItem
     public decimal UnitPrice { get; set; }
     public decimal FreightValue { get; set; }
     public DateTimeOffset? ShippingLimitDateUtc { get; set; }
-    public OrderStatus FulfillmentStatus { get; set; } = OrderStatus.Pending;
-    public DateTimeOffset? FulfillmentApprovedAtUtc { get; set; }
-    public DateTimeOffset? FulfillmentProcessingAtUtc { get; set; }
-    public DateTimeOffset? FulfillmentShippedAtUtc { get; set; }
 
     public Order? Order { get; set; }
     public Catalog.ProductListing? Listing { get; set; }

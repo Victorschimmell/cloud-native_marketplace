@@ -79,6 +79,7 @@ function getCapabilities(user: UserAccount | null, profile: AuthProfile | null):
     isAuthenticated,
     isCustomer,
     isSeller,
+    needsSellerVerification: isSeller && !isVerifiedSeller,
     isVerifiedSeller,
     isAdmin,
   };

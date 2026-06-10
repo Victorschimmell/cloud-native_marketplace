@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Api.Contracts.User.Auth;
 
 public sealed record UserAccountModel

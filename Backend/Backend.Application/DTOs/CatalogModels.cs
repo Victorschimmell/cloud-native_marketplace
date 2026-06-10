@@ -5,7 +5,6 @@ public sealed record ProductDto(
     Guid CategoryId,
     string ProductName,
     string Description,
-    string? ImageUrl,
     int ProductNameLength,
     int ProductDescriptionLength,
     int ProductPhotosQty,
@@ -20,7 +19,6 @@ public sealed record BrowseProductDto(
     Guid CategoryId,
     string ProductName,
     string Description,
-    string? ImageUrl,
     string? CategoryName,
     decimal Price,
     string CurrencyCode,
@@ -39,7 +37,6 @@ public sealed record ProductDetailsDto(
     Guid CategoryId,
     string ProductName,
     string Description,
-    string? ImageUrl,
     string? CategoryName,
     decimal Price,
     string CurrencyCode,
@@ -67,39 +64,23 @@ public sealed record CreateProductRequest(
     Guid CategoryId,
     string ProductName,
     string Description,
-    string? ImageUrl,
     int ProductPhotosQty,
     int ProductWeightG,
     int ProductLengthCm,
     int ProductHeightCm,
-    int ProductWidthCm,
-    decimal Price,
-    int InventoryQuantity);
+    int ProductWidthCm);
 
 public sealed record UpdateProductRequest(
-    Guid ListingId,
-    Guid CategoryId,
-    string ProductName,
-    string Description,
-    string? ImageUrl,
-    int ProductPhotosQty,
-    int ProductWeightG,
-    int ProductLengthCm,
-    int ProductHeightCm,
-    int ProductWidthCm,
-    decimal Price,
-    int InventoryQuantity,
-    string VisibilityStatus);
-
-public sealed record SellerListingDto(
-    Guid ListingId,
     Guid ProductId,
     Guid CategoryId,
     string ProductName,
     string Description,
-    string? ImageUrl,
-    string? CategoryName,
-    decimal ListingPrice,
-    string CurrencyCode,
-    int InventoryQuantity,
-    string VisibilityStatus);
+    int ProductPhotosQty,
+    int ProductWeightG,
+    int ProductLengthCm,
+    int ProductHeightCm,
+    int ProductWidthCm);
+
+public sealed record CreateCategoryRequest(string CategoryNamePt, string? CategoryNameEn);
+
+public sealed record UpdateCategoryRequest(Guid CategoryId, string CategoryNamePt, string? CategoryNameEn);

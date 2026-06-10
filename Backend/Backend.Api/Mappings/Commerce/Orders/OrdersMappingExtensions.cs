@@ -16,7 +16,7 @@ public static class OrdersMappingExtensions
             UserId = order.UserId,
             ShippingAddressId = order.ShippingAddressId,
             OrderNumber = order.OrderNumber,
-            OrderStatus = order.OrderStatus,
+            OrderStatus = (OrderStatus)order.OrderStatus,
             OrderStatusDescription = order.OrderStatusDescription,
             OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
             OrderApprovedAtUtc = order.OrderApprovedAtUtc,
@@ -40,7 +40,7 @@ public static class OrdersMappingExtensions
             Id = order.Id,
             UserId = order.UserId,
             OrderNumber = order.OrderNumber,
-            OrderStatus = order.OrderStatus,
+            OrderStatus = (OrderStatus)order.OrderStatus,
             OrderStatusDescription = order.OrderStatusDescription,
             OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
             OrderApprovedAtUtc = order.OrderApprovedAtUtc,
@@ -53,39 +53,6 @@ public static class OrdersMappingExtensions
             CurrencyCode = order.CurrencyCode,
             Items = order.Items.Select(i => i.ToModel()).ToArray(),
             Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
-        };
-
-    public static SellerOrderSummaryModel ToSellerSummaryModel(this App.SellerOrderSummaryDto order) =>
-        new()
-        {
-            Id = order.Id,
-            CustomerId = order.CustomerId,
-            CustomerName = order.CustomerName,
-            CustomerEmail = order.CustomerEmail,
-            OrderNumber = order.OrderNumber,
-            OrderStatus = order.OrderStatus,
-            OrderStatusDescription = order.OrderStatusDescription,
-            OrderPurchaseTimestampUtc = order.OrderPurchaseTimestampUtc,
-            OrderApprovedAtUtc = order.OrderApprovedAtUtc,
-            OrderDeliveredCarrierDateUtc = order.OrderDeliveredCarrierDateUtc,
-            OrderDeliveredCustomerDateUtc = order.OrderDeliveredCustomerDateUtc,
-            OrderEstimatedDeliveryDateUtc = order.OrderEstimatedDeliveryDateUtc,
-            SubtotalAmount = order.SubtotalAmount,
-            FreightAmount = order.FreightAmount,
-            TotalAmount = order.TotalAmount,
-            CurrencyCode = order.CurrencyCode,
-            CanUpdateStatus = order.CanUpdateStatus,
-            Items = order.Items.Select(i => i.ToModel()).ToArray(),
-            Shipments = order.Shipments.Select(s => s.ToModel()).ToArray()
-        };
-
-    public static SellerOrderStatsModel ToSellerStatsModel(this App.SellerOrderStatsDto stats) =>
-        new()
-        {
-            TotalOrders = stats.TotalOrders,
-            ActiveOrders = stats.ActiveOrders,
-            TotalRevenue = stats.TotalRevenue,
-            CurrencyCode = stats.CurrencyCode
         };
 
     public static OrderItemModel ToModel(this App.OrderItemDto item) =>
@@ -96,7 +63,6 @@ public static class OrdersMappingExtensions
             ListingId = item.ListingId,
             ProductId = item.ProductId,
             ProductName = item.ProductName,
-            ImageUrl = item.ImageUrl,
             ProductPhotosQty = item.ProductPhotosQty,
             SellerId = item.SellerId,
             SellerName = item.SellerName,
@@ -105,11 +71,7 @@ public static class OrdersMappingExtensions
             LineTotal = item.LineTotal,
             FreightValue = item.FreightValue,
             CurrencyCode = item.CurrencyCode,
-            ShippingLimitDateUtc = item.ShippingLimitDateUtc,
-            FulfillmentStatus = item.FulfillmentStatus,
-            FulfillmentApprovedAtUtc = item.FulfillmentApprovedAtUtc,
-            FulfillmentProcessingAtUtc = item.FulfillmentProcessingAtUtc,
-            FulfillmentShippedAtUtc = item.FulfillmentShippedAtUtc
+            ShippingLimitDateUtc = item.ShippingLimitDateUtc
         };
 
     public static App.CancelOrderRequest ToApplicationRequest(this CancelOrderRequest request, Guid orderId) =>

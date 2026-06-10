@@ -1,16 +1,16 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Backend.Api.Contracts.Commerce.Cart;
 using Backend.Api.Contracts.Commerce.Checkout;
 using Backend.Api.Contracts.Commerce.Payments;
-using Backend.Domain.Enums;
+using Backend.Api.Contracts.Commerce.Orders;
+using DomainEnums = Backend.Domain.Enums;
 using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using DomainEnums = Backend.Domain.Enums;
+using System.Text.Json;
 
 namespace Backend.IntegrationTests;
 
@@ -554,7 +554,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount($"{Guid.NewGuid():N}@seller.example");
-        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
         var category = TestEntityFactory.CreateCategory("checkout_category", "Checkout category");
         var product = TestEntityFactory.CreateProduct(category.Id, productName);
         var listing = TestEntityFactory.CreateListing(seller.Id, product.Id, sku, price);
@@ -591,7 +591,7 @@ public class CheckoutEndpointsTests : IClassFixture<MarketplaceApiFactory>
         using var scope = _factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var sellerUser = TestEntityFactory.CreateUserAccount(email);
-        var seller = TestEntityFactory.CreateVerifiedSeller(sellerUser.Id);
+        var seller = TestEntityFactory.CreateSeller(sellerUser.Id);
 
         dbContext.UserAccounts.Add(sellerUser);
         dbContext.Sellers.Add(seller);

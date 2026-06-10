@@ -47,7 +47,7 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return Result<CartDto>.Forbidden(restriction);
+            return restriction;
         }
 
         var cart = await GetCartWithProductDetailsAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
@@ -57,7 +57,7 @@ public sealed class CartService : ICartService
             return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
         }
 
-        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -69,10 +69,10 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return Result<CartDto>.Forbidden(restriction);
+            return restriction;
         }
 
-        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -155,10 +155,10 @@ public sealed class CartService : ICartService
     {
         if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
         {
-            return Result<CartDto>.Forbidden(restriction);
+            return restriction;
         }
 
-        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
+        if (!_currencyConversionService.TryGetPriceConverter(displayCurrency, out var currencyCode, out var priceConverter))
         {
             return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
         }
@@ -206,41 +206,6 @@ public sealed class CartService : ICartService
             await _cartRepository.UpdateItemAsync(existingCartItem, cancellationToken);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
-    }
-
-    public async Task<Result<CartDto>> RemoveItemAsync(RemoveCartItemRequest request, string displayCurrency, CancellationToken cancellationToken = default)
-    {
-        if (await GetBuyerRestrictionAsync(request.UserId, cancellationToken) is { } restriction)
-        {
-            return Result<CartDto>.Forbidden(restriction);
-        }
-
-        if (!_currencyConversionService.TryGetPriceFromBaseConverter(displayCurrency, out var currencyCode, out var priceConverter))
-        {
-            return Result<CartDto>.ValidationFailure("Currency must be one of BRL, USD, or DKK.");
-        }
-
-        if (!request.CartId.HasValue && !request.UserId.HasValue && !request.SessionId.HasValue)
-        {
-            return Result<CartDto>.ValidationFailure("At least one of CartId, UserId, or SessionId must be provided.");
-        }
-
-        var cart = await GetActiveCartAsync(request.CartId, request.UserId, request.SessionId, cancellationToken);
-        if (cart is null)
-        {
-            return Result<CartDto>.NotFound("Cart was not found for the provided identifiers.");
-        }
-
-        var existingCartItem = cart.Items.FirstOrDefault(item => item.ListingId == request.ListingId);
-        if (existingCartItem is null)
-        {
-            return Result<CartDto>.NotFound("Cart item was not found in the cart.");
-        }
-
-        await _cartRepository.RemoveItemAsync(existingCartItem, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await ReloadCartResultAsync(cart.Id, currencyCode, priceConverter, cancellationToken);
@@ -347,7 +312,7 @@ public sealed class CartService : ICartService
         return cart;
     }
 
-    private async Task<string?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
+    private async Task<Result<CartDto>?> GetBuyerRestrictionAsync(Guid? userId, CancellationToken cancellationToken)
     {
         if (!userId.HasValue)
         {
@@ -357,19 +322,13 @@ public sealed class CartService : ICartService
         var seller = await _sellerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (seller is not null)
         {
-            return "Seller accounts cannot use carts or buy products.";
-        }
-
-        var user = seller?.UserAccount;
-        if (user?.IsAdmin == true)
-        {
-            return "Admin accounts cannot check out or buy products.";
+            return Result<CartDto>.Forbidden("Seller accounts cannot use carts or buy products.");
         }
 
         var customer = await _customerRepository.GetByUserIdAsync(userId.Value, cancellationToken);
         if (customer is null)
         {
-            return "Only customer accounts can use carts.";
+            return Result<CartDto>.Forbidden("Only customer accounts can use carts.");
         }
 
         return null;

@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Backend.Api;
 using Backend.Api.Contracts.Catalog.Products;
 using Backend.Api.Contracts.Commerce.Cart;
+using Backend.Api.Contracts.Commerce.Payments;
 using Backend.Api.Contracts.Commerce.Reviews;
 using Backend.Api.Contracts.User.Registration;
 
@@ -103,14 +105,11 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
     {
         // Arrange
         var productName = new string('a', 501); // Invalid: exceeds MaxLength(500)
-        await AuthenticateAsRegisteredCustomerAsync();
         var createRequest = new CreateProductRequest
         {
             ProductName = productName,
             CategoryId = Guid.NewGuid(),
             Description = "Test Description",
-            Price = 9.99m,
-            InventoryQuantity = 10,
             ProductPhotosQty = 1,
             ProductWeightG = 100,
             ProductLengthCm = 10,
@@ -147,6 +146,29 @@ public class InputValidationTests : IClassFixture<MarketplaceApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("ListingId", content);
+    }
+
+
+
+    // Valid Data Test
+    // Ensure valid data still receives NotImplemented (endpoint exists but not implemented)
+    [Fact]
+    public async Task RecordPayment_WithValidData_ReturnsNotImplemented()
+    {
+        // Arrange
+        var recordRequest = new RecordPaymentRequest
+        {
+            CurrencyId = Guid.NewGuid(),
+            PaymentType = PaymentType.CreditCard,
+            PaymentInstallments = 1,
+            PaymentValue = 100m
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/payments", recordRequest, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotImplemented, response.StatusCode);
     }
 
     private async Task AuthenticateAsRegisteredCustomerAsync()

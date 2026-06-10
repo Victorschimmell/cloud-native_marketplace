@@ -18,7 +18,7 @@ internal sealed class DefaultResponsesTransformer : IOpenApiOperationTransformer
         }
         else if (metadata.OfType<HttpPostAttribute>().Any())
         {
-            operation.Responses.TryAdd("200", new OpenApiResponse { Description = "OK" });
+            operation.Responses.TryAdd("201", new OpenApiResponse { Description = "Created" });
             operation.Responses.TryAdd("400", new OpenApiResponse { Description = "Bad Request" });
             operation.Responses.TryAdd("409", new OpenApiResponse { Description = "Conflict" });
         }
@@ -36,7 +36,6 @@ internal sealed class DefaultResponsesTransformer : IOpenApiOperationTransformer
         }
         else if (metadata.OfType<HttpDeleteAttribute>().Any())
         {
-            operation.Responses.TryAdd("200", new OpenApiResponse { Description = "OK" });
             operation.Responses.TryAdd("204", new OpenApiResponse { Description = "No Content" });
             operation.Responses.TryAdd("404", new OpenApiResponse { Description = "Not Found" });
         }

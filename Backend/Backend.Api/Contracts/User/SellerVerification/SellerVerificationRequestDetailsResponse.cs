@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Api.Contracts.User.SellerVerification;
 
 public sealed record SellerVerificationRequestDetailsResponse

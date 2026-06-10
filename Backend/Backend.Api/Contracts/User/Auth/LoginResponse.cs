@@ -1,4 +1,4 @@
-using Backend.Domain.Enums;
+using Backend.Api.Contracts.User.SellerVerification;
 
 namespace Backend.Api.Contracts.User.Auth;
 

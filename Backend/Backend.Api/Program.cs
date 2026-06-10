@@ -1,14 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text.Json.Serialization;
 using Backend.Api.Auth;
 using Backend.Api.Middleware;
 using Backend.Api.OpenApi.Transformers;
 using Backend.Application;
 using Backend.Infrastructure;
-using Elastic.Ingest.Elasticsearch;
-using Elastic.Ingest.Elasticsearch.DataStreams;
-using Elastic.Serilog.Sinks;
 using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 using Serilog;
@@ -20,7 +15,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     var logDirectory = context.Configuration["LogFiles:DirectoryPath"];
-    var elasticsearchUri = context.Configuration["Elasticsearch:Uri"];
     var resolvedLogDirectory = string.IsNullOrWhiteSpace(logDirectory)
         ? Path.Combine(AppContext.BaseDirectory, "logs")
         : Path.GetFullPath(logDirectory);
@@ -36,29 +30,6 @@ builder.Host.UseSerilog((context, services, configuration) =>
             shared: true,
             retainedFileCountLimit: 30,
             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}");
-
-    if (Uri.TryCreate(elasticsearchUri, UriKind.Absolute, out var parsedElasticsearchUri))
-    {
-        configuration.WriteTo.Elasticsearch(
-            [parsedElasticsearchUri],
-            options =>
-            {
-                options.DataStream = new DataStreamName("logs", "marketplace-backend", context.HostingEnvironment.EnvironmentName.ToLowerInvariant());
-                options.BootstrapMethod = BootstrapMethod.Silent;
-            });
-    }
-});
-
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
 });
 
 builder.Services.AddMarketplaceAuthentication(builder.Configuration, builder.Environment);
@@ -88,16 +59,10 @@ app.Logger.LogInformation("Backend API host built successfully.");
 
 var applyMigrationsOnStartup = builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
 var seedOlistOnStartup = builder.Configuration.GetValue<bool>("OlistImport:Enabled");
-var seedAdminOnStartup = builder.Configuration.GetValue<bool>("AdminUser:SeedOnStartup");
 
-if (applyMigrationsOnStartup || seedOlistOnStartup || seedAdminOnStartup)
+if (applyMigrationsOnStartup || seedOlistOnStartup)
 {
     await app.Services.ApplyMigrationsAsync();
-}
-
-if (seedAdminOnStartup)
-{
-    await app.Services.SeedAdminDataAsync(builder.Configuration);
 }
 
 if (seedOlistOnStartup)
@@ -106,35 +71,14 @@ if (seedOlistOnStartup)
 }
 
 app.UseExceptionHandler();
-app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseSerilogRequestLogging(options =>
-{
-    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
-    {
-        var statusCode = httpContext.Response.StatusCode;
-        var userIdClaim = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-        diagnosticContext.Set("Component", "HttpPipeline");
-        diagnosticContext.Set("Operation", "HttpRequest");
-        diagnosticContext.Set("Outcome", statusCode >= StatusCodes.Status400BadRequest ? "Failed" : "Succeeded");
-        diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
-        diagnosticContext.Set("StatusCode", statusCode);
-        diagnosticContext.Set("RequestMethod", httpContext.Request.Method);
-        diagnosticContext.Set("RequestPath", httpContext.Request.Path.Value ?? string.Empty);
-
-        if (Guid.TryParse(userIdClaim, out var userId))
-        {
-            diagnosticContext.Set("UserId", userId);
-        }
-    };
-});
-app.UseMiddleware<RequestTimingMiddleware>();
+app.UseSerilogRequestLogging();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    await app.Services.SeedAdminDataAsync(builder.Configuration);
+    await app.Services.SeedSellerDataAsync(builder.Configuration);
+
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
@@ -148,12 +92,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-if (!app.Environment.IsDevelopment() && app.Configuration.GetValue("HttpsRedirection:Enabled", true))
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseCors();
+app.UseHttpsRedirection();
 
 app.UseAuthentication();
 

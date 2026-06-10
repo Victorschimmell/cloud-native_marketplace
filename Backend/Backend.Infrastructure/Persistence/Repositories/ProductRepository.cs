@@ -1,5 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.Catalog;
+using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;

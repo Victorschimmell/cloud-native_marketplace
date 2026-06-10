@@ -1,6 +1,5 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
-using Backend.Application.Common.Models;
 using Backend.Domain.Entities.Orders;
 using Backend.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -23,32 +22,6 @@ internal sealed class PaymentRepository(ApplicationDbContext dbContext, IDateTim
             .Where(payment => payment.OrderId == orderId)
             .OrderBy(payment => payment.PaymentSequential)
             .ToListAsync(cancellationToken);
-    }
-
-    public async Task<PagedResult<OrderPayment>> GetRecentAsync(AdminPaymentStatusFilter status, int page, int pageSize, CancellationToken cancellationToken = default)
-    {
-        var query = dbContext.OrderPayments
-            .AsNoTracking()
-            .Include(p => p.Order)
-                .ThenInclude(o => o!.Customer)
-            .AsQueryable();
-
-        query = status switch
-        {
-            AdminPaymentStatusFilter.Completed => query.Where(p => p.PaymentStatus == PaymentStatus.Paid || p.PaymentStatus == PaymentStatus.Refunded),
-            AdminPaymentStatusFilter.Pending => query.Where(p => p.PaymentStatus == PaymentStatus.Pending || p.PaymentStatus == PaymentStatus.Authorized),
-            AdminPaymentStatusFilter.Failed => query.Where(p => p.PaymentStatus == PaymentStatus.Failed || p.PaymentStatus == PaymentStatus.Cancelled),
-            _ => query
-        };
-
-        var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query
-            .OrderByDescending(p => p.PaidAtUtc ?? (p.Order != null ? p.Order.OrderPurchaseTimestampUtc : DateTimeOffset.MinValue))
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return new PagedResult<OrderPayment>(items, page, pageSize, totalCount);
     }
 
     public async Task AddAsync(OrderPayment payment, CancellationToken cancellationToken = default)

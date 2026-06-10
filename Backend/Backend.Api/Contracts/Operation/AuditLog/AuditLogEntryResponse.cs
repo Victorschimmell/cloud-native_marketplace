@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Api.Contracts.Operation.AuditLog;
 
 public sealed record AuditLogEntryResponse

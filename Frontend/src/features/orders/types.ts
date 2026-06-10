@@ -19,7 +19,6 @@ export interface OrderItem {
   listingId: string;
   productId: string;
   productName: string;
-  imageUrl?: string | null;
   productPhotosQty: number;
   sellerId: string;
   sellerName: string;
@@ -29,10 +28,6 @@ export interface OrderItem {
   freightValue: number;
   currencyCode: CurrencyCode;
   shippingLimitDateUtc?: string | null;
-  fulfillmentStatus: OrderStatus;
-  fulfillmentApprovedAtUtc?: string | null;
-  fulfillmentProcessingAtUtc?: string | null;
-  fulfillmentShippedAtUtc?: string | null;
 }
 
 export interface Payment {

@@ -1,7 +1,0 @@
-services:
-  backend:
-    environment:
-      OlistImport__Enabled: "true"
-      OlistImport__DatasetRootPath: "/app/.data/olist"
-    volumes:
-      - ./Backend/Backend.Api/.data/olist:/app/.data/olist:ro

@@ -37,11 +37,7 @@ export default function CartLine({
     <div className="cart-line">
       <div className="cart-line__product">
         <span className="cart-line__media" aria-hidden="true">
-          {item.imageUrl ? (
-            <img alt="" src={item.imageUrl} />
-          ) : (
-            'No image'
-          )}
+          No image
         </span>
         <div className="cart-line__info">
           <div className="cart-line__product-name">{item.productName}</div>
@@ -55,7 +51,7 @@ export default function CartLine({
             onClick={() => onRemoveItem(item)}
             type="button"
           >
-            Remove item
+            Remove
           </button>
         </div>
       </div>

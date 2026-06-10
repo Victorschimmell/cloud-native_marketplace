@@ -61,7 +61,6 @@ internal static class ApplicationMappings
             product.CategoryId,
             product.ProductName,
             product.Description,
-            product.ImageUrl,
             product.ProductNameLength,
             product.ProductDescriptionLength,
             product.ProductPhotosQty,
@@ -69,23 +68,6 @@ internal static class ApplicationMappings
             product.ProductLengthCm,
             product.ProductHeightCm,
             product.ProductWidthCm);
-
-    public static SellerListingDto ToSellerListingDto(this ProductListing listing, string currencyCode, Func<decimal, decimal> priceConverter)
-    {
-        var product = listing.Product ?? throw new InvalidOperationException("Product listing must include product details.");
-        return new SellerListingDto(
-            listing.Id,
-            listing.ProductId,
-            product.CategoryId,
-            product.ProductName,
-            product.Description,
-            product.ImageUrl,
-            product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
-            priceConverter(listing.ListingPrice),
-            currencyCode,
-            listing.InventoryQuantity,
-            listing.VisibilityStatus.ToString());
-    }
 
     public static BrowseProductDto ToBrowseDto(this ProductListing listing, string currencyCode, decimal convertedPrice)
     {
@@ -97,7 +79,6 @@ internal static class ApplicationMappings
             product.CategoryId,
             product.ProductName,
             product.Description,
-            product.ImageUrl,
             product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
             convertedPrice,
             currencyCode,
@@ -122,7 +103,6 @@ internal static class ApplicationMappings
             product.CategoryId,
             product.ProductName,
             product.Description,
-            product.ImageUrl,
             product.Category?.CategoryNameEn ?? product.Category?.CategoryNamePt,
             convertedPrice,
             currencyCode,
@@ -150,7 +130,6 @@ internal static class ApplicationMappings
             item.ListingId,
             product.Id,
             product.ProductName,
-            product.ImageUrl,
             item.Quantity,
             priceConverter(item.UnitPriceAtAddition),
             priceConverter(item.UnitPriceAtAddition * item.Quantity),
@@ -175,7 +154,6 @@ internal static class ApplicationMappings
             item.ListingId,
             item.ProductId,
             item.Product?.ProductName ?? $"Product {item.ProductId:N}"[..20],
-            item.Product?.ImageUrl,
             item.Product?.ProductPhotosQty ?? 0,
             item.SellerId,
             item.Seller?.BusinessName ?? $"Seller {item.SellerId:N}"[..15],
@@ -184,11 +162,7 @@ internal static class ApplicationMappings
             priceConverter(item.UnitPrice * item.Quantity),
             priceConverter(item.FreightValue),
             currencyCode,
-            item.ShippingLimitDateUtc,
-            item.FulfillmentStatus,
-            item.FulfillmentApprovedAtUtc,
-            item.FulfillmentProcessingAtUtc,
-            item.FulfillmentShippedAtUtc);
+            item.ShippingLimitDateUtc);
 
     public static PaymentDto ToPaymentDto(this OrderPayment payment) =>
         new(
@@ -260,30 +234,6 @@ internal static class ApplicationMappings
             order.Reviews.Select(ToReviewDto).ToArray(),
             order.Shipments.Select(ToShipmentDto).ToArray());
 
-    public static OrderDto ToOrderDto(this Order order, Guid userId, string currencyCode, Func<decimal, decimal> priceConverter, IReadOnlyList<OrderReview> reviews) =>
-        new(
-            order.Id,
-            order.CustomerId,
-            userId,
-            order.ShippingAddressId,
-            order.OrderNumber,
-            order.OrderStatus,
-            order.OrderStatusDescription,
-            order.OrderPurchaseTimestampUtc,
-            order.OrderApprovedAtUtc,
-            order.OrderDeliveredCarrierDateUtc,
-            order.OrderDeliveredCustomerDateUtc,
-            order.OrderEstimatedDeliveryDateUtc,
-            priceConverter(order.SubtotalAmount),
-            priceConverter(order.FreightAmount),
-            priceConverter(order.TotalAmount),
-            currencyCode,
-            order.PlacedFromCartId,
-            order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
-            order.Payments.Select(ToPaymentDto).ToArray(),
-            reviews.Select(ToReviewDto).ToArray(),
-            order.Shipments.Select(ToShipmentDto).ToArray());
-
     public static OrderSummaryDto ToOrderSummaryDto(this Order order, Guid userId, string currencyCode, Func<decimal, decimal> priceConverter) =>
         new(
             order.Id,
@@ -305,45 +255,6 @@ internal static class ApplicationMappings
             order.PlacedFromCartId,
             order.Items.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
             order.Shipments.Select(ToShipmentDto).ToArray());
-
-    public static SellerOrderSummaryDto ToSellerOrderSummaryDto(this Order order, Guid sellerId, string currencyCode, Func<decimal, decimal> priceConverter)
-    {
-        var sellerItems = order.Items
-            .Where(item => item.SellerId == sellerId)
-            .ToArray();
-        var sellerShipments = order.Shipments
-            .Where(shipment => shipment.SellerId == sellerId)
-            .Select(ToShipmentDto)
-            .ToArray();
-        var customerName = order.Customer is { } customer
-            ? $"{customer.FirstName} {customer.LastName}".Trim()
-            : string.Empty;
-
-        return new SellerOrderSummaryDto(
-            order.Id,
-            order.CustomerId,
-            string.IsNullOrWhiteSpace(customerName) ? "Customer" : customerName,
-            order.Customer?.UserAccount?.Email.Value ?? string.Empty,
-            order.OrderNumber,
-            order.OrderStatus,
-            order.OrderStatusDescription,
-            order.OrderPurchaseTimestampUtc,
-            order.OrderApprovedAtUtc,
-            order.OrderDeliveredCarrierDateUtc,
-            order.OrderDeliveredCustomerDateUtc,
-            order.OrderEstimatedDeliveryDateUtc,
-            priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity)),
-            priceConverter(sellerItems.Sum(item => item.FreightValue)),
-            priceConverter(sellerItems.Sum(item => item.UnitPrice * item.Quantity + item.FreightValue)),
-            currencyCode,
-            CanSellerUpdateItems(order.OrderStatus, sellerItems),
-            sellerItems.Select(item => item.ToOrderItemDto(currencyCode, priceConverter)).ToArray(),
-            sellerShipments);
-    }
-
-    private static bool CanSellerUpdateItems(OrderStatus orderStatus, IReadOnlyCollection<OrderItem> sellerItems) =>
-        orderStatus is not (OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned) &&
-        sellerItems.Any(item => item.FulfillmentStatus is not (OrderStatus.Cancelled or OrderStatus.Delivered or OrderStatus.Returned));
 
     public static AuditLogEntryDto ToAuditLogEntryDto(this AuditLog auditLog) =>
         new(
@@ -370,26 +281,4 @@ internal static class ApplicationMappings
             request.ReviewedByUserId,
             request.ReviewedAtUtc,
             request.RejectionReason);
-
-    public static AdminIssueDto ToAdminIssueDto(this AdminIssue issue)
-    {
-        var reportedByDisplay = issue.ReportedByUser?.Email.Value;
-        var assignedToDisplay = issue.AssignedToUser?.Email.Value;
-        return new AdminIssueDto(
-            issue.Id,
-            issue.Title,
-            issue.Description,
-            issue.Type,
-            issue.Priority,
-            issue.Status,
-            issue.ReportedByUserId,
-            reportedByDisplay,
-            issue.AssignedToUserId,
-            assignedToDisplay,
-            issue.ResolvedByUserId,
-            issue.ResolvedAtUtc,
-            issue.Resolution,
-            issue.CreatedAtUtc,
-            issue.UpdatedAtUtc);
-    }
 }

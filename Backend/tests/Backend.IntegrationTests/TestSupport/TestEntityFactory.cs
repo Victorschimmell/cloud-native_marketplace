@@ -28,7 +28,7 @@ internal static class TestEntityFactory
             DefaultAddressId = defaultAddressId
         };
 
-    public static Seller CreatePendingSeller(Guid userId, Guid? defaultAddressId = null) =>
+    public static Seller CreateSeller(Guid userId, Guid? defaultAddressId = null) =>
         new()
         {
             UserId = userId,
@@ -37,17 +37,6 @@ internal static class TestEntityFactory
             PayoutInformation = "iban:dk5000400440116243",
             DefaultAddressId = defaultAddressId,
             VerificationStatus = VerificationStatus.Pending
-        };
-
-    public static Seller CreateVerifiedSeller(Guid userId, Guid? defaultAddressId = null) =>
-        new()
-        {
-            UserId = userId,
-            BusinessName = "MarketplaceTraders",
-            RegistrationNumber = $"REG-{Guid.NewGuid():N}",
-            PayoutInformation = "iban:dk5000400440116243",
-            DefaultAddressId = defaultAddressId,
-            VerificationStatus = VerificationStatus.Verified
         };
 
     public static Address CreateAddress() =>
@@ -107,20 +96,6 @@ internal static class TestEntityFactory
             SubtotalAmount = 100m,
             FreightAmount = 15m,
             TotalAmount = 115m
-        };
-
-    public static OrderItem CreateOrderItem(Guid orderId, int orderItemId, Guid listingId, Guid productId, Guid sellerId, int quantity, decimal unitPrice) =>
-        new()
-        {
-            OrderId = orderId,
-            OrderItemId = orderItemId,
-            ListingId = listingId,
-            ProductId = productId,
-            SellerId = sellerId,
-            Quantity = quantity,
-            UnitPrice = unitPrice,
-            FreightValue = 15m,
-            FulfillmentStatus = OrderStatus.Pending
         };
 
     public static AuditLog CreateAuditLog(

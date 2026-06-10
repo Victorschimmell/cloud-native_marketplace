@@ -19,27 +19,6 @@ internal sealed class EfUnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
         }
     }
 
-    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
-    {
-        var strategy = dbContext.Database.CreateExecutionStrategy();
-
-        await strategy.ExecuteAsync(async () =>
-        {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-            try
-            {
-                await operation(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
-        });
-    }
-
     private static bool TryGetUniqueConstraintViolation(
         DbUpdateException exception,
         out UniqueConstraintTarget target,

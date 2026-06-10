@@ -89,8 +89,9 @@ export interface AuthCapabilities {
   isAuthenticated: boolean;
   isCustomer: boolean;
   isSeller: boolean;
+  needsSellerVerification: boolean;
   isVerifiedSeller: boolean;
   isAdmin: boolean;
 }
 
-export type AuthCapability = 'authenticated' | 'customer' | 'seller' | 'verifiedSeller' | 'admin';
+export type AuthCapability = 'authenticated' | 'customer' | 'seller' | 'sellerVerification' | 'verifiedSeller' | 'admin';

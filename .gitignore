@@ -12,8 +12,6 @@ Thumbs.db
 # .NET
 **/bin/
 **/obj/
-TestResults/
-CoverageReport/
 
 # Node / frontend build output
 **/node_modules/

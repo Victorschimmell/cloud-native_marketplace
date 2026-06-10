@@ -4,7 +4,6 @@ export interface CartItem {
   listingId: string;
   productId: string;
   productName: string;
-  imageUrl?: string | null;
   quantity: number;
   unitPriceAtAddition: number;
   lineTotal: number;

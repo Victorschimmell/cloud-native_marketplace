@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using Backend.Api;
 using Backend.Api.Contracts.User.Auth;
 using Backend.Api.Contracts.User.Registration;
 

@@ -6,7 +6,6 @@ export interface BrowseProduct {
   categoryId: string;
   productName: string;
   description: string;
-  imageUrl?: string | null;
   categoryName: string | null;
   price: number;
   currencyCode: ProductCurrencyCode;
@@ -26,7 +25,6 @@ export interface ProductDetails {
   categoryId: string;
   productName: string;
   description: string;
-  imageUrl?: string | null;
   categoryName: string | null;
   price: number;
   currencyCode: ProductCurrencyCode;

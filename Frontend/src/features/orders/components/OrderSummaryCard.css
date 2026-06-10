@@ -1,20 +1,15 @@
 .orders-page__card {
   display: grid;
   gap: 16px;
-  border-bottom: 1px solid #e5e7eb;
-  border-radius: 0;
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
   background: #ffffff;
-  padding: 22px 24px;
-}
-
-.orders-page__card:last-child {
-  border-bottom: 0;
+  padding: 22px;
 }
 
 .orders-page__card-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  display: flex;
+  justify-content: space-between;
   gap: 16px;
 }
 
@@ -24,11 +19,9 @@
 
 .orders-page__eyebrow {
   margin: 0;
-  color: #111827;
-  font-size: 18px;
+  color: #1f2937;
+  font-size: 20px;
   font-weight: 700;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
 }
 
 .orders-page__card-date {
@@ -74,23 +67,14 @@
 
 .orders-page__items {
   display: grid;
-  gap: 0;
-  border: 1px solid #eef2f7;
-  border-radius: 8px;
-  overflow: hidden;
+  gap: 8px;
 }
 
 .orders-page__item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  background: #ffffff;
-  padding: 12px 14px;
-}
-
-.orders-page__item + .orders-page__item {
-  border-top: 1px solid #eef2f7;
 }
 
 .orders-page__item-name {
@@ -112,10 +96,12 @@
 }
 
 .orders-page__footer {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
 }
 
 .orders-page__total {
@@ -128,7 +114,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  justify-content: flex-end;
 }
 
 .orders-page__action {
@@ -167,7 +152,8 @@
 
 @media (max-width: 720px) {
   .orders-page__card-header {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .orders-page__card-status {
@@ -176,10 +162,7 @@
   }
 
   .orders-page__footer {
-    grid-template-columns: 1fr;
-  }
-
-  .orders-page__actions {
-    justify-content: flex-start;
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

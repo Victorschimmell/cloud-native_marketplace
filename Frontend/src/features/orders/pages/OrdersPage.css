@@ -1,83 +1,13 @@
 .orders-page {
   display: grid;
-  gap: 24px;
-  width: 100%;
-}
-
-.orders-page__panel {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.orders-page__panel-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 18px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 18px 24px;
-}
-
-.orders-page__panel-header h2 {
-  margin: 0;
-  color: #111827;
-  font-size: 18px;
-  line-height: 1.25;
-}
-
-.orders-page__panel-header p {
-  margin: 4px 0 0;
-  color: #6b7280;
-  font-size: 13px;
-}
-
-.orders-page__filters {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-size: 14px;
-}
-
-.orders-page__filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #374151;
-  font-weight: 600;
-}
-
-.orders-page__filter select {
-  min-height: 34px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #111827;
-  font: inherit;
-  font-weight: 500;
-  padding: 6px 10px;
-}
-
-.orders-page__filter select:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
+  gap: 20px;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .orders-page__list {
   display: grid;
-  gap: 0;
-}
-
-.orders-page__empty {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
-  padding: 32px 24px;
-  text-align: center;
+  gap: 18px;
 }
 
 .orders-page__loading {
@@ -86,22 +16,4 @@
   font-size: 14px;
 }
 
-.orders-page .pagination {
-  margin-top: 0;
-  border-top: 1px solid #e5e7eb;
-  padding: 16px 24px;
-}
 
-@media (max-width: 760px) {
-  .orders-page__panel-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .orders-page__filters,
-  .orders-page__filter {
-    align-items: stretch;
-    flex-direction: column;
-    width: 100%;
-  }
-}

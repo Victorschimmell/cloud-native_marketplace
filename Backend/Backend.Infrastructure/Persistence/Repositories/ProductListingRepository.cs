@@ -3,6 +3,7 @@ using Backend.Application.Common.Models;
 using Backend.Application.DTOs;
 using Backend.Domain.Entities.Catalog;
 using Backend.Domain.Enums;
+using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
@@ -12,8 +13,6 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<ProductListing?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
-            .Include(l => l.Seller)
-                .ThenInclude(p => p!.UserAccount)
             .FirstOrDefaultAsync(l => l.Id == id, cancellationToken);
     }
 
@@ -100,8 +99,6 @@ internal sealed class ProductListingRepository(ApplicationDbContext dbContext) :
     public async Task<IReadOnlyList<ProductListing>> GetBySellerIdAsync(Guid sellerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         return await dbContext.ProductListings
-            .Include(l => l.Product)
-            .ThenInclude(p => p!.Category)
             .Where(l => l.SellerId == sellerId && !l.IsDeleted)
             .OrderBy(l => l.CreatedAtUtc)
             .Skip((page - 1) * pageSize)

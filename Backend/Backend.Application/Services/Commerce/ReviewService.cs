@@ -14,7 +14,6 @@ public sealed class ReviewService : IReviewService
     private readonly IOrderRepository _orderRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IAuditLogService _auditLogService;
     private readonly IUnitOfWork _unitOfWork;
 
     public ReviewService(
@@ -22,21 +21,18 @@ public sealed class ReviewService : IReviewService
         IOrderRepository orderRepository,
         ICustomerRepository customerRepository,
         IDateTimeProvider dateTimeProvider,
-        IAuditLogService auditLogService,
         IUnitOfWork unitOfWork)
     {
         ArgumentNullException.ThrowIfNull(reviewRepository);
         ArgumentNullException.ThrowIfNull(orderRepository);
         ArgumentNullException.ThrowIfNull(customerRepository);
         ArgumentNullException.ThrowIfNull(dateTimeProvider);
-        ArgumentNullException.ThrowIfNull(auditLogService);
         ArgumentNullException.ThrowIfNull(unitOfWork);
 
         _reviewRepository = reviewRepository;
         _orderRepository = orderRepository;
         _customerRepository = customerRepository;
         _dateTimeProvider = dateTimeProvider;
-        _auditLogService = auditLogService;
         _unitOfWork = unitOfWork;
     }
 
@@ -149,15 +145,6 @@ public sealed class ReviewService : IReviewService
         review.Order = order;
         review.Customer = customer;
         review.OrderItem = orderItem;
-
-        await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
-            ActionType: AuditActionType.Created,
-            TargetEntityType: nameof(OrderReview),
-            TargetEntityId: review.Id.ToString(),
-            Outcome: AuditOutcome.Succeeded,
-            Details: $"Customer {customer.Id} created review {review.Id} for product {review.ProductId} on order {order.Id} with score {review.ReviewScore}."
-        ), cancellationToken);
-
         return Result<ReviewDto>.Success(review.ToReviewDto());
     }
 

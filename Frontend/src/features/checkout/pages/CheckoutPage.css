@@ -340,7 +340,7 @@
 }
 
 .checkout-page__summary-total dd {
-    color: var(--primary-color);
+    color: #2563eb;
 }
 
 .checkout-page__summary-actions {

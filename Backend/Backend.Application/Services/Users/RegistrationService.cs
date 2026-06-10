@@ -99,7 +99,7 @@ public sealed class RegistrationService : IRegistrationService
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Created,
                 TargetEntityType: nameof(Customer),
-                TargetEntityId: customer.Id.ToString(),
+                TargetEntityId: customer.Id.ToString(), 
                 Outcome: AuditOutcome.Succeeded,
                 Details: $"Customer profile created for user {request.Email}"
             ), cancellationToken);
@@ -188,7 +188,7 @@ public sealed class RegistrationService : IRegistrationService
             await _auditLogService.WriteEntryAsync(new WriteAuditLogEntryRequest(
                 ActionType: AuditActionType.Created,
                 TargetEntityType: nameof(SellerVerificationRequest),
-                TargetEntityId: verificationRequest.Id.ToString(),
+                TargetEntityId: verificationRequest.Id.ToString(), 
                 Outcome: AuditOutcome.Succeeded,
                 Details: $"Verification request submitted for seller {seller.Id}"
             ), cancellationToken);

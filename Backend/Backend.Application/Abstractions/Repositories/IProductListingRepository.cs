@@ -1,6 +1,6 @@
+using Backend.Domain.Entities.Catalog;
 using Backend.Application.Common.Models;
 using Backend.Application.DTOs;
-using Backend.Domain.Entities.Catalog;
 
 namespace Backend.Application.Abstractions.Repositories;
 

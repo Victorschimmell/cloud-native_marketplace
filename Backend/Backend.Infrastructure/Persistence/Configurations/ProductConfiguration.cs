@@ -17,11 +17,7 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRequired();
 
         builder.Property(p => p.Description)
-            .HasMaxLength(5000)
             .IsRequired();
-
-        builder.Property(p => p.ImageUrl)
-            .HasMaxLength(2048);
 
         builder.Property(p => p.OlistProductId)
             .HasMaxLength(100);

@@ -1,7 +1,7 @@
 import { request } from '../../../shared/api/request';
 import type { CurrencyCode } from '../../../shared/currency/currency';
 import type { PageResponse } from '../../../shared/types/pagination';
-import type { Order, OrderStatus, OrderSummary, Review } from '../types';
+import type { Order, OrderSummary, Review } from '../types';
 
 interface CreateReviewRequest {
   orderId: string;
@@ -40,20 +40,13 @@ export const orderApi = {
     page: number,
     pageSize: number,
     currency: CurrencyCode,
-    status: 'all' | OrderStatus,
-    sort: string,
     signal?: AbortSignal,
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
       currency,
-      sort,
     });
-    if (status !== 'all') {
-      params.set('status', status);
-    }
-
     return request<PageResponse<OrderSummary>>(`/api/customers/${userId}/orders?${params}`, { signal });
   },
 };

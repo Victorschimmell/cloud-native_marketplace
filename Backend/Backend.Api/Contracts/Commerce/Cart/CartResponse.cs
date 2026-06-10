@@ -1,5 +1,3 @@
-using Backend.Domain.Enums;
-
 namespace Backend.Api.Contracts.Commerce.Cart;
 
 public sealed record CartResponse

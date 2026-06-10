@@ -1,7 +1,7 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Application.Common.Abstractions;
-using Backend.Infrastructure.Persistence;
 using Backend.IntegrationTests.TestSupport;
+using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

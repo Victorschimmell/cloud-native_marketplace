@@ -9,12 +9,10 @@ import { AuthPageFrame } from '../components/AuthPageFrame';
 import type { AccountType } from '../types';
 import './AuthPages.css';
 
-const phonePattern = String.raw`\+?[0-9]{7,25}`;
-const digitsOnlyPattern = String.raw`\d*`;
+const phonePattern = String.raw`\+?[0-9][0-9\s().-]{6,24}(?:\s?(?:x|ext\.?)\s?[0-9]{1,6})?`;
 const phoneValidationMessage = 'Use a valid phone number, for example +4512345678.';
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = new RegExp(`^${phonePattern}$`);
-const digitsOnlyRegex = /^\d+$/;
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -22,7 +20,6 @@ export default function RegisterPage() {
   const [accountType, setAccountType] = useState<AccountType>('customer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -44,10 +41,9 @@ export default function RegisterPage() {
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       password,
-      confirmPassword,
-      payoutInformation: normalizeDigitsInput(payoutInformation),
-      phone: normalizePhoneInput(phone),
-      registrationNumber: normalizeDigitsInput(registrationNumber),
+      payoutInformation: payoutInformation.trim(),
+      phone: phone.trim(),
+      registrationNumber: registrationNumber.trim(),
     };
     const validationError = validateRegisterForm(formValues);
     if (validationError) {
@@ -117,14 +113,6 @@ export default function RegisterPage() {
             type="password"
             value={password}
           />
-          <TextField
-            autoComplete="new-password"
-            invalid={hasAttemptedSubmit && (!confirmPassword || confirmPassword !== password)}
-            label="Confirm password"
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            type="password"
-            value={confirmPassword}
-          />
 
           {accountType === 'customer' ? (
             <>
@@ -147,9 +135,7 @@ export default function RegisterPage() {
                 inputMode="tel"
                 invalid={hasAttemptedSubmit && (!phone.trim() || !phoneRegex.test(phone.trim()))}
                 label="Phone"
-                maxLength={26}
-                onChange={(event) => setPhone(normalizePhoneInput(event.target.value))}
-                pattern={phonePattern}
+                onChange={(event) => setPhone(event.target.value)}
                 placeholder="+4512345678"
                 type="tel"
                 value={phone}
@@ -165,19 +151,15 @@ export default function RegisterPage() {
                 value={businessName}
               />
               <TextField
-                inputMode="numeric"
-                invalid={hasAttemptedSubmit && !digitsOnlyRegex.test(registrationNumber)}
+                invalid={hasAttemptedSubmit && !registrationNumber.trim()}
                 label="Registration number"
-                onChange={(event) => setRegistrationNumber(normalizeDigitsInput(event.target.value))}
-                pattern={digitsOnlyPattern}
+                onChange={(event) => setRegistrationNumber(event.target.value)}
                 value={registrationNumber}
               />
               <TextField
-                inputMode="numeric"
-                invalid={hasAttemptedSubmit && !digitsOnlyRegex.test(payoutInformation)}
+                invalid={hasAttemptedSubmit && !payoutInformation.trim()}
                 label="Payout information"
-                onChange={(event) => setPayoutInformation(normalizeDigitsInput(event.target.value))}
-                pattern={digitsOnlyPattern}
+                onChange={(event) => setPayoutInformation(event.target.value)}
                 value={payoutInformation}
               />
             </>
@@ -203,21 +185,9 @@ interface RegisterFormValues {
   firstName: string;
   lastName: string;
   password: string;
-  confirmPassword: string;
   payoutInformation: string;
   phone: string;
   registrationNumber: string;
-}
-
-function normalizePhoneInput(value: string): string {
-  const hasLeadingPlus = value.trimStart().startsWith('+');
-  const digits = value.replace(/\D/g, '');
-
-  return hasLeadingPlus ? `+${digits}` : digits;
-}
-
-function normalizeDigitsInput(value: string): string {
-  return value.replace(/\D/g, '');
 }
 
 function validateRegisterForm(values: RegisterFormValues): string | null {
@@ -235,14 +205,6 @@ function validateRegisterForm(values: RegisterFormValues): string | null {
 
   if (values.password.length < 8) {
     return 'Password must be at least 8 characters.';
-  }
-
-  if (!values.confirmPassword) {
-    return 'Confirm password is required.';
-  }
-
-  if (values.confirmPassword !== values.password) {
-    return 'Passwords must match.';
   }
 
   if (values.accountType === 'customer') {
@@ -269,16 +231,8 @@ function validateRegisterForm(values: RegisterFormValues): string | null {
     return 'Registration number is required.';
   }
 
-  if (!digitsOnlyRegex.test(values.registrationNumber)) {
-    return 'Registration number can only contain numbers.';
-  }
-
   if (!values.payoutInformation) {
     return 'Payout information is required.';
-  }
-
-  if (!digitsOnlyRegex.test(values.payoutInformation)) {
-    return 'Payout information can only contain numbers.';
   }
 
   return null;

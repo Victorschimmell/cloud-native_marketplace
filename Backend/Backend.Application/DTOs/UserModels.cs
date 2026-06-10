@@ -78,6 +78,8 @@ public sealed record SellerVerificationRequestDto(
     DateTimeOffset? ReviewedAtUtc,
     string? RejectionReason);
 
+public sealed record SubmitSellerVerificationRequest(Guid SellerId, string SubmittedDetails);
+
 public sealed record VerifySellerRequest(
     Guid VerificationRequestId,
     Guid SellerId,

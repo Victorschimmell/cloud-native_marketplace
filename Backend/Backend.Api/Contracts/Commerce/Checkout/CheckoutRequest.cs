@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
 using Backend.Api.Attributes;
 using Backend.Api.Contracts.Commerce.Payments;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Api.Contracts.Commerce.Checkout;
 

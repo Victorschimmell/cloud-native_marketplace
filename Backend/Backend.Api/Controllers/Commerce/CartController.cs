@@ -91,25 +91,6 @@ public class CartController : ApiControllerBase
         return HandleResult(result, cart => cart.ToResponse());
     }
 
-    [HttpDelete("items/{listingId:guid}")]
-    public async Task<ActionResult<CartResponse>> RemoveCartItemAsync([NotEmptyGuid] Guid listingId, [FromQuery] Guid? cartId, [FromQuery] string displayCurrency, CancellationToken cancellationToken)
-    {
-        if (!TryGetCurrentUserId(out var userId))
-        {
-            return Unauthorized(new { Error = "Authenticated user id is missing." });
-        }
-
-        _logger.LogInformation(
-            "Remove cart item requested for listing {ListingId}, cart {CartId}, user {UserId}, session {SessionId}.",
-            listingId,
-            cartId,
-            userId,
-            null);
-
-        var result = await _cartService.RemoveItemAsync(new App.RemoveCartItemRequest(cartId, userId, null, listingId), displayCurrency, cancellationToken);
-        return HandleResult(result, cart => cart.ToResponse());
-    }
-
     private bool TryGetCurrentUserId(out Guid userId)
     {
         if (_currentUserProvider.UserId is { } currentUserId)

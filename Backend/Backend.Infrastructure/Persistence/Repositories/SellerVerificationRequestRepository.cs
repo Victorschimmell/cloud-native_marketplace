@@ -1,5 +1,6 @@
 using Backend.Application.Abstractions.Repositories;
 using Backend.Domain.Entities.IdentityAccess;
+using Backend.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Infrastructure.Persistence.Repositories;
@@ -21,9 +22,12 @@ internal sealed class SellerVerificationRequestRepository(ApplicationDbContext d
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SellerVerificationRequest>> GetBySellerIdAsync(Guid sellerId, CancellationToken cancellationToken = default)
     {
-        return await dbContext.SellerVerificationRequests.CountAsync(cancellationToken);
+        return await dbContext.SellerVerificationRequests
+            .Where(r => r.SellerId == sellerId)
+            .OrderByDescending(r => r.SubmittedAtUtc)
+            .ToListAsync(cancellationToken);
     }
 
     public Task AddAsync(SellerVerificationRequest request, CancellationToken cancellationToken = default)

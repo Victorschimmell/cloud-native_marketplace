@@ -1,400 +1,87 @@
+import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
-import { useCallback, useMemo, useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import PageSkeleton from '../../../components/PageSkeleton';
-import { getCurrencyLocale } from '../../../shared/currency/currency';
-import { useCurrency } from '../../../shared/currency/useCurrency';
-import { productApi } from '../../products/api/productApi';
-import type { Category } from '../../products/types';
 import ProductInventoryTable from './ProductInventoryTable';
-import SellerProductDeleteDialog from './SellerProductDeleteDialog';
-import SellerProductDetailsDialog from './SellerProductDetailsDialog';
-import SellerProductEditDialog, { type SellerProductEditFormValues } from './SellerProductEditDialog';
-import SellerProductPublishDialog from './SellerProductPublishDialog';
 import OrdersTable from './OrdersTable';
-import {
-  sellerApi,
-  type SellerListing,
-  type SellerOrderSort,
-  type SellerOrderStats,
-  type SellerOrderStatusFilter,
-  type SellerOrderSummary,
-} from '../api/sellerApi';
+import { placeholderOrders, placeholderProducts, placeholderStats } from '../data/placeholderData';
 import './SellerDashboard.css';
 
 export type SellerDashboardTab = 'products' | 'orders';
 
-const ORDERS_PAGE_SIZE = 25;
-
-type PendingProductAction = {
-  listingId: string;
-  action: 'delete' | 'publish' | 'update';
-} | null;
-
 interface SellerDashboardProps {
-  activeTab?: SellerDashboardTab;
+  activeTab: SellerDashboardTab;
 }
 
 /**
  * Seller Dashboard
  *
- * This same component is used for the "My Products" and "Orders" routes so tab changes
- * swap table content without remounting and refetching the dashboard counters.
+ * This is the same page is used for the "My Products" and "Orders" tabs. 
+ * The tab is controlled by `activeTab`, which comes from the route (so each tab has its
+ * own URL). Replace placeholder arrays when the back-end is ready with real API calls.
  */
 export default function SellerDashboard({ activeTab }: SellerDashboardProps) {
-  const location = useLocation();
-  const selectedTab = activeTab ?? getActiveTab(location.pathname);
-  const { currency } = useCurrency();
-  const priceFormatter = useMemo(
-    () => new Intl.NumberFormat(getCurrencyLocale(currency), { style: 'currency', currency }),
-    [currency],
-  );
-  const [listings, setListings] = useState<SellerListing[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [orders, setOrders] = useState<SellerOrderSummary[]>([]);
-  const [ordersPage, setOrdersPage] = useState(1);
-  const [ordersTotalCount, setOrdersTotalCount] = useState(0);
-  const [ordersStatusFilter, setOrdersStatusFilter] = useState<SellerOrderStatusFilter>('all');
-  const [ordersSort, setOrdersSort] = useState<SellerOrderSort>('newest');
-  const [orderStats, setOrderStats] = useState<SellerOrderStats | null>(null);
-  const [ordersError, setOrdersError] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<SellerListing | null>(null);
-  const [editingProduct, setEditingProduct] = useState<SellerListing | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState<SellerListing | null>(null);
-  const [publishingProduct, setPublishingProduct] = useState<SellerListing | null>(null);
-  const [pendingProductAction, setPendingProductAction] = useState<PendingProductAction>(null);
-  const [productActionError, setProductActionError] = useState<string | null>(null);
-
-  const loadListings = useCallback(async (signal?: AbortSignal) => {
-    const listingsResponse = await sellerApi.getMyListings(currency, signal);
-    setListings(listingsResponse);
-  }, [currency]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    loadListings(controller.signal).catch(() => {});
-    return () => controller.abort();
-  }, [loadListings]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    productApi.getCategories(controller.signal).then(setCategories).catch(() => {});
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadOrders() {
-      try {
-        const ordersResponse = await sellerApi.getMyOrders({
-          currency,
-          page: ordersPage,
-          pageSize: ORDERS_PAGE_SIZE,
-          status: ordersStatusFilter,
-          sort: ordersSort,
-          signal: controller.signal,
-        });
-
-        setOrders(ordersResponse.items);
-        setOrdersTotalCount(ordersResponse.totalCount);
-        setOrdersError(null);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-
-        setOrders([]);
-        setOrdersTotalCount(0);
-        setOrdersError('Orders could not be loaded right now.');
-      }
-    }
-
-    void loadOrders();
-
-    return () => controller.abort();
-  }, [currency, ordersPage, ordersSort, ordersStatusFilter]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadOrderStats() {
-      try {
-        const statsResponse = await sellerApi.getMyOrderStats(currency, controller.signal);
-        setOrderStats(statsResponse);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-
-        setOrderStats(null);
-      }
-    }
-
-    void loadOrderStats();
-
-    return () => controller.abort();
-  }, [currency]);
-
-  function handleOrdersStatusChange(status: SellerOrderStatusFilter) {
-    setOrdersStatusFilter(status);
-    setOrdersPage(1);
-  }
-
-  function handleOrdersSortChange(sort: SellerOrderSort) {
-    setOrdersSort(sort);
-    setOrdersPage(1);
-  }
-
-  function openProductDetails(product: SellerListing) {
-    setProductActionError(null);
-    setSelectedProduct(product);
-  }
-
-  function openEditProduct(product: SellerListing) {
-    setProductActionError(null);
-    setSelectedProduct(null);
-    setEditingProduct(product);
-  }
-
-  function openDeleteProduct(product: SellerListing) {
-    setProductActionError(null);
-    setSelectedProduct(null);
-    setDeletingProduct(product);
-  }
-
-  function openPublishProduct(product: SellerListing) {
-    setProductActionError(null);
-    setSelectedProduct(null);
-    setPublishingProduct(product);
-  }
-
-  function closeProductDialogs() {
-    if (pendingProductAction) {
-      return;
-    }
-
-    setSelectedProduct(null);
-    setEditingProduct(null);
-    setDeletingProduct(null);
-    setPublishingProduct(null);
-    setProductActionError(null);
-  }
-
-  async function updateProduct(values: SellerProductEditFormValues) {
-    if (!editingProduct) {
-      return;
-    }
-
-    const inventoryQuantity = Number.parseInt(values.inventoryQuantity, 10);
-    const listingPrice = Number.parseFloat(values.price);
-
-    setPendingProductAction({ listingId: editingProduct.listingId, action: 'update' });
-    setProductActionError(null);
-
-    try {
-      await sellerApi.updateProduct(editingProduct.listingId, {
-        categoryId: values.categoryId,
-        description: values.description,
-        imageUrl: normalizeOptional(values.imageUrl),
-        inventoryQuantity,
-        price: listingPrice,
-        productName: values.name,
-        visibilityStatus: values.visibilityStatus,
-      }, currency);
-
-      const categoryName = categories.find((category) => category.id === values.categoryId);
-      const updatedProduct: SellerListing = {
-        ...editingProduct,
-        categoryId: values.categoryId,
-        categoryName: categoryName?.categoryNameEn ?? categoryName?.categoryNamePt ?? editingProduct.categoryName,
-        currencyCode: currency,
-        description: values.description,
-        imageUrl: normalizeOptional(values.imageUrl),
-        inventoryQuantity,
-        listingPrice,
-        productName: values.name,
-        visibilityStatus: values.visibilityStatus,
-      };
-
-      setListings((current) => current.map((listing) => (
-        listing.listingId === updatedProduct.listingId ? updatedProduct : listing
-      )));
-      setEditingProduct(null);
-    } catch (error) {
-      setProductActionError(error instanceof Error ? error.message : 'Failed to update product.');
-    } finally {
-      setPendingProductAction(null);
-    }
-  }
-
-  async function deleteProduct() {
-    if (!deletingProduct) {
-      return;
-    }
-
-    setPendingProductAction({ listingId: deletingProduct.listingId, action: 'delete' });
-    setProductActionError(null);
-
-    try {
-      await sellerApi.deleteProduct(deletingProduct.listingId);
-      setListings((current) => current.filter((listing) => listing.listingId !== deletingProduct.listingId));
-      setSelectedProduct((current) => current?.listingId === deletingProduct.listingId ? null : current);
-      setDeletingProduct(null);
-    } catch (error) {
-      setProductActionError(error instanceof Error ? error.message : 'Failed to delete product.');
-    } finally {
-      setPendingProductAction(null);
-    }
-  }
-
-  async function publishProduct() {
-    if (!publishingProduct) {
-      return;
-    }
-
-    setPendingProductAction({ listingId: publishingProduct.listingId, action: 'publish' });
-    setProductActionError(null);
-
-    try {
-      await sellerApi.updateProduct(publishingProduct.listingId, {
-        categoryId: publishingProduct.categoryId,
-        description: publishingProduct.description,
-        imageUrl: publishingProduct.imageUrl ?? null,
-        inventoryQuantity: publishingProduct.inventoryQuantity,
-        price: publishingProduct.listingPrice,
-        productName: publishingProduct.productName,
-        visibilityStatus: 'Published',
-      }, currency);
-
-      const updatedProduct = {
-        ...publishingProduct,
-        currencyCode: currency,
-        visibilityStatus: 'Published',
-      };
-
-      setListings((current) => current.map((listing) => (
-        listing.listingId === updatedProduct.listingId ? updatedProduct : listing
-      )));
-      setPublishingProduct(null);
-    } catch (error) {
-      setProductActionError(error instanceof Error ? error.message : 'Failed to publish product.');
-    } finally {
-      setPendingProductAction(null);
-    }
-  }
-
   return (
-    <PageSkeleton
-      summary="Manage product inventory, seller performance and fulfillment activity."
-      title="Seller Dashboard"
-      titleId="seller-dashboard-title"
+    <section className="seller-dashboard">
+      <DashboardHeader />
+      <StatsRow />
+      <TabBar activeTab={activeTab} />
+
+      {activeTab === 'products' ? (
+        <ProductInventoryTable products={placeholderProducts} />
+      ) : (
+        <OrdersTable orders={placeholderOrders} />
+      )}
+    </section>
+  );
+}
+
+/* Header */
+
+function DashboardHeader() {
+  return (
+    <header className="seller-dashboard__header">
+      <h1 className="seller-dashboard__title">
+        <StoreIcon />
+        Seller Dashboard
+      </h1>
+      <Link to="/seller/products/new" className="seller-dashboard__add-button">
+        + Add Product
+      </Link>
+    </header>
+  );
+}
+
+function StoreIcon() {
+  return (
+    <svg
+      className="seller-dashboard__title-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
     >
-      <section className="seller-dashboard" aria-labelledby="seller-dashboard-title">
-        <div className="seller-dashboard__actions">
-          <Link to="/seller/products/new" className="seller-dashboard__primary-action">
-            Add Product
-          </Link>
-        </div>
-
-        <StatsRow listings={listings} orderStats={orderStats} priceFormatter={priceFormatter} />
-        <TabBar activeTab={selectedTab} />
-
-        {selectedTab === 'products' ? (
-          <ProductInventoryTable
-            pendingListingId={pendingProductAction?.listingId ?? null}
-            products={listings}
-            onDeleteProduct={openDeleteProduct}
-            onEditProduct={openEditProduct}
-            onOpenProduct={openProductDetails}
-            onPublishProduct={openPublishProduct}
-          />
-        ) : (
-          <OrdersTable
-            error={ordersError}
-            orders={orders}
-            page={ordersPage}
-            pageSize={ORDERS_PAGE_SIZE}
-            priceFormatter={priceFormatter}
-            sort={ordersSort}
-            statusFilter={ordersStatusFilter}
-            totalCount={ordersTotalCount}
-            onPageChange={setOrdersPage}
-            onSortChange={handleOrdersSortChange}
-            onStatusFilterChange={handleOrdersStatusChange}
-          />
-        )}
-        {selectedProduct ? (
-          <SellerProductDetailsDialog
-            priceFormatter={priceFormatter}
-            product={selectedProduct}
-            onClose={closeProductDialogs}
-            onDelete={openDeleteProduct}
-            onEdit={openEditProduct}
-          />
-        ) : null}
-        {editingProduct ? (
-          <SellerProductEditDialog
-            categories={categories}
-            currency={currency}
-            error={productActionError}
-            isPending={pendingProductAction?.listingId === editingProduct.listingId && pendingProductAction.action === 'update'}
-            product={editingProduct}
-            onClose={closeProductDialogs}
-            onSubmit={updateProduct}
-          />
-        ) : null}
-        {deletingProduct ? (
-          <SellerProductDeleteDialog
-            error={productActionError}
-            isPending={pendingProductAction?.listingId === deletingProduct.listingId && pendingProductAction.action === 'delete'}
-            product={deletingProduct}
-            onClose={closeProductDialogs}
-            onConfirm={deleteProduct}
-          />
-        ) : null}
-        {publishingProduct ? (
-          <SellerProductPublishDialog
-            error={productActionError}
-            isPending={pendingProductAction?.listingId === publishingProduct.listingId && pendingProductAction.action === 'publish'}
-            product={publishingProduct}
-            onClose={closeProductDialogs}
-            onConfirm={publishProduct}
-          />
-        ) : null}
-      </section>
-    </PageSkeleton>
+      <path d="M3 9l1-5h16l1 5" />
+      <path d="M4 9v11h16V9" />
+      <path d="M9 22V12h6v10" />
+    </svg>
   );
 }
 
 /* Stats */
 
-function StatsRow({
-  listings,
-  orderStats,
-  priceFormatter,
-}: {
-  listings: SellerListing[];
-  orderStats: SellerOrderStats | null;
-  priceFormatter: Intl.NumberFormat;
-}) {
+function StatsRow() {
+  const stats = placeholderStats;
+
   return (
     <div className="seller-dashboard__stats">
-      <StatCard label="Total Products" value={listings.length.toString()} />
-      <StatCard label="Total Revenue" value={priceFormatter.format(orderStats?.totalRevenue ?? 0)} />
-      <StatCard label="Total Orders" value={(orderStats?.totalOrders ?? 0).toString()} />
-      <StatCard label="Active Orders" value={(orderStats?.activeOrders ?? 0).toString()} />
+      <StatCard label="Total Products" value={stats.totalProducts.toString()} />
+      <StatCard label="Total Revenue" value={`$${stats.totalRevenue.toLocaleString()}`} />
+      <StatCard label="Total Orders" value={stats.totalOrders.toString()} />
+      <StatCard label="Active Orders" value={stats.activeOrders.toString()} />
     </div>
   );
-}
-
-function getActiveTab(pathname: string): SellerDashboardTab {
-  return pathname.includes('/seller/orders') ? 'orders' : 'products';
-}
-
-function normalizeOptional(value: string): string | null {
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : null;
 }
 
 function StatCard({ label, value }: { label: string; value: ReactNode }) {

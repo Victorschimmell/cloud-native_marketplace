@@ -26,7 +26,7 @@ public sealed class OlistDataSeederTests
         var dbContext = firstScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var listingBeforeReseed = await dbContext.ProductListings
             .SingleAsync(productListing => productListing.Sku == "OLIST-SELLER-1-PRODUCT-2", TestContext.Current.CancellationToken);
-        Assert.InRange(listingBeforeReseed.InventoryQuantity, 0, 100);
+        Assert.InRange(listingBeforeReseed.InventoryQuantity, 0, 10);
 
         listingBeforeReseed.InventoryQuantity = 0;
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);

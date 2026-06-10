@@ -1,5 +1,4 @@
 using Backend.Api.Attributes;
-using Backend.Domain.Enums;
 
 namespace Backend.Api.Contracts.Commerce.Payments;
 
