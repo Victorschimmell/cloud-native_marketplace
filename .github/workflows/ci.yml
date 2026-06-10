@@ -1,0 +1,96 @@
+name: CI
+
+# Runs on:
+#   - Every PR targeting release/v1.0.0
+#   - Every push/merge to release/v1.0.0
+
+on:
+  push:
+    branches:
+      - release/v1.0.0
+  pull_request:
+    branches:
+      - release/v1.0.0
+
+env:
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Backend
+      - name: Install .NET 10.x SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Restore dependencies
+        run: dotnet restore Marketplace.slnx
+
+      - name: Build solution
+        run: dotnet build Marketplace.slnx --configuration "$BUILD_CONFIGURATION" --no-restore
+
+      - name: Run unit tests
+        run: >
+          dotnet test Backend/tests/Backend.UnitTests/Backend.UnitTests.csproj
+          --configuration "$BUILD_CONFIGURATION"
+          --no-build
+          --collect "XPlat Code Coverage"
+          --settings Backend/coverlet.runsettings
+          --logger "trx;LogFileName=unit-tests.trx"
+
+      - name: Run integration tests
+        run: >
+          dotnet test Backend/tests/Backend.IntegrationTests/Backend.IntegrationTests.csproj
+          --configuration "$BUILD_CONFIGURATION"
+          --no-build
+          --collect "XPlat Code Coverage"
+          --settings Backend/coverlet.runsettings
+          --logger "trx;LogFileName=integration-tests.trx"
+
+      - name: Verify backend code coverage
+        run: |
+          coverage_files="$(find . -path '*/TestResults/*/coverage.cobertura.xml' -print)"
+          if [ -z "$coverage_files" ]; then
+            echo "No backend coverage.cobertura.xml files were produced."
+            exit 1
+          fi
+
+      - name: Publish backend test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: Backend/tests/**/TestResults/**/*.trx
+          if-no-files-found: error
+
+      - name: Publish backend code coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-code-coverage
+          path: Backend/tests/**/TestResults/**/coverage.cobertura.xml
+          if-no-files-found: error
+
+      # Frontend
+      - name: Install Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Frontend npm install
+        working-directory: Frontend
+        run: npm install
+
+      - name: Frontend lint
+        working-directory: Frontend
+        run: npm run lint
+
+      - name: Frontend build
+        working-directory: Frontend
+        run: npm run build
