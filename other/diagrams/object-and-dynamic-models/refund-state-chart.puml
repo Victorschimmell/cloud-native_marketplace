@@ -1,0 +1,32 @@
+@startuml Refund Flow
+
+title Refund Flow\nFrom request through review, processing, and resolution
+
+skinparam state {
+    BackgroundColor #FFF3E0
+    BorderColor #EF6C00
+    FontColor #BF360C
+    ArrowColor #37474F
+    FontSize 14
+}
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+
+[*] --> RefundRequested
+
+RefundRequested --> RefundUnderReview : Validate refund conditions
+RefundUnderReview --> RefundApproved : Refund allowed
+RefundUnderReview --> RefundRejected : Refund not allowed
+
+RefundApproved --> RefundProcessing : Send refund to payment service
+RefundProcessing --> Refunded : Refund successful
+RefundProcessing --> RefundFailed : Refund failed
+
+RefundFailed --> RefundProcessing : Retry refund
+RefundFailed --> ManualReview : Retry limit reached
+
+Refunded --> [*]
+RefundRejected --> [*]
+ManualReview --> [*]
+
+@enduml

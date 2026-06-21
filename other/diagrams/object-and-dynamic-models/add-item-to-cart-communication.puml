@@ -1,0 +1,75 @@
+@startuml AddItemToCartCommunication
+title Communication Diagram - Add Product Listing to Cart
+
+top to bottom direction
+
+skinparam shadowing false
+skinparam linetype polyline
+skinparam defaultFontName Arial
+skinparam nodesep 70
+skinparam ranksep 65
+skinparam rectangle {
+  RoundCorner 6
+  Padding 10
+  BackgroundColor<<Boundary>> #E8F1FF
+  BorderColor<<Boundary>> #3B73B9
+  BackgroundColor<<Control>> #FFF4D6
+  BorderColor<<Control>> #B98900
+  BackgroundColor<<Entity>> #E8F7E8
+  BorderColor<<Entity>> #3B8F3B
+}
+skinparam note {
+  BackgroundColor #FFF8DC
+  BorderColor #A8A29E
+}
+
+rectangle "customer:Customer" as Customer <<Actor>>
+rectangle "cartPage:CartPage" as CartPage <<Boundary>>
+rectangle "cartController:CartController" as CartController <<Boundary>>
+rectangle "cartService:CartService" as CartService <<Control>>
+
+rectangle "listingRepo:\nProductListingRepository" as ListingRepo
+rectangle "cartRepo:\nCartRepository" as CartRepo
+rectangle "unitOfWork:UnitOfWork" as UnitOfWork
+
+rectangle "listing:ProductListing" as Listing <<Entity>>
+rectangle "cart:ShoppingCart" as Cart <<Entity>>
+rectangle "item:CartItem" as CartItem <<Entity>>
+
+' Top row
+Customer -[hidden]right-> CartPage
+CartPage -[hidden]right-> CartController
+
+' Force CartService below the caller chain
+CartPage -[hidden]down-> CartService
+
+' Repository/entity rows
+ListingRepo -[hidden]right-> CartRepo
+CartRepo -[hidden]right-> UnitOfWork
+Listing -[hidden]right-> Cart
+Cart -[hidden]right-> CartItem
+
+Customer -right-> CartPage : 1: add item
+CartPage -right-> CartController : 1.1: POST /api/cart
+CartController -down-> CartService : 1.2: AddItemAsync(request)
+
+CartService -down-> ListingRepo : 1.3: get listing
+ListingRepo -down-> Listing : 1.3.1: load
+
+CartService -down-> CartRepo : 1.5: get active cart
+CartRepo -down-> Cart : 1.5.1: return
+
+CartService -down-> UnitOfWork : 1.9: save changes
+
+CartService -down-> Listing : 1.4: check status\nand inventory
+CartService -down-> Cart : 1.6: create cart\n1.7: find item
+CartService -down-> CartItem : 1.8a: create item\n1.8b: update quantity
+
+note right of CartService
+Coordinates the use case:
+validates the listing,
+retrieves or creates the cart,
+updates items and commits.
+end note
+
+@enduml

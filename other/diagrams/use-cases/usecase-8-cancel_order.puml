@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Customer" as Customer
+
+rectangle "Order Management" {
+  usecase "Cancel Order" as UC8
+  usecase "Confirm Cancellation" as UC81
+  usecase "Enter Cancellation\nReason" as UC82
+  usecase "Validate Cancellation\nData" as UC83
+  usecase "Record Cancellation\nReason" as UC84
+  usecase "Update Order Status" as UC85
+}
+
+Customer --> UC8
+
+UC8 .> UC81 : <<include>>
+UC8 .> UC82 : <<include>>
+UC8 .> UC83 : <<include>>
+UC8 .> UC84 : <<include>>
+UC8 .> UC85 : <<include>>
+
+@enduml

@@ -1,0 +1,20 @@
+@startuml
+skinparam actorStyle awesome
+
+left to right direction
+
+actor Admin
+
+rectangle "Platform Management System" {
+  usecase "Manage Seller Registrations" as UC1
+  usecase "View Analytics Dashboard" as UC2
+  usecase "Create Internal Tickets" as UC3
+  usecase "Monitor Platform Issues" as UC4
+}
+
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+
+@enduml

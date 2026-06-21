@@ -1,0 +1,41 @@
+@startuml
+title Checkout Flow Across Frontend and Backend Layers
+
+actor Customer
+participant "CheckoutPage\n(frontend)" as Page
+participant "checkoutApi\n(frontend API wrapper)" as Api
+participant "CheckoutController\n(API layer)" as Controller
+participant "CheckoutMappingExtensions\n(mapping)" as Mapping
+participant "CheckoutService\n(application layer)" as Service
+participant "Repositories + PaymentService\n(application/persistence coordination)" as Modules
+participant "PaymentRepository\n(simulated gateway)" as PaymentRepo
+database "IUnitOfWork / Database" as Db
+
+Customer -> Page: Confirm checkout
+Page -> Page: Normalize and validate address
+Page -> Api: checkout request
+Api -> Controller: POST /api/checkout?currency=BRL
+
+Controller -> Controller: Read user id from JWT
+Controller -> Mapping: Map API request to application DTO
+Mapping --> Controller: Application checkout request
+Controller -> Service: Execute checkout
+
+Service -> Modules: Validate cart, customer,\nlistings, stock, payment total
+Service -> Modules: Create address, order\nand order items
+Service -> Modules: Record checkout payment
+Modules -> PaymentRepo: Add OrderPayment
+PaymentRepo -> PaymentRepo: Set simulated reference,\nPaid status and paid timestamp
+Service -> Modules: Deduct stock and convert cart
+Service -> Db: Save checkout state
+Db --> Service: Saved
+
+Service --> Controller: Checkout response
+Controller -> Mapping: Map application response to API response
+Mapping --> Controller: API checkout response
+Controller --> Api: 200 OK + checkout response
+Api --> Page: Created order, cart, payment, total
+Page -> Page: Clear local cart id
+Page -> Customer: Redirect to order details
+
+@enduml

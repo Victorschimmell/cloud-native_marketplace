@@ -1,0 +1,42 @@
+@startuml OrderStatus Lifecycle
+
+title OrderStatus Lifecycle
+
+skinparam state {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    FontColor #0D47A1
+    ArrowColor #37474F
+    FontSize 14
+}
+skinparam shadowing false
+skinparam defaultFontName "Segoe UI"
+
+[*] --> Pending : Checkout succeeds\nOrderPayment recorded as Paid
+
+Pending --> Approved : Seller approves items
+Pending -left-> Cancelled : Customer cancels
+
+Approved --> Processing : Seller starts processing
+Approved --> Cancelled : Customer cancels
+
+Processing --> Shipped : Seller ships items
+Processing --> Cancelled : Customer cancels
+
+Shipped --> Delivered : Seller marks delivered
+
+Delivered --> [*]
+Cancelled --> [*]
+
+note right of Pending
+Checkout creates the order with OrderStatus = Pending.
+The simulated payment is stored separately as an
+OrderPayment with PaymentStatus = Paid.
+end note
+
+note bottom
+Returned exists in the enum, but the current code does not expose
+a persisted return workflow. Refund handling is also not implemented.
+end note
+
+@enduml

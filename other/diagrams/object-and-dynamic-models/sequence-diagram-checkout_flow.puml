@@ -1,0 +1,43 @@
+title Place Order (Checkout) - Sequence Diagram
+
+actor Customer
+participant "React Web App" as Web
+participant "CheckoutController" as Ctrl
+participant "CheckoutService" as Svc
+participant "PaymentService" as Pay
+participant "Repositories" as Repo
+database "PostgreSQL" as DB
+
+Customer->Web: Submit checkout
+Web->Ctrl: POST /api/checkout
+Ctrl->Svc: CheckoutAsync(cart, shipping, payments)
+
+Svc->Repo: getActiveCart(cart)
+Repo->DB: query cart and listings
+DB-->Repo: cart and listings
+Repo-->Svc: active cart
+
+note over Svc: Verify customer, shipping,\navailability, stock and payment total
+
+Svc->Repo: createOrder(shipping, totals)
+Repo->DB: insert address and order
+Repo-->Svc: order
+
+Svc->Pay: RecordCheckoutPaymentAsync(order, payment)
+Pay->Repo: addPayment(payment)
+Repo->DB: insert payment with Pending status
+Repo-->Pay: payment recorded
+Pay-->Svc: PaymentDto
+
+Svc->Repo: createOrderItemsAndDeductStock(order, items)
+Repo->DB: insert order items\nupdate listing stock
+
+Svc->Repo: convertCart(cart)
+Repo->DB: update cart status
+
+Svc->Repo: SaveChanges()
+Repo->DB: commit changes
+
+Svc-->Ctrl: CheckoutResponse
+Ctrl-->Web: 201 Created
+Web-->Customer: Show confirmation

@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Seller" as Seller
+actor "Customer" as Customer
+
+rectangle "Order Management" {
+  usecase "Modify Order Status" as UC7
+  usecase "View Order Details" as UC71
+  usecase "Enter Shipment\nInformation" as UC72
+  usecase "Validate Shipment\nInformation" as UC73
+  usecase "Update status for Customer" as UC74
+  usecase "Close Order\nAutomatically" as UC75
+}
+
+Seller --> UC7
+Customer <-- UC74
+
+UC7 .> UC71 : <<include>>
+UC7 .> UC72 : <<include>>
+UC7 .> UC73 : <<include>>
+UC7 .> UC74 : <<include>>
+UC75 .> UC7 : <<extend>>
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+title Combined View 2 - Backend Layered Module Architecture
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam nodesep 45
+skinparam ranksep 35
+
+package ".NET 10 RESTful API" as API #FAFBFC {
+
+  package "Presentation Layer" as Presentation #EAF1F8 {
+    [Controllers]
+  }
+
+  package "Application Layer" as Application #F7F1E8 {
+    [Application Services]
+  }
+
+  package "Infrastructure Layer" as Infrastructure #F1EEF6 {
+    [Olist Import / Seeding]
+    [Repositories]
+    [Infrastructure Utilities]
+  }
+
+  package "Domain Layer" as Domain #ECF3EE {
+    [Domain Model]
+  }
+}
+
+database "PostgreSQL" as DB
+
+[Controllers] --> [Application Services] : invokes use cases
+[Application Services] -right-> [Domain Model] : applies\nbusiness rules
+[Application Services] -down-> [Repositories] : loads/persists data\nvia abstractions
+[Application Services] -down-> [Infrastructure Utilities] : common infrastructure\nsupport
+[Olist Import / Seeding] -right-> [Repositories]
+[Repositories] --> DB : persistence
+
+[Controllers] -[hidden]down-> [Application Services]
+[Application Services] -[hidden]down-> [Repositories]
+[Repositories] -[hidden]down-> DB
+[Olist Import / Seeding] -[hidden]right-> [Repositories]
+[Repositories] -[hidden]right-> [Infrastructure Utilities]
+Infrastructure -[hidden]right-> Domain
+@enduml

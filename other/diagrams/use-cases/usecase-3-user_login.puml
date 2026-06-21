@@ -1,0 +1,24 @@
+@startuml
+left to right direction
+
+actor "Registered User" as User
+actor "Customer" as Customer
+
+rectangle "Authentication" {
+    usecase "Log In" as UC_Login
+    usecase "Enter Email & Password" as UC_Credentials
+    usecase "Restore Cart" as UC_RestoreCart
+}
+
+User --> UC_Login
+Customer --> UC_RestoreCart
+Customer --|> User
+
+UC_Login .> UC_Credentials : <<include>>
+UC_RestoreCart .> UC_Login : <<include>>
+
+note right of UC_RestoreCart
+  Only Customer role/type
+end note
+
+@enduml
