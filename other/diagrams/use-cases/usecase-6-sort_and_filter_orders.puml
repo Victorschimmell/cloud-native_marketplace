@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Seller" as Seller
+
+rectangle "Order Management" {
+  usecase "Sort and Filter Orders" as UC6
+  usecase "Sort Orders" as UC61
+  usecase "Filter Orders" as UC62
+  usecase "Display Updated\nOrder List" as UC63
+}
+
+Seller --> UC6
+
+UC6 .> UC61 : <<include>>
+UC6 .> UC62 : <<include>>
+UC6 .> UC63 : <<include>>
+@enduml

@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Seller" as Seller
+
+rectangle "Seller Dashboard" {
+
+  usecase "View Orders Overview" as UC1
+
+  usecase "Optimize Shipment\n(Sort by Date, Price, Status...)" as UC2
+
+  usecase "Manage Order" as UC3
+  usecase "Update Delivery Status" as UC3a
+  usecase "Cancel Order" as UC3b
+
+  usecase "View Order Details\n(Address, Items, Total...)" as UC4
+
+}
+
+Seller --> UC1
+Seller --> UC2
+Seller --> UC3
+Seller --> UC4
+
+UC2 .> UC1 : <<include>>
+UC3a .> UC3 : <<extend>>
+UC3b .> UC3 : <<extend>>
+UC4 .> UC3 : <<extend>>
+
+@enduml

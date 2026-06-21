@@ -1,0 +1,24 @@
+@startuml
+skinparam actorStyle awesome
+left to right direction
+
+actor Visitor
+actor Customer
+
+rectangle "Marketplace" {
+  usecase "Log In / Sign Up" as UC0
+  usecase "Browse Products" as UC1
+  usecase "Manage Cart" as UC2
+  usecase "Checkout" as UC3
+  usecase "View Order History" as UC4
+}
+
+Visitor --> UC1
+
+Customer --> UC0
+Customer --> UC1
+Customer --> UC2
+Customer --> UC3
+Customer --> UC4
+
+@enduml

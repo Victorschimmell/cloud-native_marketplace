@@ -1,0 +1,44 @@
+@startuml
+title Combined View 1 - System Context and Container Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+package "Marketplace Platform" #F8FAFC {
+  node "Frontend" #F4F7FB {
+    [React Web App] as ReactApp
+  }
+
+  node "Backend" #FAFBFC {
+    [.NET 10 RESTful API] as Api
+  }
+
+  database "PostgreSQL" as DB
+
+  node "Observability" #F4F7FB {
+    database "Elasticsearch" as Elasticsearch
+    [Kibana] as Kibana
+  }
+}
+
+ReactApp --> Api : HTTPS + JSON/REST
+Api --> DB : persist and query data
+Api --> Elasticsearch : structured logs via Serilog
+Kibana --> Elasticsearch : query log data views\nand dashboard panels
+
+note right of ReactApp
+Desktop browser frontend
+Single entry point for users
+Role-based UI rendering
+end note
+
+note right of Api
+Main backend application
+Business logic and API endpoints
+Internal authentication and authorization
+Checkout payment records are simulated internally
+end note
+
+@enduml

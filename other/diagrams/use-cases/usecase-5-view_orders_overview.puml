@@ -1,0 +1,15 @@
+@startuml
+left to right direction
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+
+actor "Seller" as Seller
+
+rectangle "Order Management" {
+  usecase "View Orders Overview" as UC5
+  usecase "Display Order Summary" as UC51
+}
+
+Seller --> UC5
+UC5 .> UC51 : <<include>>
+@enduml

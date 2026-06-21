@@ -1,0 +1,29 @@
+@startuml
+title Context Diagram - Combined View 2 (Backend Layered Module Architecture)
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+actor "Customer / Seller / Administrator" as User
+rectangle "React Web App" as FE
+database "PostgreSQL" as DB
+rectangle ".NET 10 RESTful API\n(Scoped Element of View 2)" as API
+
+User --> FE : uses web interface
+FE --> API : auth / products / carts /\norders / seller / admin requests
+API --> DB : persist business data /\naudit data
+
+note left of FE
+Outside this view:
+frontend routing, UI composition,
+client-side state and rendering.
+end note
+
+note bottom of DB
+Outside this view:
+schema design, deployment,
+backup and operational setup.
+end note
+
+@enduml

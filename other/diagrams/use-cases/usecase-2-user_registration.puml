@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+
+actor "Visitor" as Visitor
+actor "Administrator" as Admin
+
+rectangle "Registration" {
+    usecase "Register Account" as UC_Register
+    usecase "Choose Role\n(Customer or Seller)" as UC_Role
+    usecase "Enter Personal Details\n(First Name, Last Name,\nPhone, Email, Address, Password)" as UC_Details
+    usecase "Enter Seller Details\n(Business Name, CVR,\nPayout Info, Documentation)" as UC_SellerDetails
+    usecase "Submit Registration" as UC_Submit
+    usecase "Verify Seller Account" as UC_Verify
+}
+
+Visitor --> UC_Register
+
+UC_Register .> UC_Role : <<include>>
+UC_Register .> UC_Details : <<include>>
+UC_Register .> UC_Submit : <<include>>
+
+UC_SellerDetails .> UC_Register : <<extend>>
+Admin --> UC_Verify
+UC_Verify .> UC_Register : <<extend>>
+
+@enduml

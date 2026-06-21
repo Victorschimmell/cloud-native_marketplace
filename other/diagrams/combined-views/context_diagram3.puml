@@ -1,0 +1,49 @@
+@startuml
+title Context Diagram - Combined View 3
+
+top to bottom direction
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 130
+skinparam maxMessageSize 70
+skinparam nodesep 80
+skinparam ranksep 75
+
+skinparam package {
+    BackgroundColor #F7F9FC
+    BorderColor #777777
+}
+
+hide stereotype
+
+database "PostgreSQL" as DB
+rectangle "Audit\nLogging" as Audit
+
+package ".NET 10 RESTful API\n(View 3 Scope)" as Backend {
+  rectangle "Request\nProcessing" as Flow
+  rectangle "Payment\nRecording\n(PaymentService +\nRepository)" as PaymentRecording
+  rectangle "Exception\nHandling" as ExHandler
+
+  Flow -[hidden]right-> PaymentRecording
+  PaymentRecording -[hidden]right-> ExHandler
+}
+
+rectangle "React Web App" as Frontend
+
+Frontend --> Flow : HTTP\nrequests
+Flow --> Frontend : API error\nresponses
+
+Flow --> PaymentRecording : record\ncheckout payment
+Flow --> ExHandler : raised\nexceptions
+
+PaymentRecording --> DB : persist\nOrderPayment
+Flow --> DB : persist /\nload
+
+Flow --> Audit : audit\nevents
+ExHandler --> Audit : failure\nlogs
+
+@enduml

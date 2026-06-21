@@ -1,0 +1,380 @@
+@startuml
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+
+' =========================
+' IDENTITY / ACCESS
+' =========================
+
+entity "user_account" as user_account #DCEEFF {
+  * user_id : uuid <<PK>>
+  --
+  email : varchar(320) <<UQ>>
+  password_hash : varchar(500)
+  is_admin : boolean
+  is_blocked : boolean
+  account_status : integer
+  failed_login_attempts : int
+  locked_until : timestamptz <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+  last_login_at : timestamptz <<nullable>>
+}
+
+entity "customer" as customer {
+  * customer_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UQ>>
+  first_name : varchar(100)
+  last_name : varchar(100)
+  phone : varchar(30)
+  default_address_id : uuid <<FK, nullable>>
+  olist_customer_id : varchar(100) <<nullable>>
+  olist_customer_unique_id : varchar(100) <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "seller" as seller {
+  * seller_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, UQ>>
+  business_name : varchar(200)
+  registration_number : varchar(100)
+  payout_information : varchar(500)
+  default_address_id : uuid <<FK, nullable>>
+  verification_status : integer
+  verified_at : timestamptz <<nullable>>
+  olist_seller_id : varchar(100) <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "user_session" as user_session #DCEEFF {
+  * session_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  ip_address : varchar(45)
+  user_agent : varchar(500)
+  started_at : timestamptz
+  expires_at : timestamptz
+  ended_at : timestamptz <<nullable>>
+  is_active : boolean
+}
+
+entity "seller_verification_request" as seller_verification_request #DCEEFF {
+  * verification_request_id : uuid <<PK>>
+  --
+  seller_id : uuid <<FK>>
+  submitted_at : timestamptz
+  status : integer
+  business_name_snapshot : varchar(200)
+  registration_number_snapshot : varchar(100)
+  submitted_details : text
+  review_notes : varchar(1000) <<nullable>>
+  reviewed_by_user_id : uuid <<FK, nullable>>
+  reviewed_at : timestamptz <<nullable>>
+  rejection_reason : varchar(1000) <<nullable>>
+}
+
+' =========================
+' LOCATION
+' =========================
+
+entity "address" as address {
+  * address_id : uuid <<PK>>
+  --
+  postal_code : varchar(20)
+  city : varchar(100)
+  state : varchar(100)
+  address_line_1 : varchar(200) <<nullable>>
+  address_line_2 : varchar(200) <<nullable>>
+  country_code : varchar(3)
+  latitude : numeric(10,7) <<nullable>>
+  longitude : numeric(10,7) <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+' =========================
+' CATALOG / SELLING
+' =========================
+
+entity "product_category" as product_category {
+  * category_id : uuid <<PK>>
+  --
+  category_name_pt : varchar(200)
+  category_name_en : varchar(200) <<nullable>>
+}
+
+entity "product" as product {
+  * product_id : uuid <<PK>>
+  --
+  category_id : uuid <<FK>>
+  product_name : varchar(500)
+  description : text
+  image_url : varchar(2048) <<nullable>>
+  product_name_length : int
+  product_description_length : int
+  product_photos_qty : int
+  product_weight_g : int
+  product_length_cm : int
+  product_height_cm : int
+  product_width_cm : int
+  created_at : timestamptz
+  updated_at : timestamptz
+  olist_product_id : varchar(100) <<nullable, indexed>>
+}
+
+entity "product_listing" as product_listing #DCEEFF {
+  * listing_id : uuid <<PK>>
+  --
+  seller_id : uuid <<FK>>
+  product_id : uuid <<FK>>
+  sku : varchar(100) <<UQ>>
+  listing_price : numeric(18,4)
+  inventory_quantity : int
+  visibility_status : integer
+  is_deleted : boolean
+  published_at : timestamptz <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+' =========================
+' CART / CHECKOUT
+' =========================
+
+entity "shopping_cart" as shopping_cart #DCEEFF {
+  * cart_id : uuid <<PK>>
+  --
+  user_id : uuid <<FK, nullable>>
+  session_id : uuid <<FK, nullable>>
+  status : integer
+  created_at : timestamptz
+  updated_at : timestamptz
+  expires_at : timestamptz
+  recovered_from_cart_id : uuid <<FK, nullable>>
+}
+
+entity "cart_item" as cart_item #DCEEFF {
+  * cart_item_id : uuid <<PK>>
+  --
+  cart_id : uuid <<FK>>
+  listing_id : uuid <<FK>>
+  quantity : int
+  unit_price_at_addition : numeric(18,4)
+  added_at : timestamptz
+  updated_at : timestamptz
+}
+
+' =========================
+' ORDERS
+' =========================
+
+entity "order" as order {
+  * order_id : uuid <<PK>>
+  --
+  customer_id : uuid <<FK>>
+  shipping_address_id : uuid <<FK>>
+  order_status : integer
+  order_status_description : varchar(500) <<nullable>>
+  order_purchase_timestamp : timestamptz
+  order_approved_at : timestamptz <<nullable>>
+  order_delivered_carrier_date : timestamptz <<nullable>>
+  order_delivered_customer_date : timestamptz <<nullable>>
+  order_estimated_delivery_date : timestamptz <<nullable>>
+  subtotal_amount : numeric(18,4)
+  freight_amount : numeric(18,4)
+  total_amount : numeric(18,4)
+  placed_from_cart_id : uuid <<FK, nullable>>
+  order_number : varchar(100) <<UQ>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "order_item" as order_item {
+  * order_id : uuid <<PK, FK>>
+  * order_item_id : int <<PK>>
+  --
+  listing_id : uuid <<FK>>
+  product_id : uuid <<FK>>
+  seller_id : uuid <<FK>>
+  quantity : int
+  unit_price : numeric(18,4)
+  freight_value : numeric(18,4)
+  shipping_limit_date : timestamptz <<nullable>>
+  fulfillment_status : integer
+  fulfillment_approved_at : timestamptz <<nullable>>
+  fulfillment_processing_at : timestamptz <<nullable>>
+  fulfillment_shipped_at : timestamptz <<nullable>>
+}
+
+entity "currency" as currency #DCEEFF {
+  * currency_id : uuid <<PK>>
+  --
+  code : varchar(3) <<UQ>>
+  name : varchar(100)
+  symbol : varchar(10) <<nullable>>
+}
+
+entity "order_payment" as order_payment {
+  * order_id : uuid <<PK, FK>>
+  * payment_sequential : int <<PK>>
+  --
+  currency_id : uuid <<FK>>
+  payment_type : integer
+  payment_installments : int
+  payment_value : numeric(18,4)
+  payment_status : integer
+  external_payment_reference : varchar(200) <<nullable>>
+  paid_at : timestamptz <<nullable>>
+}
+
+entity "order_review" as order_review {
+  * review_id : uuid <<PK>>
+  --
+  order_id : uuid <<FK>>
+  order_item_id : int <<FK, nullable>>
+  customer_id : uuid <<FK>>
+  product_id : uuid <<FK>>
+  olist_review_id : varchar(100) <<UQ, nullable>>
+  review_score : int
+  review_comment_title : varchar(200) <<nullable>>
+  review_comment_message : varchar(2000) <<nullable>>
+  review_creation_date : timestamptz
+  review_answer_timestamp : timestamptz <<nullable>>
+}
+
+entity "shipment" as shipment #DCEEFF {
+  * shipment_id : uuid <<PK>>
+  --
+  order_id : uuid <<FK>>
+  seller_id : uuid <<FK>>
+  carrier_name : varchar(200)
+  tracking_number : varchar(200) <<indexed>>
+  shipment_status : integer
+  shipped_at : timestamptz <<nullable>>
+  delivered_at : timestamptz <<nullable>>
+  returned_at : timestamptz <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+
+'entity "order_cancellation" as order_cancellation {
+'  * cancellation_id : uuid <<PK>>
+'  --
+'  order_id : uuid <<FK>>
+'  cancelled_by_seller_id : uuid <<FK>>
+'  cancellation_reason : text
+'  comment_to_customer : text
+'  cancelled_at : timestamp
+'  refund_status : text
+'}
+
+'entity "refund" as refund {
+'  * refund_id : uuid <<PK>>
+'  --
+'  cancellation_id : uuid <<FK>>
+'  order_id : uuid <<FK>>
+'  amount : numeric
+'  refund_status : text
+'  external_refund_reference : text <<nullable>>
+'  processed_at : timestamp <<nullable>>
+'}
+
+' =========================
+' ADMIN / MONITORING
+' =========================
+
+entity "number_sequence" as number_sequence #DCEEFF {
+  * sequence_id : uuid <<PK>>
+  --
+  sequence_key : varchar(100) <<UQ>>
+  last_value : bigint
+}
+
+entity "admin_issue" as admin_issue #DCEEFF {
+  * issue_id : uuid <<PK>>
+  --
+  title : varchar(200)
+  description : varchar(4000)
+  type : integer
+  priority : integer <<indexed>>
+  status : integer <<indexed>>
+  reported_by_user_id : uuid <<FK, indexed>>
+  assigned_to_user_id : uuid <<FK, nullable>>
+  resolved_by_user_id : uuid <<FK, nullable>>
+  resolved_at : timestamptz <<nullable>>
+  resolution : varchar(4000) <<nullable>>
+  created_at : timestamptz
+  updated_at : timestamptz
+}
+
+entity "audit_log" as audit_log #DCEEFF {
+  * audit_log_id : uuid <<PK>>
+  --
+  actor_user_id : uuid <<FK, nullable>>
+  actor_ip_address : varchar(45) <<nullable>>
+  action_type : integer
+  target_entity_type : varchar(200)
+  target_entity_id : varchar(200)
+  outcome : integer
+  details : text
+  created_at : timestamptz
+}
+
+' =========================
+' RELATIONSHIPS
+' =========================
+
+user_account ||--o| customer : has
+user_account ||--o| seller : has
+user_account ||--o{ user_session : starts
+
+seller ||--o{ seller_verification_request : submits
+user_account ||--o{ seller_verification_request : reviews
+
+address ||--o{ customer : default_address
+address ||--o{ seller : default_address
+
+product_category ||--o{ product : classifies
+product ||--o{ product_listing : listed_as
+seller ||--o{ product_listing : owns
+
+user_account ||--o{ shopping_cart : owns
+user_session ||--o{ shopping_cart : guest_session
+shopping_cart ||--o{ cart_item : contains
+shopping_cart ||--o{ shopping_cart : recovers
+product_listing ||--o{ cart_item : referenced_by
+
+customer ||--o{ order : places
+address ||--o{ order : ship_to
+shopping_cart ||--o{ order : converts_to
+
+order ||--o{ order_item : contains
+product_listing ||--o{ order_item : sold_as
+product ||--o{ order_item : snapshot_product
+seller ||--o{ order_item : fulfilled_by
+
+currency ||--o{ order_payment : denominates
+order ||--o{ order_payment : paid_by
+order ||--o{ order_review : reviewed_by
+order_item ||--o{ order_review : reviewed_item
+customer ||--o{ order_review : writes
+product ||--o{ order_review : receives
+order ||--o{ shipment : shipped_in
+seller ||--o{ shipment : ships
+
+'order ||--o| order_cancellation : may_have
+'order_cancellation ||--o{ refund : triggers
+
+user_account ||--o{ audit_log : acts_in
+user_account ||--o{ admin_issue : reports
+user_account ||--o{ admin_issue : assigned_to
+user_account ||--o{ admin_issue : resolves
+
+@enduml

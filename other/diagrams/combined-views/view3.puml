@@ -1,0 +1,58 @@
+@startuml
+title Combined View 3 - Backend Exception and Error-Handling View
+
+skinparam shadowing false
+skinparam responseMessageBelowArrow true
+skinparam sequenceMessageAlign center
+
+participant "API Endpoint" as API
+participant "Input Validation" as Validation
+participant "Application Service" as App
+participant "PaymentService" as PaymentService
+participant "PaymentRepository\n(simulated gateway)" as PaymentRepo
+participant "Repository" as Repo
+database "PostgreSQL" as DB
+participant "Audit / Structured Logging" as Audit
+participant "EF SaveChanges\n(UnitOfWork)" as UoW
+participant "Central Exception Handler" as ExHandler
+
+API -> Validation : validate request
+
+alt Validation fails
+    Validation --> API : 400 validation response
+    API -> Audit : structured validation / request log
+
+else Validation succeeds
+    API -> App : invoke use case
+    App -> Repo : load cart, customer,\nlistings and order data
+    Repo -> DB : query
+
+    App -> App : validate business rules,\nstock and payment total
+
+    alt Business rule fails
+        App --> API : domain error result
+        API -> Audit : structured failure log
+
+    else Business rule succeeds
+        App -> Repo : stage address, order,\nitems and cart updates
+        App -> PaymentService : RecordCheckoutPaymentAsync
+        PaymentService -> PaymentRepo : add OrderPayment
+        PaymentRepo -> PaymentRepo : simulate successful gateway result
+        PaymentRepo -> DB : stage OrderPayment
+
+        App -> UoW : SaveChangesAsync
+        UoW -> DB : persist staged changes
+
+        alt Persistence or unexpected failure
+            DB -> ExHandler : exception
+            ExHandler -> Audit : log exception with trace id
+            ExHandler --> API : standardized error response
+
+        else Save succeeds
+            App -> Audit : write checkout audit log
+            App --> API : success response
+        end
+    end
+end
+
+@enduml

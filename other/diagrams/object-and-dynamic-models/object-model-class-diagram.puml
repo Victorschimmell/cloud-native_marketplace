@@ -1,0 +1,182 @@
+@startuml MarketplaceObjectModel
+title Marketplace Platform - Object Model (Class Diagram)
+
+top to bottom direction
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+skinparam class {
+    BackgroundColor<<Boundary>> #E8F1FF
+    BorderColor<<Boundary>> #3B73B9
+    BackgroundColor<<Control>> #FFF4D6
+    BorderColor<<Control>> #B98900
+    BackgroundColor<<Entity>> #E8F7E8
+    BorderColor<<Entity>> #3B8F3B
+}
+
+' Boundary objects
+class ProductPage <<Boundary>> {
+    +browseProducts()
+    +viewProductDetails()
+}
+
+class CartPage <<Boundary>> {
+    +showCart()
+    +changeQuantity()
+}
+
+class CheckoutPage <<Boundary>> {
+    +confirmOrder()
+}
+
+class OrdersPage <<Boundary>> {
+    +listOrders()
+    +viewOrderDetails()
+}
+
+' Control objects
+class ProductService <<Control>> {
+    +browseProducts()
+    +getProductDetails()
+}
+
+class CartService <<Control>> {
+    +addItem()
+    +removeItem()
+    +updateQuantity()
+    +calculateCartTotal()
+}
+
+class CheckoutService <<Control>> {
+    +previewCheckout()
+    +placeOrder()
+}
+
+class OrderService <<Control>> {
+    +getOrder()
+    +cancelOrder()
+}
+
+class PaymentService <<Control>> {
+    +recordPayment()
+}
+
+' Entity objects
+class Customer <<Entity>> {
+    -FirstName
+    -LastName
+    -Phone
+    +getDisplayName()
+}
+
+class Seller <<Entity>> {
+    -BusinessName
+    -RegistrationNumber
+    -VerificationStatus
+}
+
+class Product <<Entity>> {
+    -ProductName
+    -Description
+    -Weight
+    -Dimensions
+}
+
+class ProductListing <<Entity>> {
+    -Sku
+    -ListingPrice
+    -InventoryQuantity
+    -VisibilityStatus
+    +reserveStock()
+    +releaseStock()
+}
+
+class ShoppingCart <<Entity>> {
+    -Status
+    +addItem()
+    +removeItem()
+    +calculateTotal()
+}
+
+class CartItem <<Entity>> {
+    -Quantity
+    -UnitPriceAtAddition
+}
+
+class Order <<Entity>> {
+    -OrderNumber
+    -OrderStatus
+    -SubtotalAmount
+    -TotalAmount
+    +place()
+    +cancel()
+}
+
+class OrderItem <<Entity>> {
+    -Quantity
+    -UnitPrice
+}
+
+class OrderPayment <<Entity>> {
+    -PaymentType
+    -PaymentStatus
+    -PaymentValue
+    -ExternalPaymentReference
+    -PaidAtUtc
+    +recordPayment()
+}
+
+note right of ProductListing
+  Sku identifies a seller-specific listing
+  and its stock, not the product definition.
+end note
+
+' Boundary objects that use control objects
+ProductPage ..> ProductService : uses
+CartPage ..> CartService : uses
+CheckoutPage ..> CheckoutService : uses
+OrdersPage ..> OrderService : uses
+
+' Control objects that coordinate entity objects
+ProductService ..> Product
+ProductService ..> ProductListing
+
+CartService ..> ShoppingCart
+CartService ..> CartItem
+CartService ..> ProductListing
+
+CheckoutService ..> ShoppingCart
+CheckoutService ..> Order
+CheckoutService ..> OrderPayment
+
+OrderService ..> Order
+PaymentService ..> OrderPayment
+
+' Entity associations
+Seller "1" o-- "0..*" ProductListing : offers
+Product "1" o-- "0..*" ProductListing : listed as
+
+Customer "1" o-- "0..*" ShoppingCart : owns
+ShoppingCart "1" *-- "0..*" CartItem : contains
+CartItem "0..*" --> "1" ProductListing : refers to
+
+Customer "1" --> "0..*" Order : places
+Order "0..*" --> "0..1" ShoppingCart : placed from
+Order "1" *-- "1..*" OrderItem : contains
+
+OrderItem "0..*" --> "1" ProductListing : bought listing
+OrderItem "0..*" --> "1" Product : product
+OrderItem "0..*" --> "1" Seller : sold by
+
+Order "1" *-- "0..*" OrderPayment : paid by
+
+' The table at the bottom of the diagram explaining the stereotypes used for different classes
+legend bottom
+|= Stereotype |= Meaning |
+| <<Boundary>> | User-facing page or interface object |
+| <<Control>> | Use case coordination object |
+| <<Entity>> | Persistent marketplace domain object |
+endlegend
+
+@enduml
